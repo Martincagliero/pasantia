@@ -14,7 +14,7 @@ export function GlassCard({ children, className = '', interactive = false }: Gla
     <motion.div
       whileHover={interactive ? { y: -6 } : undefined}
       transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-      className={`glass rounded-3xl p-7 sm:p-8 ${
+      className={`glass rounded-3xl p-5 sm:p-8 ${
         interactive ? 'hover:bg-white/[0.08]' : ''
       } ${className}`}
     >

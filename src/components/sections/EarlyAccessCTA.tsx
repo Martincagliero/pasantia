@@ -27,14 +27,14 @@ export function EarlyAccessCTA({
   return (
     <div className="container-px">
       <Reveal>
-        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/12 bg-gradient-to-b from-white/[0.09] to-white/[0.03] px-6 py-20 text-center sm:px-16 sm:py-28">
+        <div className="relative overflow-hidden rounded-[2rem] border border-white/12 bg-gradient-to-b from-white/[0.09] to-white/[0.03] px-5 py-16 text-center sm:rounded-[2.5rem] sm:px-10 sm:py-24 lg:px-16 lg:py-28">
           <Glow className="left-1/2 top-0 h-72 w-72 -translate-x-1/2 -translate-y-1/3" />
           <Glow
             className="bottom-0 right-10 h-56 w-56 translate-y-1/3"
             color="rgba(125,156,255,0.25)"
           />
 
-          <h2 className="mx-auto max-w-3xl text-4xl font-semibold tracking-tighter sm:text-6xl">
+          <h2 className="mx-auto max-w-3xl text-3xl font-semibold tracking-tighter xs:text-4xl sm:text-6xl">
             {heading}
           </h2>
           <p className="mx-auto mt-6 max-w-xl text-lg font-light text-white/70">

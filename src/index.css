@@ -16,6 +16,7 @@
   body {
     @apply bg-brand-500 text-white font-sans antialiased;
     text-rendering: optimizeLegibility;
+    overflow-x: hidden;
   }
 
   /* Selección coherente con la marca */

@@ -25,12 +25,12 @@ export function Accordion({ items }: AccordionProps) {
             <button
               onClick={() => setOpen(isOpen ? null : i)}
               aria-expanded={isOpen}
-              className="flex w-full items-center gap-5 py-6 text-left transition-colors hover:text-white"
+              className="flex w-full items-center gap-3 py-5 text-left transition-colors hover:text-white sm:gap-5 sm:py-6"
             >
               <span className="text-sm font-medium tabular-nums text-white/40">
                 {num}
               </span>
-              <span className="flex-1 text-lg font-semibold tracking-tight text-white sm:text-xl">
+              <span className="flex-1 text-base font-semibold tracking-tight text-white xs:text-lg sm:text-xl">
                 {item.question}
               </span>
               <motion.span
@@ -51,7 +51,7 @@ export function Accordion({ items }: AccordionProps) {
                   transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                   className="overflow-hidden"
                 >
-                  <p className="max-w-3xl pb-7 pl-11 pr-6 text-base font-light leading-relaxed text-white/70">
+                  <p className="max-w-3xl pb-7 pl-8 pr-2 text-[15px] font-light leading-relaxed text-white/70 sm:pl-11 sm:pr-6 sm:text-base">
                     {item.answer}
                   </p>
                 </motion.div>

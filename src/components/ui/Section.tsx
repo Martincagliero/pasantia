@@ -14,7 +14,7 @@ interface SectionProps {
  */
 export function Section({ children, id, className = '', contained = true }: SectionProps) {
   return (
-    <section id={id} className={`relative py-24 sm:py-28 lg:py-36 ${className}`}>
+    <section id={id} className={`relative overflow-x-clip py-24 sm:py-28 lg:py-36 ${className}`}>
       {contained ? <div className="container-px">{children}</div> : children}
     </section>
   );

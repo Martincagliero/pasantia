@@ -270,10 +270,10 @@ function Onboarding({
           aria-label="Registro de acceso anticipado"
         >
           {/* Glows de fondo */}
-          <div className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-white/10 blur-[130px]" />
+          <div className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[22rem] w-[22rem] -translate-x-1/2 rounded-full bg-white/10 blur-[130px] sm:h-[36rem] sm:w-[36rem]" />
 
           {/* Header */}
-          <header className="flex items-center justify-between px-6 py-5 sm:px-10">
+          <header className="flex items-center justify-between px-5 py-4 sm:px-10 sm:py-5">
             <div className="flex items-center gap-2.5">
               <img src={logo} alt="PasantIA" className="h-8 w-8 rounded-lg object-contain" />
               <span className="text-lg font-semibold tracking-tight">PasantIA</span>
@@ -297,7 +297,7 @@ function Onboarding({
           </div>
 
           {/* Contenido */}
-          <div className="flex flex-1 items-center justify-center overflow-y-auto px-6 py-10">
+          <div className="flex flex-1 items-center justify-center overflow-y-auto px-5 py-8 sm:px-6 sm:py-10">
             {submitted ? (
               <Success role={data.role} onClose={onClose} />
             ) : (
@@ -428,7 +428,7 @@ function StepRole({
                 alt=""
                 aria-hidden
                 loading="lazy"
-                className={`h-40 w-full object-cover ${o.objectPos} transition-transform duration-500 group-hover:scale-105`}
+                className={`h-32 w-full object-cover ${o.objectPos} transition-transform duration-500 group-hover:scale-105 sm:h-40`}
               />
             </div>
             <div className="px-3 pb-2 pt-4">
@@ -468,7 +468,7 @@ function StepContacto({
           placeholder="tucorreo@email.com"
         />
         <Input
-          label="Teléfono / WhatsApp (opcional)"
+          label="Teléfono (opcional)"
           value={data.telefono}
           onChange={(v) => set({ telefono: v })}
           placeholder="+54 9 ..."
@@ -641,11 +641,11 @@ function Success({ role, onClose }: { role: FormData['role']; onClose: () => voi
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 200, damping: 16 }}
-        className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/15"
+        className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/15 sm:h-20 sm:w-20"
       >
         <Check size={38} />
       </motion.div>
-      <h2 className="mt-8 text-4xl font-semibold tracking-tighter sm:text-5xl">
+      <h2 className="mt-8 text-3xl font-semibold tracking-tighter xs:text-4xl sm:text-5xl">
         ¡Estás en la lista!
       </h2>
       <p className="mx-auto mt-5 max-w-md text-lg font-light text-white/65">

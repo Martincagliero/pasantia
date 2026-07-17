@@ -26,7 +26,7 @@ export function Navbar() {
           paddingBottom: scrolled ? 10 : 18,
         }}
         transition={{ duration: 0.3 }}
-        className={`mx-auto mt-3 flex w-[min(1180px,92vw)] items-center justify-between rounded-full px-4 sm:px-6 transition-all duration-300 ${
+        className={`relative z-50 mx-auto mt-3 flex w-[min(1180px,92vw)] items-center justify-between rounded-full px-4 sm:px-6 transition-all duration-300 ${
           scrolled
             ? 'glass-strong shadow-lg shadow-brand-950/20'
             : 'border border-transparent bg-transparent'
@@ -82,70 +82,89 @@ export function Navbar() {
 
         {/* Botón menú mobile */}
         <button
-          className="flex h-10 w-10 items-center justify-center rounded-full text-white md:hidden"
+          className="relative z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 text-white md:hidden"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
           aria-expanded={menuOpen}
         >
-          {menuOpen ? <X size={22} /> : <Menu size={22} />}
+          {menuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </motion.nav>
 
-      {/* Panel mobile */}
+      {/* Menú mobile a pantalla completa */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="mx-auto mt-2 w-[min(1180px,92vw)] md:hidden"
+            className="fixed inset-0 z-40 flex flex-col bg-brand-600 md:hidden"
           >
-            <div className="glass-strong rounded-3xl p-4">
-              <ul className="flex flex-col gap-1">
-                {NAV_LINKS.map((link) => (
-                  <li key={link.to}>
-                    <NavLink
-                      to={link.to}
-                      end={link.to === '/'}
-                      onClick={() => setMenuOpen(false)}
-                      className={({ isActive }) =>
-                        `block rounded-2xl px-4 py-3 text-base font-medium transition-colors ${
-                          isActive
-                            ? 'bg-white/10 text-white'
-                            : 'text-white/70 hover:bg-white/5 hover:text-white'
-                        }`
-                      }
-                    >
-                      {link.label}
-                    </NavLink>
-                  </li>
-                ))}
-                {HASH_LINKS.map((link) => (
-                  <li key={link.to}>
-                    <Link
-                      to={link.to}
-                      onClick={() => setMenuOpen(false)}
-                      className="block rounded-2xl px-4 py-3 text-base font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-3">
-                <Button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    open();
-                  }}
-                  size="md"
-                  className="w-full"
+            <div className="pointer-events-none absolute left-1/2 top-0 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-white/10 blur-[120px]" />
+
+            {/* Links centrados */}
+            <motion.nav
+              initial="hidden"
+              animate="visible"
+              variants={{
+                visible: { transition: { staggerChildren: 0.06, delayChildren: 0.08 } },
+              }}
+              className="flex flex-1 flex-col items-center justify-center gap-7 px-6"
+            >
+              {NAV_LINKS.map((link) => (
+                <motion.div
+                  key={link.to}
+                  variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
                 >
-                  Solicitar acceso anticipado
-                </Button>
-              </div>
-            </div>
+                  <NavLink
+                    to={link.to}
+                    end={link.to === '/'}
+                    onClick={() => setMenuOpen(false)}
+                    className={({ isActive }) =>
+                      `text-2xl font-medium tracking-tight transition-colors ${
+                        isActive ? 'text-white' : 'text-white/60 hover:text-white'
+                      }`
+                    }
+                  >
+                    {link.label}
+                  </NavLink>
+                </motion.div>
+              ))}
+              {HASH_LINKS.map((link) => (
+                <motion.div
+                  key={link.to}
+                  variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
+                >
+                  <Link
+                    to={link.to}
+                    onClick={() => setMenuOpen(false)}
+                    className="text-2xl font-medium tracking-tight text-white/60 transition-colors hover:text-white"
+                  >
+                    {link.label}
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.nav>
+
+            {/* CTA abajo */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35, duration: 0.4 }}
+              className="flex justify-center px-6 pb-12"
+            >
+              <Button
+                onClick={() => {
+                  setMenuOpen(false);
+                  open();
+                }}
+                size="lg"
+                className="w-full max-w-xs justify-center"
+              >
+                Acceso anticipado
+              </Button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

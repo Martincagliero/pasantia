@@ -34,16 +34,16 @@ export function PageHero({
   const { open } = useEarlyAccess();
 
   return (
-    <section className="relative overflow-hidden pt-36 pb-16 sm:pt-44 sm:pb-24">
-      <Glow className="left-1/4 top-10 h-96 w-96" />
+    <section className="relative overflow-hidden pt-32 pb-16 sm:pt-44 sm:pb-24">
+      <Glow className="left-1/4 top-10 h-72 w-72 sm:h-96 sm:w-96" />
       <div className="container-px">
-        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+        <div className="grid items-center gap-10 sm:gap-12 lg:grid-cols-2 lg:gap-16">
           <div>
             <Badge icon={badgeIcon}>{badge}</Badge>
             <AnimatedHeadline
               lines={headlineLines}
               delay={0.15}
-              className="mt-6 text-5xl font-semibold tracking-tightest text-white sm:text-6xl lg:text-7xl"
+              className="mt-6 text-[2.75rem] font-semibold tracking-tightest text-white xs:text-5xl sm:text-6xl lg:text-7xl"
             />
             <motion.p
               initial={{ opacity: 0, y: 16 }}

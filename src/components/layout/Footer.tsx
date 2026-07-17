@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { CONTACT, WHATSAPP_MESSAGES, whatsappLink } from '../../lib/constants';
+import { CONTACT } from '../../lib/constants';
 import { useEarlyAccess } from '../early-access/EarlyAccess';
 import logo from '../../assets/logo.png';
 
@@ -14,7 +14,7 @@ export function Footer() {
   return (
     <footer className="relative border-t border-white/10 bg-brand-950/40">
       <div className="container-px py-20">
-        <div className="grid gap-12 lg:grid-cols-[1.6fr_1fr_1fr]">
+        <div className="grid gap-10 sm:gap-12 lg:grid-cols-[1.6fr_1fr_1fr]">
           {/* Marca + tagline */}
           <div>
             <Link
@@ -60,14 +60,6 @@ export function Footer() {
               className={linkClass}
             >
               Instagram
-            </a>
-            <a
-              href={whatsappLink(WHATSAPP_MESSAGES.general)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={linkClass}
-            >
-              WhatsApp
             </a>
             <a href={`mailto:${CONTACT.email}`} className={linkClass}>
               Email

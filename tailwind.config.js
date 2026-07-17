@@ -2,6 +2,16 @@
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
+    // Breakpoints completos en orden (xs debe ir antes que sm para que
+    // `xs:` no gane precedencia sobre `sm:` en pantallas grandes).
+    screens: {
+      xs: '480px',
+      sm: '640px',
+      md: '768px',
+      lg: '1024px',
+      xl: '1280px',
+      '2xl': '1536px',
+    },
     extend: {
       colors: {
         // Azul de marca extraído del logo real (loog.png) = #0148FD
@@ -68,9 +78,6 @@ export default {
         marquee: 'marquee 32s linear infinite',
         'float-slow': 'float-slow 6s ease-in-out infinite',
         'glow-pulse': 'glow-pulse 5s ease-in-out infinite',
-      },
-      screens: {
-        xs: '480px',
       },
     },
   },

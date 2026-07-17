@@ -3,10 +3,6 @@ import {
   GraduationCap,
   Building2,
   ArrowRight,
-  Sparkles,
-  Target,
-  ShieldCheck,
-  Zap,
   Briefcase,
   Code2,
   Megaphone,
@@ -26,17 +22,17 @@ import { Button } from '../components/ui/Button';
 import { Reveal } from '../components/ui/Reveal';
 import { Glow } from '../components/ui/Glow';
 import { Marquee } from '../components/ui/Marquee';
-import { GlassCard } from '../components/ui/GlassCard';
 import { Accordion } from '../components/ui/Accordion';
 import { AnimatedHeadline } from '../components/ui/AnimatedHeadline';
 import { Accent } from '../components/ui/Accent';
 import { Typewriter } from '../components/ui/Typewriter';
 import { HowItWorks, type Step } from '../components/sections/HowItWorks';
 import { EarlyAccessCTA } from '../components/sections/EarlyAccessCTA';
+import { PlatformShowcase } from '../components/sections/PlatformShowcase';
 import { IMAGES, AVATARS } from '../lib/images';
-import { fadeUp, staggerContainer, viewportOnce } from '../lib/motion';
 import appPreview from '../assets/images/2daseccion.png';
 import estudianteImg from '../assets/images/estudiante.jpg';
+import iconosHero from '../assets/images/iconos-hero.png';
 
 // Rubros como "logos" (ícono + palabra), estilo tira de marcas de go-marz.
 const MARQUEE_ITEMS: { icon: LucideIcon; label: string }[] = [
@@ -107,7 +103,7 @@ const FAQ = [
   {
     question: '¿Cómo me sumo al acceso anticipado?',
     answer:
-      'Con el botón de WhatsApp de esta página. Nos escribís, te anotamos en la lista y te avisamos apenas abramos el acceso.',
+      'Con el botón de acceso anticipado de esta página. Te anotás en la lista y te avisamos apenas abramos el acceso.',
   },
 ];
 
@@ -122,34 +118,30 @@ export default function Home() {
   return (
     <>
       {/* ===================== HERO (inspirado en go-marz) ===================== */}
-      <section className="relative overflow-hidden pt-40 pb-24 sm:pt-48 sm:pb-32">
-        <Glow className="left-1/2 top-16 h-[34rem] w-[34rem] -translate-x-1/2" />
+      <section className="relative overflow-hidden pt-20 pb-12 sm:pt-52 sm:pb-32">
+        <Glow className="left-1/2 top-16 h-[20rem] w-[20rem] -translate-x-1/2 sm:h-[34rem] sm:w-[34rem]" />
         <Glow
-          className="right-10 top-1/3 h-72 w-72"
+          className="right-10 top-1/3 h-56 w-56 sm:h-72 sm:w-72"
           color="rgba(125,156,255,0.22)"
         />
 
         <div className="container-px">
-          <div className="relative mx-auto flex max-w-4xl flex-col items-center text-center">
-            {/* Badge outline con punto de estado "en vivo" */}
-            <motion.span
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-white/80 backdrop-blur"
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-70" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-              </span>
-              Lanzamiento en Argentina
-            </motion.span>
-
-            {/* Headline + cluster de íconos flotando (adaptación del cluster de plataformas) */}
-            <div className="relative mt-7 w-full">
+          <div className="relative mx-auto flex min-h-[100svh] max-w-4xl flex-col items-center justify-center text-center sm:min-h-0 sm:justify-start">
+            {/* Headline con iconos de referentes al lado de "pasantía" */}
+            <div className="relative w-full">
               <AnimatedHeadline
                 lines={[
-                  'La pasantía',
+                  <span
+                    key="l1"
+                    className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2"
+                  >
+                    <span className="whitespace-nowrap">La pasantía</span>
+                    <img
+                      src={iconosHero}
+                      alt="Mercado Libre, Globant, UADE"
+                      className="inline-block h-[1.5em] w-auto align-middle sm:h-[1.2em] lg:h-[1.05em]"
+                    />
+                  </span>,
                   'que buscabas,',
                   <span
                     key="tw"
@@ -168,38 +160,18 @@ export default function Home() {
                   </span>,
                 ]}
                 delay={0.15}
-                className="text-[3.25rem] font-semibold leading-[0.95] tracking-tightest text-white sm:text-6xl lg:text-[6.5rem]"
+                className="text-[2.6rem] font-semibold leading-[1] tracking-tightest text-white xs:text-[3.25rem] xs:leading-[0.95] sm:text-6xl lg:text-[6.5rem]"
               />
-
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.7, delay: 0.95, ease: [0.22, 1, 0.36, 1] }}
-                className="pointer-events-none absolute -top-9 right-0 hidden lg:block xl:-right-6"
-                aria-hidden
-              >
-                <div className="relative flex items-center gap-3">
-                  <div className="absolute -inset-6 -z-10 rounded-full bg-white/25 blur-2xl" />
-                  {[GraduationCap, Building2, Briefcase].map((Icon, i) => (
-                    <span
-                      key={i}
-                      className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-brand-600/80 text-white shadow-xl shadow-brand-950/50 backdrop-blur"
-                    >
-                      <Icon size={24} />
-                    </span>
-                  ))}
-                </div>
-              </motion.div>
             </div>
 
             <motion.p
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.7 }}
-              className="mt-8 max-w-xl text-lg font-light leading-relaxed text-white/70 sm:text-xl"
+              className="mt-4 max-w-xl text-sm font-light leading-relaxed text-white/60 sm:mt-8 sm:text-xl sm:text-white/70"
             >
               Conectá con empresas verificadas, gestioná todo desde un mismo lugar y
-              arrancá tu pasantía sin mandar CVs a ciegas.
+              arrancá tu pasantía.
             </motion.p>
 
             {/* CTAs centrados con glow bajo el primario */}
@@ -207,17 +179,32 @@ export default function Home() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.85 }}
-              className="relative mt-9 flex flex-col gap-3 sm:flex-row"
+              className="relative mt-7 flex w-full flex-col gap-3 sm:mt-9 sm:w-auto sm:flex-row"
             >
               <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-24 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/25 blur-3xl" />
-              <Button as="link" to="/estudiantes" size="lg">
-                <GraduationCap size={20} />
-                Soy estudiante
-              </Button>
-              <Button as="link" to="/empresas" variant="secondary" size="lg">
-                <Building2 size={20} />
-                Soy empresa
-              </Button>
+              <div className="[&>*]:w-full sm:[&>*]:w-auto">
+                <Button
+                  as="link"
+                  to="/estudiantes"
+                  size="lg"
+                  className="w-full justify-center max-sm:!h-11 sm:w-auto"
+                >
+                  <GraduationCap size={20} />
+                  Soy estudiante
+                </Button>
+              </div>
+              <div className="[&>*]:w-full sm:[&>*]:w-auto">
+                <Button
+                  as="link"
+                  to="/empresas"
+                  variant="secondary"
+                  size="lg"
+                  className="w-full justify-center max-sm:!h-11 sm:w-auto"
+                >
+                  <Building2 size={20} />
+                  Soy empresa
+                </Button>
+              </div>
             </motion.div>
 
             {/* Fila de confianza: avatares apilados + divisor + estado */}
@@ -225,10 +212,10 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.7, delay: 1 }}
-              className="mt-10 flex flex-col items-center gap-5 sm:flex-row sm:gap-6"
+              className="mt-7 flex flex-col items-center gap-5 sm:mt-10 sm:flex-row sm:gap-6"
             >
-              <div className="flex items-center gap-3">
-                <div className="flex -space-x-3">
+              <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:gap-3 sm:text-left">
+                <div className="flex -space-x-2.5">
                   {AVATARS.map((src, i) => (
                     <img
                       key={i}
@@ -236,11 +223,11 @@ export default function Home() {
                       alt=""
                       aria-hidden
                       loading="lazy"
-                      className="h-9 w-9 rounded-full border-2 border-brand-500 object-cover"
+                      className="h-8 w-8 rounded-full border-2 border-brand-500 object-cover sm:h-9 sm:w-9"
                     />
                   ))}
                 </div>
-                <span className="text-left text-sm leading-tight text-white/60">
+                <span className="text-sm leading-tight text-white/60 sm:text-left">
                   Estudiantes y empresas
                   <br className="hidden sm:block" /> en un mismo lugar
                 </span>
@@ -359,58 +346,7 @@ export default function Home() {
 
       {/* ===================== POR QUÉ PASANTIA ===================== */}
       <Section className="bg-brand-950/30">
-        <Reveal className="mx-auto max-w-2xl text-center">
-          <span className="text-sm font-semibold uppercase tracking-[0.16em] text-white/50">
-            Por qué PasantIA
-          </span>
-          <h2 className="mt-4 text-4xl font-semibold tracking-tighter sm:text-5xl">
-            Una sola plataforma,{' '}
-            <Accent>dos mundos que se encuentran.</Accent>
-          </h2>
-        </Reveal>
-
-        <motion.div
-          variants={staggerContainer(0.1)}
-          initial="hidden"
-          whileInView="visible"
-          viewport={viewportOnce}
-          className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4"
-        >
-          {[
-            {
-              icon: Target,
-              title: 'Relevante',
-              desc: 'Conexiones según carrera, intereses y ubicación. Basta de aplicar a ciegas.',
-            },
-            {
-              icon: ShieldCheck,
-              title: 'Confiable',
-              desc: 'Empresas verificadas y estudiantes reales. Un entorno serio para ambos.',
-            },
-            {
-              icon: Zap,
-              title: 'Ágil',
-              desc: 'Menos fricción, menos tiempo perdido. Del match a la entrevista, rápido.',
-            },
-            {
-              icon: Sparkles,
-              title: 'Simple',
-              desc: 'Una experiencia clara y moderna, pensada para tu primera experiencia laboral.',
-            },
-          ].map((b) => (
-            <motion.div key={b.title} variants={fadeUp}>
-              <GlassCard interactive className="h-full">
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
-                  <b.icon size={22} />
-                </span>
-                <h3 className="mt-6 text-xl font-semibold tracking-tight">{b.title}</h3>
-                <p className="mt-3 text-[15px] font-light leading-relaxed text-white/65">
-                  {b.desc}
-                </p>
-              </GlassCard>
-            </motion.div>
-          ))}
-        </motion.div>
+        <PlatformShowcase />
       </Section>
 
       {/* ===================== CÓMO VA A FUNCIONAR ===================== */}
@@ -506,7 +442,7 @@ export default function Home() {
               Lo que <Accent>querés saber.</Accent>
             </h2>
             <p className="mt-5 text-lg font-light text-white/70">
-              ¿Te quedó una duda? Escribinos por WhatsApp o a nuestro mail.
+              ¿Te quedó una duda? Escribinos a nuestro mail.
             </p>
           </Reveal>
           <Reveal delay={0.1}>

@@ -19,13 +19,13 @@ interface FloatItem {
 }
 
 const FLOATERS: FloatItem[] = [
-  { src: face('photo-1494790108377-be9c29b29330'), pos: 'left-1/2 top-[4%] -translate-x-1/2', size: 'h-20 w-20', delay: 0 },
-  { src: face('photo-1500648767791-00dcc994a43e'), pos: 'left-[15%] top-[18%]', size: 'h-16 w-16', delay: 0.06 },
-  { src: face('photo-1544005313-94ddf0286df2'), pos: 'right-[13%] top-[12%]', size: 'h-24 w-24', delay: 0.12 },
-  { src: face('photo-1507003211169-0a1dd7228f2d'), pos: 'left-[7%] top-1/2', size: 'h-14 w-14', delay: 0.18 },
-  { src: face('photo-1506794778202-cad84cf45f1d'), pos: 'right-[8%] top-[52%]', size: 'h-20 w-20', delay: 0.24 },
-  { src: face('photo-1438761681033-6461ffad8d80'), pos: 'left-[23%] bottom-[8%]', size: 'h-16 w-16', delay: 0.3 },
-  { src: face('photo-1534528741775-53994a69daeb'), pos: 'right-[25%] bottom-[6%]', size: 'h-24 w-24', delay: 0.36 },
+  { src: face('photo-1494790108377-be9c29b29330'), pos: 'left-1/2 top-[4%] -translate-x-1/2', size: 'h-12 w-12 md:h-20 md:w-20', delay: 0 },
+  { src: face('photo-1500648767791-00dcc994a43e'), pos: 'left-[6%] top-[16%]', size: 'h-10 w-10 md:h-16 md:w-16', delay: 0.06 },
+  { src: face('photo-1544005313-94ddf0286df2'), pos: 'right-[5%] top-[11%]', size: 'h-14 w-14 md:h-24 md:w-24', delay: 0.12 },
+  { src: face('photo-1507003211169-0a1dd7228f2d'), pos: 'left-[3%] top-1/2', size: 'h-9 w-9 md:h-14 md:w-14', delay: 0.18 },
+  { src: face('photo-1506794778202-cad84cf45f1d'), pos: 'right-[3%] top-[52%]', size: 'h-12 w-12 md:h-20 md:w-20', delay: 0.24 },
+  { src: face('photo-1438761681033-6461ffad8d80'), pos: 'left-[16%] bottom-[6%]', size: 'h-10 w-10 md:h-16 md:w-16', delay: 0.3 },
+  { src: face('photo-1534528741775-53994a69daeb'), pos: 'right-[18%] bottom-[5%]', size: 'h-14 w-14 md:h-24 md:w-24', delay: 0.36 },
 ];
 
 /** Avatar flotante con entrada y flotación infinita. */
@@ -69,10 +69,10 @@ export function PlatformShowcase() {
 
   return (
     <div ref={ref} className="relative">
-      {/* Avatares (desktop): convergen/divergen del centro con el scroll */}
+      {/* Avatares: convergen/divergen del centro con el scroll (mobile + desktop) */}
       <motion.div
         style={reduce ? undefined : { scale: clusterScale }}
-        className="pointer-events-none absolute inset-0 hidden md:block"
+        className="pointer-events-none absolute inset-0"
         aria-hidden
       >
         {FLOATERS.map((item) => (
@@ -81,21 +81,7 @@ export function PlatformShowcase() {
       </motion.div>
 
       {/* Contenido central */}
-      <div className="relative mx-auto flex min-h-[26rem] max-w-xl flex-col items-center justify-center py-6 text-center md:min-h-[36rem] md:py-16">
-        {/* Cluster de avatares (solo mobile) */}
-        <div className="mb-7 flex -space-x-3 md:hidden">
-          {FLOATERS.slice(0, 5).map((item) => (
-            <img
-              key={item.src}
-              src={item.src}
-              alt=""
-              aria-hidden
-              loading="lazy"
-              className="h-12 w-12 rounded-full border-2 border-brand-500 object-cover"
-            />
-          ))}
-        </div>
-
+      <div className="relative mx-auto flex min-h-[30rem] max-w-xl flex-col items-center justify-center py-6 text-center md:min-h-[36rem] md:py-16">
         <Reveal>
           <span className="text-sm font-semibold uppercase tracking-[0.16em] text-white/50">
             Por qué PasantIA

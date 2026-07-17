@@ -30,7 +30,7 @@ import { HowItWorks, type Step } from '../components/sections/HowItWorks';
 import { EarlyAccessCTA } from '../components/sections/EarlyAccessCTA';
 import { PlatformShowcase } from '../components/sections/PlatformShowcase';
 import { IMAGES, AVATARS } from '../lib/images';
-import appPreview from '../assets/images/2daseccion.png';
+import appPreview from '../assets/images/2daseccion.jpg';
 import estudianteImg from '../assets/images/estudiante.jpg';
 import iconosHero from '../assets/images/iconos-hero.png';
 

@@ -327,14 +327,6 @@ export default function StudentProfileForm() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <FormRow label="Promedio (opcional)" htmlFor="gpa">
-                  <TextField
-                    id="gpa"
-                    value={form.gpa ?? ''}
-                    onChange={(e) => set('gpa', e.target.value)}
-                    placeholder="Ej: 8.40"
-                  />
-                </FormRow>
                 <FormRow label="GitHub (opcional)" htmlFor="github">
                   <TextField
                     id="github"

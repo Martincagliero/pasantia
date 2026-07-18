@@ -129,6 +129,16 @@ export interface Post {
   created_at: string;
 }
 
+export interface AmbassadorPost {
+  id: string;
+  ambassador_id: string;
+  title: string;
+  description: string;
+  image_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // --- Tipado genérico para el cliente de Supabase ---
 // Mantenido intencionalmente simple; el SDK igual funciona sin tipos exhaustivos.
 export interface Database {

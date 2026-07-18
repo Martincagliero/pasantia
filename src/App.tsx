@@ -36,6 +36,7 @@ const AmbassadorOpportunities = lazy(() => import('./features/ambassador/Ambassa
 const AmbassadorLeaderboard = lazy(() => import('./features/ambassador/AmbassadorLeaderboard'));
 const AmbassadorProfile = lazy(() => import('./features/ambassador/AmbassadorProfile'));
 const AmbassadorDirectory = lazy(() => import('./features/ambassador/AmbassadorDirectory'));
+const AmbassadorAnnouncements = lazy(() => import('./features/ambassador/AmbassadorAnnouncements'));
 const Novedades = lazy(() => import('./features/posts/Novedades'));
 
 const fallback = <div className="min-h-screen" aria-hidden />;
@@ -166,6 +167,14 @@ export default function App() {
               element={
                 <ProtectedRoute role="embajador">
                   <AmbassadorProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="anuncios"
+              element={
+                <ProtectedRoute role="embajador">
+                  <AmbassadorAnnouncements />
                 </ProtectedRoute>
               }
             />

@@ -181,196 +181,201 @@ export default function StudentProfileForm() {
   if (loading) return <PageLoader />;
 
   return (
-    <div className="max-w-2xl">
+    <div>
       <PageHeader
         title="Mi perfil"
         description="Completá tus datos para que las empresas te conozcan mejor."
       />
 
-      <Card>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <FormRow label="Nombre completo" htmlFor="name">
-            <TextField
-              id="name"
-              value={fullName}
-              onChange={(e) => {
-                setFullName(e.target.value);
-                setSaved(false);
-              }}
-              required
-            />
-          </FormRow>
+      <form onSubmit={handleSubmit}>
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* ── Columna izquierda: datos académicos ── */}
+          <Card>
+            <h3 className="mb-5 text-base font-semibold text-white">Datos académicos</h3>
+            <div className="space-y-4">
+              <FormRow label="Nombre completo" htmlFor="name">
+                <TextField
+                  id="name"
+                  value={fullName}
+                  onChange={(e) => {
+                    setFullName(e.target.value);
+                    setSaved(false);
+                  }}
+                  required
+                />
+              </FormRow>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormRow label="Universidad" htmlFor="uni">
-              <TextField
-                id="uni"
-                value={form.university ?? ''}
-                onChange={(e) => set('university', e.target.value)}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormRow label="Universidad" htmlFor="uni">
+                  <TextField
+                    id="uni"
+                    value={form.university ?? ''}
+                    onChange={(e) => set('university', e.target.value)}
+                  />
+                </FormRow>
+                <FormRow label="Carrera" htmlFor="career">
+                  <TextField
+                    id="career"
+                    list="careers-list"
+                    value={form.career ?? ''}
+                    onChange={(e) => set('career', e.target.value)}
+                    placeholder="Empezá a escribir…"
+                  />
+                  <datalist id="careers-list">
+                    {CAREERS.map((c) => (
+                      <option key={c} value={c} />
+                    ))}
+                  </datalist>
+                </FormRow>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormRow label="Año de cursada" htmlFor="year">
+                  <SelectField
+                    id="year"
+                    value={form.year ?? ''}
+                    onChange={(e) => set('year', e.target.value)}
+                  >
+                    <option value="">Seleccionar…</option>
+                    {['1°', '2°', '3°', '4°', '5°', 'Graduado/a'].map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </SelectField>
+                </FormRow>
+                <FormRow label="Área de interés" htmlFor="area">
+                  <TextField
+                    id="area"
+                    value={form.area ?? ''}
+                    onChange={(e) => set('area', e.target.value)}
+                    placeholder="Ej: Desarrollo, Marketing, Diseño"
+                  />
+                </FormRow>
+              </div>
+
+              <SuggestChips
+                label="Áreas sugeridas para tu carrera"
+                items={suggestions.areas}
+                isActive={(a) => (form.area ?? '').toLowerCase() === a.toLowerCase()}
+                onPick={(a) => set('area', a)}
               />
-            </FormRow>
-            <FormRow label="Carrera" htmlFor="career">
-              <TextField
-                id="career"
-                list="careers-list"
-                value={form.career ?? ''}
-                onChange={(e) => set('career', e.target.value)}
-                placeholder="Empezá a escribir…"
+
+              <FormRow label="Habilidades" htmlFor="skills">
+                <TextField
+                  id="skills"
+                  value={form.skills}
+                  onChange={(e) => set('skills', e.target.value)}
+                  placeholder="React, Excel, Inglés (separá con comas)"
+                />
+              </FormRow>
+
+              <SuggestChips
+                label="Habilidades sugeridas (tocá para agregar)"
+                items={suggestions.skills}
+                isActive={hasSkill}
+                onPick={toggleSkill}
               />
-              <datalist id="careers-list">
-                {CAREERS.map((c) => (
-                  <option key={c} value={c} />
-                ))}
-              </datalist>
-            </FormRow>
-          </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormRow label="Año de cursada" htmlFor="year">
-              <SelectField
-                id="year"
-                value={form.year ?? ''}
-                onChange={(e) => set('year', e.target.value)}
-              >
-                <option value="">Seleccionar…</option>
-                {['1°', '2°', '3°', '4°', '5°', 'Graduado/a'].map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </SelectField>
-            </FormRow>
-            <FormRow label="Área de interés" htmlFor="area">
-              <TextField
-                id="area"
-                value={form.area ?? ''}
-                onChange={(e) => set('area', e.target.value)}
-                placeholder="Ej: Desarrollo, Marketing, Diseño"
+              <FormRow label="Disponibilidad" htmlFor="avail">
+                <TextField
+                  id="avail"
+                  value={form.availability ?? ''}
+                  onChange={(e) => set('availability', e.target.value)}
+                  placeholder="Ej: Medio día, 20 hs semanales"
+                />
+              </FormRow>
+
+              <SuggestChips
+                label="Opciones rápidas"
+                items={[...AVAILABILITY_OPTIONS]}
+                isActive={(v) => (form.availability ?? '').toLowerCase() === v.toLowerCase()}
+                onPick={(v) => set('availability', v)}
               />
-            </FormRow>
-          </div>
 
-          {/* Áreas sugeridas según la carrera */}
-          <SuggestChips
-            label="Áreas sugeridas para tu carrera"
-            items={suggestions.areas}
-            isActive={(a) => (form.area ?? '').toLowerCase() === a.toLowerCase()}
-            onPick={(a) => set('area', a)}
-          />
+              <FormRow label="Sobre mí" htmlFor="bio">
+                <TextArea
+                  id="bio"
+                  value={form.bio ?? ''}
+                  onChange={(e) => set('bio', e.target.value)}
+                  placeholder="Contá brevemente tu experiencia e intereses."
+                />
+              </FormRow>
+            </div>
+          </Card>
 
-          <FormRow label="Habilidades" htmlFor="skills">
-            <TextField
-              id="skills"
-              value={form.skills}
-              onChange={(e) => set('skills', e.target.value)}
-              placeholder="React, Excel, Inglés (separá con comas)"
-            />
-          </FormRow>
+          {/* ── Columna derecha: contacto, links y archivos ── */}
+          <Card>
+            <h3 className="mb-5 text-base font-semibold text-white">Links y archivos</h3>
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormRow label="Teléfono (opcional)" htmlFor="phone">
+                  <TextField
+                    id="phone"
+                    type="tel"
+                    value={form.phone ?? ''}
+                    onChange={(e) => set('phone', e.target.value)}
+                    placeholder="+54 9 …"
+                  />
+                </FormRow>
+                <FormRow label="Ciudad (opcional)" htmlFor="location">
+                  <TextField
+                    id="location"
+                    value={form.location ?? ''}
+                    onChange={(e) => set('location', e.target.value)}
+                    placeholder="Ej: Rosario, Santa Fe"
+                  />
+                </FormRow>
+              </div>
 
-          {/* Habilidades sugeridas según la carrera (clic para agregar/quitar) */}
-          <SuggestChips
-            label="Habilidades sugeridas (tocá para agregar)"
-            items={suggestions.skills}
-            isActive={hasSkill}
-            onPick={toggleSkill}
-          />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormRow label="Promedio (opcional)" htmlFor="gpa">
+                  <TextField
+                    id="gpa"
+                    value={form.gpa ?? ''}
+                    onChange={(e) => set('gpa', e.target.value)}
+                    placeholder="Ej: 8.40"
+                  />
+                </FormRow>
+                <FormRow label="GitHub (opcional)" htmlFor="github">
+                  <TextField
+                    id="github"
+                    type="url"
+                    value={form.github_url ?? ''}
+                    onChange={(e) => set('github_url', e.target.value)}
+                    placeholder="https://github.com/…"
+                  />
+                </FormRow>
+              </div>
 
-          <FormRow label="Disponibilidad" htmlFor="avail">
-            <TextField
-              id="avail"
-              value={form.availability ?? ''}
-              onChange={(e) => set('availability', e.target.value)}
-              placeholder="Ej: Medio día, 20 hs semanales"
-            />
-          </FormRow>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormRow label="LinkedIn (opcional)" htmlFor="linkedin">
+                  <TextField
+                    id="linkedin"
+                    type="url"
+                    value={form.linkedin_url ?? ''}
+                    onChange={(e) => set('linkedin_url', e.target.value)}
+                    placeholder="https://linkedin.com/in/…"
+                  />
+                </FormRow>
+                <FormRow label="Portfolio / web (opcional)" htmlFor="portfolio">
+                  <TextField
+                    id="portfolio"
+                    type="url"
+                    value={form.portfolio_url ?? ''}
+                    onChange={(e) => set('portfolio_url', e.target.value)}
+                    placeholder="https://…"
+                  />
+                </FormRow>
+              </div>
 
-          {/* Disponibilidad sugerida */}
-          <SuggestChips
-            label="Opciones rápidas"
-            items={[...AVAILABILITY_OPTIONS]}
-            isActive={(v) => (form.availability ?? '').toLowerCase() === v.toLowerCase()}
-            onPick={(v) => set('availability', v)}
-          />
-
-          <FormRow label="Sobre mí" htmlFor="bio">
-            <TextArea
-              id="bio"
-              value={form.bio ?? ''}
-              onChange={(e) => set('bio', e.target.value)}
-              placeholder="Contá brevemente tu experiencia e intereses."
-            />
-          </FormRow>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormRow label="Teléfono (opcional)" htmlFor="phone">
-              <TextField
-                id="phone"
-                type="tel"
-                value={form.phone ?? ''}
-                onChange={(e) => set('phone', e.target.value)}
-                placeholder="+54 9 …"
-              />
-            </FormRow>
-            <FormRow label="Ciudad (opcional)" htmlFor="location">
-              <TextField
-                id="location"
-                value={form.location ?? ''}
-                onChange={(e) => set('location', e.target.value)}
-                placeholder="Ej: Rosario, Santa Fe"
-              />
-            </FormRow>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormRow label="Promedio (opcional)" htmlFor="gpa">
-              <TextField
-                id="gpa"
-                value={form.gpa ?? ''}
-                onChange={(e) => set('gpa', e.target.value)}
-                placeholder="Ej: 8.40"
-              />
-            </FormRow>
-            <FormRow label="GitHub (opcional)" htmlFor="github">
-              <TextField
-                id="github"
-                type="url"
-                value={form.github_url ?? ''}
-                onChange={(e) => set('github_url', e.target.value)}
-                placeholder="https://github.com/…"
-              />
-            </FormRow>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormRow label="LinkedIn (opcional)" htmlFor="linkedin">
-              <TextField
-                id="linkedin"
-                type="url"
-                value={form.linkedin_url ?? ''}
-                onChange={(e) => set('linkedin_url', e.target.value)}
-                placeholder="https://linkedin.com/in/…"
-              />
-            </FormRow>
-            <FormRow label="Portfolio / web (opcional)" htmlFor="portfolio">
-              <TextField
-                id="portfolio"
-                type="url"
-                value={form.portfolio_url ?? ''}
-                onChange={(e) => set('portfolio_url', e.target.value)}
-                placeholder="https://…"
-              />
-            </FormRow>
-          </div>
-
-          <FormRow label="Link a tu CV (opcional)" htmlFor="cv">
-            <TextField
-              id="cv"
-              type="url"
-              value={form.cv_url ?? ''}
-              onChange={(e) => set('cv_url', e.target.value)}
-              placeholder="https://…"
-            />
-          </FormRow>
+              <FormRow label="Link a tu CV (opcional)" htmlFor="cv">
+                <TextField
+                  id="cv"
+                  type="url"
+                  value={form.cv_url ?? ''}
+                  onChange={(e) => set('cv_url', e.target.value)}
+                  placeholder="https://…"
+                />
+              </FormRow>
 
           {/* Subir CV y analítico como archivo (PDF) */}
           <div className="grid gap-4 sm:grid-cols-2">
@@ -462,30 +467,32 @@ export default function StudentProfileForm() {
           </div>
           {uploadError && <p className="-mt-1 text-sm text-red-300">{uploadError}</p>}
 
-          {/* Visibilidad para empresas */}
-          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/12 bg-white/5 px-4 py-3">
-            <input
-              type="checkbox"
-              checked={form.is_public}
-              onChange={(e) => set('is_public', e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-white/30 bg-white/10 accent-white"
-            />
-            <span className="text-sm text-white/80">
-              <span className="font-medium text-white">Perfil visible para empresas</span>
-              <br />
-              Las empresas van a poder encontrarte en el buscador de talento por tus
-              habilidades y área. Podés desactivarlo cuando quieras.
-            </span>
-          </label>
+              {/* Visibilidad para empresas */}
+              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/12 bg-white/5 px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={form.is_public}
+                  onChange={(e) => set('is_public', e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-white/30 bg-white/10 accent-white"
+                />
+                <span className="text-sm text-white/80">
+                  <span className="font-medium text-white">Perfil visible para empresas</span>
+                  <br />
+                  Las empresas van a poder encontrarte en el buscador de talento por tus
+                  habilidades y área. Podés desactivarlo cuando quieras.
+                </span>
+              </label>
 
-          <div className="flex items-center gap-3 pt-2">
-            <Button type="submit" variant="secondary" size="sm" disabled={saving}>
-              {saving ? 'Guardando…' : 'Guardar cambios'}
-            </Button>
-            {saved && <span className="text-sm text-emerald-300">Guardado ✓</span>}
-          </div>
-        </form>
-      </Card>
+              <div className="flex items-center gap-3 pt-2">
+                <Button type="submit" variant="secondary" size="sm" disabled={saving}>
+                  {saving ? 'Guardando…' : 'Guardar cambios'}
+                </Button>
+                {saved && <span className="text-sm text-emerald-300">Guardado ✓</span>}
+              </div>
+            </div>
+          </Card>
+        </div>
+      </form>
     </div>
   );
 }

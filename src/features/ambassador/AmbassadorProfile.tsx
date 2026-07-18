@@ -135,154 +135,166 @@ export default function AmbassadorProfile() {
         description="Completá los datos de tu comunidad para que las empresas te conozcan."
       />
 
-      <Card className="max-w-2xl">
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-white">Estado: {amb?.org_name}</h2>
-            <VerifiedBadge verified={!!amb?.verified} />
-          </div>
+      <form onSubmit={handleSubmit}>
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* ── Columna izquierda: identidad de la comunidad ── */}
+          <Card>
+            <h3 className="mb-5 text-base font-semibold text-white">Identidad</h3>
+            <div className="space-y-5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-white/60">Estado: {amb?.org_name}</span>
+                <VerifiedBadge verified={!!amb?.verified} />
+              </div>
 
-          {/* Logo */}
-          <div>
-            <label className="block text-sm font-medium text-white/80 mb-2">Logo / Avatar de tu cuenta (máx 2MB)</label>
-            <p className="text-xs text-white/50 mb-3">Recomendado: cuadrado, 500x500px</p>
-            <div className="flex items-end gap-3">
-              {form.logo_url && (
-                <div className="relative">
-                  <img
-                    src={form.logo_url}
-                    alt="Logo"
-                    className="h-16 w-16 rounded-xl object-cover border border-white/10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => set('logo_url', '')}
-                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500/80 flex items-center justify-center text-white text-xs"
-                  >
-                    ✕
-                  </button>
+              {/* Logo */}
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-2">Logo / Avatar (máx 2MB)</label>
+                <p className="text-xs text-white/50 mb-3">Recomendado: cuadrado, 500×500px</p>
+                <div className="flex items-end gap-3">
+                  {form.logo_url && (
+                    <div className="relative">
+                      <img
+                        src={form.logo_url}
+                        alt="Logo"
+                        className="h-16 w-16 rounded-xl object-cover border border-white/10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => set('logo_url', '')}
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500/80 flex items-center justify-center text-white text-xs"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                  <label className="flex-1 cursor-pointer">
+                    <div className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-white/20 bg-white/5 px-4 py-3 transition hover:border-white/40 hover:bg-white/10">
+                      <Upload size={18} className="text-white/60" />
+                      <span className="text-sm font-medium text-white/70">
+                        {uploading ? 'Subiendo…' : 'Subir logo'}
+                      </span>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      disabled={uploading}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
-              )}
-              <label className="flex-1 cursor-pointer">
-                <div className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-white/20 bg-white/5 px-4 py-3 transition hover:border-white/40 hover:bg-white/10">
-                  <Upload size={18} className="text-white/60" />
-                  <span className="text-sm font-medium text-white/70">
-                    {uploading ? 'Subiendo…' : 'Subir logo'}
-                  </span>
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoUpload}
-                  disabled={uploading}
-                  className="hidden"
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-1.5">Nombre de la comunidad</label>
+                <TextField
+                  value={form.org_name}
+                  onChange={(e) => set('org_name', e.target.value)}
+                  placeholder="Ej: ICES, Centro de Estudiantes, Ingeniería UTN"
                 />
-              </label>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-1.5">Tipo</label>
+                <select
+                  value={form.org_type}
+                  onChange={(e) => set('org_type', e.target.value as AmbassadorOrgType)}
+                  className="glass w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-white placeholder-white/40 transition focus:border-white/40 focus:outline-none"
+                >
+                  {ORG_TYPES.map((o) => (
+                    <option key={o.value} value={o.value} className="bg-brand-950 text-white">
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-1.5">Universidad / Institución (opcional)</label>
+                <TextField
+                  value={form.university}
+                  onChange={(e) => set('university', e.target.value)}
+                  placeholder="Ej: UTN, UB, UNLP"
+                />
+              </div>
             </div>
-          </div>
+          </Card>
 
-          <div>
-            <label className="block text-sm font-medium text-white/80">Nombre de la comunidad / organización</label>
-            <TextField
-              value={form.org_name}
-              onChange={(e) => set('org_name', e.target.value)}
-              placeholder="Ej: ICES, Centro de Estudiantes, Ingeniería UTN"
-            />
-          </div>
+          {/* ── Columna derecha: redes y descripción ── */}
+          <Card>
+            <h3 className="mb-5 text-base font-semibold text-white">Presencia en redes</h3>
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-1.5">Instagram *</label>
+                <TextField
+                  value={form.instagram_url}
+                  onChange={(e) => set('instagram_url', e.target.value)}
+                  type="url"
+                  placeholder="https://instagram.com/…"
+                  required
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-white/80">Tipo</label>
-            <select
-              value={form.org_type}
-              onChange={(e) => set('org_type', e.target.value as AmbassadorOrgType)}
-              className="glass w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-white placeholder-white/40 transition focus:border-white/40 focus:outline-none"
-            >
-              {ORG_TYPES.map((o) => (
-                <option key={o.value} value={o.value} className="bg-brand-950 text-white">
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-1.5">Alcance / Seguidores (aproximado)</label>
+                <TextField
+                  value={form.reach}
+                  onChange={(e) => set('reach', e.target.value)}
+                  placeholder="Ej: 2.5k seguidores, 500+ activos"
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-white/80">Universidad / Institución (opcional)</label>
-            <TextField
-              value={form.university}
-              onChange={(e) => set('university', e.target.value)}
-              placeholder="Ej: UTN, UB, UNLP"
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-1.5">Sobre tu comunidad</label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => set('description', e.target.value)}
+                  placeholder="Describí en qué se enfoca tu comunidad, cómo es tu audiencia, en qué temas podés difundir pasantías, etc."
+                  className="glass w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-white placeholder-white/40 transition focus:border-white/40 focus:outline-none"
+                  rows={6}
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-white/80">Instagram *</label>
-            <TextField
-              value={form.instagram_url}
-              onChange={(e) => set('instagram_url', e.target.value)}
-              type="url"
-              placeholder="https://instagram.com/…"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-white/80">Alcance / Seguidores (aproximado)</label>
-            <TextField
-              value={form.reach}
-              onChange={(e) => set('reach', e.target.value)}
-              placeholder="Ej: 2.5k seguidores, 500+ activos, comunidad de 100 personas"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-white/80">Sobre tu comunidad</label>
-            <textarea
-              value={form.description}
-              onChange={(e) => set('description', e.target.value)}
-              placeholder="Describí en qué se enfoca tu comunidad, cómo es tu audiencia, en qué temas podés difundir pasantías, etc."
-              className="glass w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-white placeholder-white/40 transition focus:border-white/40 focus:outline-none"
-              rows={5}
-            />
-          </div>
-
-          <div className="flex items-center gap-3 pt-2">
-            <Button type="submit" variant="secondary" size="sm" disabled={saving || uploading}>
-              {saving ? 'Guardando…' : 'Guardar cambios'}
-            </Button>
-            {saved && <span className="text-sm text-emerald-300">Guardado ✓</span>}
-          </div>
-        </form>
-
-        {amb?.verified && (
-          <div className="mt-6 space-y-4 border-t border-white/10 pt-6">
-            <div>
-              <h3 className="mb-2 font-semibold text-white">✅ Tu cuenta está verificada</h3>
-              <p className="text-sm text-white/70">
-                Ahora podés difundir todas las pasantías que quieras en Instagram y tus seguidores podrán postularse directamente desde PasantIA.
-              </p>
+              <div className="flex items-center gap-3 pt-2">
+                <Button type="submit" variant="secondary" size="sm" disabled={saving || uploading}>
+                  {saving ? 'Guardando…' : 'Guardar cambios'}
+                </Button>
+                {saved && <span className="text-sm text-emerald-300">Guardado ✓</span>}
+              </div>
             </div>
+          </Card>
+        </div>
+      </form>
 
-            <div className="rounded-lg bg-brand-500/10 border border-brand-500/20 p-4">
-              <h4 className="font-semibold text-brand-200 mb-2">🎯 Cómo ganar puntos:</h4>
-              <ul className="text-sm text-white/70 space-y-1">
-                <li>• <strong>+10 puntos</strong> por cada pasantía que difundas</li>
-                <li>• Los puntos se suman automáticamente cuando marcas "Difundida"</li>
-                <li>• Competí en el ranking y demostrá tu influencia</li>
-              </ul>
-            </div>
-
-            <div className="rounded-lg bg-sky-500/10 border border-sky-500/20 p-4">
-              <h4 className="font-semibold text-sky-200 mb-2">📱 Cómo funciona:</h4>
-              <ol className="text-sm text-white/70 space-y-1">
-                <li>1. Las empresas publican pasantías en PasantIA</li>
-                <li>2. Te eligen para difundirlas en tu Instagram</li>
-                <li>3. Compartís el link con tus seguidores</li>
-                <li>4. Marcás la pasantía como "Difundida" aquí → ganan puntos</li>
-              </ol>
-            </div>
+      {amb?.verified && (
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <h3 className="mb-2 font-semibold text-white">✅ Cuenta verificada</h3>
+            <p className="text-sm text-white/70">
+              Ahora podés difundir todas las pasantías que quieras en Instagram y tus seguidores podrán postularse directamente desde PasantIA.
+            </p>
           </div>
-        )}
-      </Card>
+
+          <div className="rounded-2xl border border-brand-500/20 bg-brand-500/10 p-5">
+            <h4 className="font-semibold text-brand-200 mb-2">🎯 Cómo ganar puntos:</h4>
+            <ul className="text-sm text-white/70 space-y-1">
+              <li>• <strong>+10 puntos</strong> por cada pasantía que difundas</li>
+              <li>• Los puntos se suman automáticamente cuando marcas "Difundida"</li>
+              <li>• Competí en el ranking y demostrá tu influencia</li>
+            </ul>
+          </div>
+
+          <div className="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-5">
+            <h4 className="font-semibold text-sky-200 mb-2">📱 Cómo funciona:</h4>
+            <ol className="text-sm text-white/70 space-y-1">
+              <li>1. Las empresas publican pasantías en PasantIA</li>
+              <li>2. Te eligen para difundirlas en tu Instagram</li>
+              <li>3. Compartís el link con tus seguidores</li>
+              <li>4. Marcás la pasantía como "Difundida" → ganan puntos</li>
+            </ol>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

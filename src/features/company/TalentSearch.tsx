@@ -1,7 +1,7 @@
 // Empresa: buscador de talento. Muestra estudiantes que se hicieron visibles
 // (perfil público) y permite filtrar por habilidad, área o nombre.
 import { useEffect, useMemo, useState } from 'react';
-import { Search, Mail, GraduationCap, MapPin, FileText, Link2, Globe, Code2 } from 'lucide-react';
+import { Search, Mail, GraduationCap, MapPin, FileText, Link2, Globe, Code2, X, Phone, Calendar } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { StudentProfile } from '../../lib/database.types';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
@@ -16,6 +16,7 @@ export default function TalentSearch() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [areaFilter, setAreaFilter] = useState('todas');
+  const [selected, setSelected] = useState<TalentRow | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -79,9 +80,7 @@ export default function TalentSearch() {
         <SelectField value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)} className="sm:w-52">
           <option value="todas">Todas las áreas</option>
           {areas.map((a) => (
-            <option key={a} value={a}>
-              {a}
-            </option>
+            <option key={a} value={a}>{a}</option>
           ))}
         </SelectField>
       </div>
@@ -98,78 +97,188 @@ export default function TalentSearch() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {filtered.map((r) => (
-            <Card key={r.id}>
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="text-lg font-semibold text-white">
-                  {r.profile?.full_name || 'Estudiante'}
-                </h3>
-                {r.gpa && (
-                  <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/70">
-                    Prom. {r.gpa}
+            <button
+              key={r.id}
+              onClick={() => setSelected(r)}
+              className="w-full text-left transition-transform hover:scale-[1.01] active:scale-[0.99]"
+            >
+              <Card className="h-full cursor-pointer hover:border-white/30">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">
+                      {r.profile?.full_name || 'Estudiante'}
+                    </h3>
+                    {(r.career || r.university) && (
+                      <p className="mt-0.5 text-sm text-white/55">
+                        {[r.career, r.university, r.year].filter(Boolean).join(' · ')}
+                      </p>
+                    )}
+                  </div>
+                  {r.area && (
+                    <span className="shrink-0 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/70">
+                      {r.area}
+                    </span>
+                  )}
+                </div>
+
+                {r.skills && r.skills.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {r.skills.slice(0, 5).map((s) => (
+                      <span key={s} className="rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-xs text-white/70">
+                        {s}
+                      </span>
+                    ))}
+                    {r.skills.length > 5 && (
+                      <span className="rounded-full border border-white/10 px-2.5 py-0.5 text-xs text-white/40">
+                        +{r.skills.length - 5}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {r.bio && (
+                  <p className="mt-2.5 line-clamp-2 text-sm text-white/55">{r.bio}</p>
+                )}
+
+                <p className="mt-3 text-xs text-white/35">Clic para ver perfil completo →</p>
+              </Card>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── Modal perfil completo ── */}
+      {selected && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          onClick={() => setSelected(null)}
+        >
+          <div
+            className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/15 bg-brand-600 p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Cerrar */}
+            <button
+              onClick={() => setSelected(null)}
+              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Header */}
+            <div className="mb-5">
+              <h2 className="text-2xl font-bold text-white">
+                {selected.profile?.full_name || 'Estudiante'}
+              </h2>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-white/60">
+                {(selected.career || selected.university) && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <GraduationCap size={15} />
+                    {[selected.career, selected.university, selected.year].filter(Boolean).join(' · ')}
+                  </span>
+                )}
+                {selected.location && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin size={15} /> {selected.location}
+                  </span>
+                )}
+                {selected.availability && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Calendar size={15} /> {selected.availability}
                   </span>
                 )}
               </div>
+            </div>
 
-              <div className="mt-2 flex flex-col gap-1.5 text-sm text-white/60">
-                {(r.career || r.university) && (
-                  <span className="inline-flex items-center gap-2">
-                    <GraduationCap className="h-4 w-4" />
-                    {[r.career, r.university, r.year].filter(Boolean).join(' · ')}
-                  </span>
-                )}
-                {r.location && (
-                  <span className="inline-flex items-center gap-2">
-                    <MapPin className="h-4 w-4" /> {r.location}
-                  </span>
-                )}
-                {r.profile?.email && (
-                  <a href={`mailto:${r.profile.email}`} className="inline-flex items-center gap-2 hover:text-white">
-                    <Mail className="h-4 w-4" /> {r.profile.email}
-                  </a>
-                )}
-              </div>
+            {/* Contactar */}
+            <div className="mb-5 flex flex-wrap gap-3">
+              {selected.profile?.email && (
+                <a
+                  href={`mailto:${selected.profile.email}`}
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-brand-600 transition hover:bg-brand-950 hover:text-white"
+                >
+                  <Mail size={16} /> Enviar email
+                </a>
+              )}
+              {selected.phone && (
+                <a
+                  href={`tel:${selected.phone}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+                >
+                  <Phone size={16} /> {selected.phone}
+                </a>
+              )}
+            </div>
 
-              {r.skills && r.skills.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {r.skills.map((s) => (
-                    <span key={s} className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/70">
+            {/* Skills */}
+            {selected.skills && selected.skills.length > 0 && (
+              <div className="mb-5">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/40">Habilidades</p>
+                <div className="flex flex-wrap gap-2">
+                  {selected.skills.map((s) => (
+                    <span key={s} className="rounded-full border border-white/20 bg-white/5 px-3 py-1 text-sm text-white/80">
                       {s}
                     </span>
                   ))}
                 </div>
-              )}
-
-              {r.bio && <p className="mt-3 text-sm text-white/60">{r.bio}</p>}
-
-              <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 border-t border-white/10 pt-3 text-sm text-white/60">
-                {r.cv_url && (
-                  <a href={r.cv_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 hover:text-white">
-                    <FileText className="h-4 w-4" /> CV
-                  </a>
-                )}
-                {r.transcript_url && (
-                  <a href={r.transcript_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 hover:text-white">
-                    <FileText className="h-4 w-4" /> Analítico
-                  </a>
-                )}
-                {r.linkedin_url && (
-                  <a href={r.linkedin_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 hover:text-white">
-                    <Link2 className="h-4 w-4" /> LinkedIn
-                  </a>
-                )}
-                {r.github_url && (
-                  <a href={r.github_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 hover:text-white">
-                    <Code2 className="h-4 w-4" /> GitHub
-                  </a>
-                )}
-                {r.portfolio_url && (
-                  <a href={r.portfolio_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 hover:text-white">
-                    <Globe className="h-4 w-4" /> Portfolio
-                  </a>
-                )}
               </div>
-            </Card>
-          ))}
+            )}
+
+            {/* Área */}
+            {selected.area && (
+              <div className="mb-5">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-white/40">Área de interés</p>
+                <p className="text-sm text-white/80">{selected.area}</p>
+              </div>
+            )}
+
+            {/* Bio */}
+            {selected.bio && (
+              <div className="mb-5">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-white/40">Sobre el estudiante</p>
+                <p className="text-sm leading-relaxed text-white/70">{selected.bio}</p>
+              </div>
+            )}
+
+            {/* Links */}
+            {(selected.cv_url || selected.transcript_url || selected.linkedin_url || selected.github_url || selected.portfolio_url) && (
+              <div className="border-t border-white/10 pt-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/40">Links</p>
+                <div className="flex flex-wrap gap-3">
+                  {selected.cv_url && (
+                    <a href={selected.cv_url} target="_blank" rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
+                      <FileText size={15} /> CV
+                    </a>
+                  )}
+                  {selected.transcript_url && (
+                    <a href={selected.transcript_url} target="_blank" rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
+                      <FileText size={15} /> Analítico
+                    </a>
+                  )}
+                  {selected.linkedin_url && (
+                    <a href={selected.linkedin_url} target="_blank" rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
+                      <Link2 size={15} /> LinkedIn
+                    </a>
+                  )}
+                  {selected.github_url && (
+                    <a href={selected.github_url} target="_blank" rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
+                      <Code2 size={15} /> GitHub
+                    </a>
+                  )}
+                  {selected.portfolio_url && (
+                    <a href={selected.portfolio_url} target="_blank" rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white">
+                      <Globe size={15} /> Portfolio
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

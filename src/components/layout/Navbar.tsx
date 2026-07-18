@@ -4,11 +4,14 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { useScrolled } from '../../hooks/useScrolled';
 import { NAV_LINKS, HASH_LINKS } from '../../lib/constants';
+import { Button } from '../ui/Button';
+import { useEarlyAccess } from '../early-access/EarlyAccess';
 import logo from '../../assets/logo.png';
 
 export function Navbar() {
   const scrolled = useScrolled(20);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { open } = useEarlyAccess();
 
   // Bloquea el scroll del fondo mientras el menú mobile está abierto.
   useEffect(() => {
@@ -78,7 +81,12 @@ export function Navbar() {
           ))}
         </ul>
 
-        {/* CTA desktop — Removed */}
+        {/* CTA desktop */}
+        <div className="hidden items-center gap-1 md:flex">
+          <Button onClick={() => open()} size="sm">
+            Acceso anticipado
+          </Button>
+        </div>
 
         {/* Botón menú mobile */}
         <button
@@ -147,7 +155,24 @@ export function Navbar() {
               ))}
             </motion.nav>
 
-            {/* CTA abajo — Removed */}
+            {/* CTA abajo */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35, duration: 0.4 }}
+              className="flex flex-col items-center gap-3 px-6 pb-12"
+            >
+              <Button
+                onClick={() => {
+                  setMenuOpen(false);
+                  open();
+                }}
+                size="lg"
+                className="w-full max-w-xs justify-center"
+              >
+                Acceso anticipado
+              </Button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -67,7 +67,7 @@ export default function Novedades() {
     if (!error) setPosts((prev) => prev.filter((p) => p.id !== id));
   }
 
-  function handleCreated(post: Post) {
+  function handleCreated(post: PostWithAuthor) {
     setPosts((prev) => [post, ...prev]);
     setShowForm(false);
   }
@@ -203,7 +203,7 @@ function PostForm({
   authorName: string;
   authorRole: Post['author_role'];
   onClose: () => void;
-  onCreated: (post: Post) => void;
+  onCreated: (post: PostWithAuthor) => void;
 }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -234,7 +234,7 @@ function PostForm({
       setError('No se pudo publicar. Verificá que la tabla "posts" exista (migración).');
       return;
     }
-    onCreated(data as Post);
+    onCreated(data as unknown as PostWithAuthor);
   }
 
   return (

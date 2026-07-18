@@ -862,8 +862,9 @@ function Autocomplete({
 
   const filtered = options.filter((o) =>
     o.toLowerCase().includes(value.trim().toLowerCase())
-  );
-  const show = open && filtered.length > 0;
+  ).slice(0, 12);
+  
+  const show = open && (filtered.length > 0 || value.trim().length === 0);
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
@@ -895,23 +896,31 @@ function Autocomplete({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-20 mt-2 max-h-56 w-full overflow-y-auto rounded-2xl border border-white/15 bg-brand-700 p-1.5 shadow-2xl shadow-brand-950/60"
+            className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-2xl border border-white/15 bg-brand-700 p-1.5 shadow-2xl shadow-brand-950/60"
           >
-            {filtered.map((o) => (
-              <li key={o}>
-                <button
-                  type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    onChange(o);
-                    setOpen(false);
-                  }}
-                  className="block w-full rounded-xl px-4 py-2.5 text-left text-[15px] text-white/85 transition-colors hover:bg-white/10"
-                >
-                  {o}
-                </button>
+            {filtered.length > 0 ? (
+              filtered.map((o) => (
+                <li key={o}>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      onChange(o);
+                      setOpen(false);
+                    }}
+                    className="block w-full rounded-xl px-4 py-2.5 text-left text-[15px] text-white/85 transition-colors hover:bg-white/10"
+                  >
+                    {o}
+                  </button>
+                </li>
+              ))
+            ) : (
+              <li>
+                <div className="px-4 py-2.5 text-sm text-white/50 text-center">
+                  Sin coincidencias
+                </div>
               </li>
-            ))}
+            )}
           </motion.ul>
         )}
       </AnimatePresence>

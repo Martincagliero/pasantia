@@ -7,6 +7,7 @@ import type { StudentProfile } from '../../lib/database.types';
 import { Button } from '../../components/ui/Button';
 import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { Card, PageHeader, PageLoader } from '../ui/primitives';
+import { UniversityAutocomplete } from '../ui/UniversityAutocomplete';
 import { AVAILABILITY_OPTIONS, CAREERS, suggestFor } from './suggestions';
 
 const MAX_CV_MB = 5;
@@ -207,10 +208,10 @@ export default function StudentProfileForm() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormRow label="Universidad" htmlFor="uni">
-                  <TextField
-                    id="uni"
+                  <UniversityAutocomplete
                     value={form.university ?? ''}
-                    onChange={(e) => set('university', e.target.value)}
+                    onChange={(v: string) => set('university', v)}
+                    placeholder="Busca tu universidad..."
                   />
                 </FormRow>
                 <FormRow label="Carrera" htmlFor="career">

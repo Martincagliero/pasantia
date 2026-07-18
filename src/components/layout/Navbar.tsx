@@ -83,9 +83,6 @@ export function Navbar() {
 
         {/* CTA desktop */}
         <div className="hidden items-center gap-1 md:flex">
-          <Button as="link" to="/ingresar" variant="ghost" size="sm">
-            Ingresar
-          </Button>
           <Button onClick={() => open()} size="sm">
             Acceso anticipado
           </Button>
@@ -165,15 +162,6 @@ export function Navbar() {
               transition={{ delay: 0.35, duration: 0.4 }}
               className="flex flex-col items-center gap-3 px-6 pb-12"
             >
-              <Button
-                as="link"
-                to="/ingresar"
-                variant="secondary"
-                size="lg"
-                className="w-full max-w-xs justify-center"
-              >
-                Ingresar
-              </Button>
               <Button
                 onClick={() => {
                   setMenuOpen(false);

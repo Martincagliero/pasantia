@@ -16,6 +16,7 @@ const Estudiantes = lazy(() => import('./pages/Estudiantes'));
 const Empresas = lazy(() => import('./pages/Empresas'));
 const PoliticaPrivacidad = lazy(() => import('./pages/PoliticaPrivacidad'));
 const Terminos = lazy(() => import('./pages/Terminos'));
+const NormasComunidad = lazy(() => import('./pages/NormasComunidad'));
 
 // --- Sistema interno (auth + panel) ---
 const Login = lazy(() => import('./features/auth/pages/Login'));
@@ -272,6 +273,14 @@ export default function App() {
                   element={
                     <PageTransition>
                       <Terminos />
+                    </PageTransition>
+                  }
+                />
+                <Route
+                  path="/normas-comunidad"
+                  element={
+                    <PageTransition>
+                      <NormasComunidad />
                     </PageTransition>
                   }
                 />

@@ -7,6 +7,7 @@ import type { InternshipWithCompany, Modality } from '../../lib/database.types';
 import { Button } from '../../components/ui/Button';
 import { Card, EmptyState, PageLoader } from '../ui/primitives';
 import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
+import { ReportButton } from '../ui/ReportButton';
 
 const modalityLabel: Record<Modality, string> = {
   presencial: 'Presencial',
@@ -162,16 +163,19 @@ export default function BrowseInternships() {
                     <Building2 className="h-4 w-4 shrink-0" strokeWidth={1.75} />
                     <span className="truncate">{i.company?.company_name || 'Empresa'}</span>
                   </div>
-                  <button
-                    onClick={() => toggleSave(i.id)}
-                    className={`shrink-0 rounded-lg p-1.5 transition hover:bg-white/10 ${
-                      saved ? 'text-red-300' : 'text-white/40 hover:text-white'
-                    }`}
-                    title={saved ? 'Quitar de guardadas' : 'Guardar'}
-                    aria-label={saved ? 'Quitar de guardadas' : 'Guardar'}
-                  >
-                    <Heart className="h-4 w-4" fill={saved ? 'currentColor' : 'none'} />
-                  </button>
+                  <div className="flex shrink-0 items-center gap-0.5">
+                    <button
+                      onClick={() => toggleSave(i.id)}
+                      className={`rounded-lg p-1.5 transition hover:bg-white/10 ${
+                        saved ? 'text-red-300' : 'text-white/40 hover:text-white'
+                      }`}
+                      title={saved ? 'Quitar de guardadas' : 'Guardar'}
+                      aria-label={saved ? 'Quitar de guardadas' : 'Guardar'}
+                    >
+                      <Heart className="h-4 w-4" fill={saved ? 'currentColor' : 'none'} />
+                    </button>
+                    <ReportButton targetType="internship" targetId={i.id} />
+                  </div>
                 </div>
                 <h3 className="text-lg font-semibold leading-snug text-white">{i.title}</h3>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs">

@@ -28,6 +28,7 @@ import type {
 import { Button } from '../components/ui/Button';
 import { Card, EmptyState, PageHeader, PageLoader } from '../features/ui/primitives';
 import { TextArea } from '../features/ui/Field';
+import { ReportButton } from '../features/ui/ReportButton';
 
 const modalityLabel: Record<Modality, string> = {
   presencial: 'Presencial',
@@ -391,6 +392,14 @@ export default function CommunityDetailPage() {
             Sos miembro
           </span>
         )}
+        <a
+          href="/normas-comunidad"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ml-auto inline-flex items-center gap-1.5 text-white/45 underline underline-offset-4 transition hover:text-white/70"
+        >
+          Normas de la comunidad
+        </a>
       </div>
 
       {/* Composer */}
@@ -570,7 +579,7 @@ function PostCard({
               {roleLabel[post.author_role]}
             </span>
             <span className="ml-auto shrink-0 text-xs text-white/40">{formatDate(post.created_at)}</span>
-            {canDelete && (
+            {canDelete ? (
               <button
                 onClick={onDelete}
                 className="shrink-0 rounded-lg p-1.5 text-white/35 transition hover:bg-white/10 hover:text-red-300"
@@ -578,6 +587,8 @@ function PostCard({
               >
                 <Trash2 className="h-4 w-4" />
               </button>
+            ) : (
+              <ReportButton targetType="community_post" targetId={post.id} />
             )}
           </div>
           <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-white/85">
@@ -608,7 +619,10 @@ function InternshipCard({
   onOpen: () => void;
 }) {
   return (
-    <Card hover className="cursor-pointer">
+    <Card hover className="relative cursor-pointer">
+      <div className="absolute right-3 top-3 z-10">
+        <ReportButton targetType="internship" targetId={i.id} />
+      </div>
       <button onClick={onOpen} className="w-full text-left">
         <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-brand-400/25 bg-brand-500/10 px-2.5 py-0.5 text-[11px] font-medium text-brand-200">
           <Briefcase className="h-3 w-3" />

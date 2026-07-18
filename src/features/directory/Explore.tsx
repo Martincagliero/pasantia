@@ -30,6 +30,7 @@ import { orgTypeLabel } from '../ambassador/ambassadorConfig';
 import { useMessages } from '../messages/MessagesProvider';
 import { useAuth } from '../auth/AuthProvider';
 import { UserPosts } from '../posts/UserPosts';
+import { ReportButton } from '../ui/ReportButton';
 
 type Tab = 'estudiantes' | 'empresas' | 'embajadores';
 
@@ -428,6 +429,7 @@ function StudentDetail({ row, onMessage }: { row: StudentRow; onMessage: (id: st
             <Phone size={16} /> {row.phone}
           </a>
         )}
+        <ReportButton targetType="profile" targetId={row.id} variant="button" />
       </div>
 
       {row.skills && row.skills.length > 0 && (
@@ -512,6 +514,7 @@ function CompanyDetail({ row, onMessage }: { row: CompanyRow; onMessage: (id: st
         {safeHref(row.website) && (
           <LinkChip href={safeHref(row.website)!} label="Sitio web" icon={<Globe size={15} />} />
         )}
+        <ReportButton targetType="profile" targetId={row.id} variant="button" />
       </div>
 
       <div className="mt-5">
@@ -560,6 +563,7 @@ function AmbassadorDetail({ row, onMessage }: { row: AmbRow; onMessage: (id: str
         {safeHref(row.instagram_url) && (
           <LinkChip href={safeHref(row.instagram_url)!} label="Instagram" icon={<Link2 size={15} />} />
         )}
+        <ReportButton targetType="profile" targetId={row.id} variant="button" />
       </div>
 
       <div className="mt-5">

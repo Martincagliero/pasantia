@@ -183,6 +183,19 @@ export interface CommunityPost {
   created_at: string;
 }
 
+export type ReportTargetType = 'internship' | 'community_post' | 'profile';
+
+export interface Report {
+  id: string;
+  reporter_id: string;
+  target_type: ReportTargetType;
+  target_id: string;
+  reason: string;
+  details: string | null;
+  status: 'pendiente' | 'revisado' | 'descartado';
+  created_at: string;
+}
+
 // --- Tipado genérico para el cliente de Supabase ---
 // Mantenido intencionalmente simple; el SDK igual funciona sin tipos exhaustivos.
 export interface Database {
@@ -213,6 +226,12 @@ export interface Database {
         Row: Application;
         Insert: Partial<Application> & Pick<Application, 'internship_id' | 'student_id'>;
         Update: Partial<Application>;
+      };
+      reports: {
+        Row: Report;
+        Insert: Partial<Report> &
+          Pick<Report, 'reporter_id' | 'target_type' | 'target_id' | 'reason'>;
+        Update: Partial<Report>;
       };
     };
     Views: Record<string, never>;

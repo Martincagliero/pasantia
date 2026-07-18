@@ -71,6 +71,9 @@ export function Footer() {
             <Link to="/terminos" className={linkClass}>
               Términos y condiciones de uso
             </Link>
+            <Link to="/normas-comunidad" className={linkClass}>
+              Normas de la comunidad
+            </Link>
           </div>
         </div>
 

@@ -30,16 +30,17 @@ export default function AmbassadorProfile() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const { data } = await supabase
-        .from('ambassador_profiles')
-        .select('*')
-        .eq('id', session!.user.id)
-        .single();
-      if (!active) return;
-      if (data) {
-        const a = data as AmbassadorProfile;
-        setAmb(a);
-        setForm({
+      try {
+        const { data } = await supabase
+          .from('ambassador_profiles')
+          .select('*')
+          .eq('id', session!.user.id)
+          .single();
+        if (!active) return;
+        if (data) {
+          const a = data as AmbassadorProfile;
+          setAmb(a);
+          setForm({
           org_name: a.org_name ?? '',
           org_type: (a.org_type as AmbassadorOrgType) ?? 'cuenta_instagram',
           university: a.university ?? '',
@@ -49,7 +50,9 @@ export default function AmbassadorProfile() {
           logo_url: a.logo_url ?? '',
         });
       }
-      setLoading(false);
+      } catch { /* ignore */ } finally {
+        if (active) setLoading(false);
+      }
     })();
     return () => {
       active = false;

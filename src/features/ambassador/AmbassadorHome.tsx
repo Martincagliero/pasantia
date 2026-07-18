@@ -20,25 +20,38 @@ export default function AmbassadorHome() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const uid = session!.user.id;
-      const [{ data: prof }, { data: myDiff }, { data: allDiff }] = await Promise.all([
-        supabase.from('ambassador_profiles').select('*').eq('id', uid).single(),
-        supabase.from('internship_diffusions').select('internship_id').eq('ambassador_id', uid),
-        supabase.from('internship_diffusions').select('ambassador_id'),
-      ]);
-      if (!active) return;
-      setAmb((prof as AmbassadorProfile) ?? null);
-      const myCount = (myDiff ?? []).length;
-      setDiffusions(myCount);
-      // ranking por cantidad de difusiones
-      const counts = new Map<string, number>();
-      (allDiff ?? []).forEach((d: { ambassador_id: string }) =>
-        counts.set(d.ambassador_id, (counts.get(d.ambassador_id) ?? 0) + 1)
-      );
-      const sorted = Array.from(counts.values()).sort((a, b) => b - a);
-      const myRank = sorted.findIndex((c) => c <= myCount) + 1;
-      setRank(myCount > 0 ? myRank : null);
-      setLoading(false);
+      try {
+        const uid = session!.user.id;
+        const [{ data: prof }, { count: myCount }, { data: rankData }] = await Promise.all([
+          supabase.from('ambassador_profiles').select('*').eq('id', uid).single(),
+          supabase
+            .from('internship_diffusions')
+            .select('internship_id', { count: 'exact', head: true })
+            .eq('ambassador_id', uid),
+          // Solo traer los counts por embajador sin todos los rows
+          supabase
+            .from('internship_diffusions')
+            .select('ambassador_id')
+            .limit(500),
+        ]);
+        if (!active) return;
+        setAmb((prof as AmbassadorProfile) ?? null);
+        const mc = myCount ?? 0;
+        setDiffusions(mc);
+        // ranking simple
+        if (mc > 0 && rankData) {
+          const counts = new Map<string, number>();
+          rankData.forEach((d: { ambassador_id: string }) =>
+            counts.set(d.ambassador_id, (counts.get(d.ambassador_id) ?? 0) + 1)
+          );
+          const sorted = Array.from(counts.values()).sort((a, b) => b - a);
+          setRank(sorted.findIndex((c) => c <= mc) + 1);
+        }
+      } catch {
+        // silently ignore — mostrar pantalla igual
+      } finally {
+        if (active) setLoading(false);
+      }
     })();
     return () => {
       active = false;

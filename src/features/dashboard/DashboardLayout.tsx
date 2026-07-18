@@ -17,7 +17,7 @@ import {
   X,
   Megaphone,
   Trophy,
-  MessageCircle,
+  
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import logo from '../../assets/logo.png';
@@ -50,8 +50,7 @@ const companyNav: NavItem[] = [
 
 const ambassadorNav: NavItem[] = [
   { to: '/app/embajador', label: 'Resumen', icon: LayoutDashboard },
-  { to: '/app/oportunidades', label: 'Difundir pasantías', icon: Megaphone },
-  { to: '/app/anuncios', label: 'Mis anuncios', icon: MessageCircle },
+  { to: '/app/anuncios', label: 'Anuncios', icon: Megaphone },
   { to: '/app/ranking', label: 'Ranking', icon: Trophy },
   { to: '/app/novedades', label: 'Novedades', icon: Newspaper },
   { to: '/app/embajador-perfil', label: 'Mi comunidad', icon: UserRound },

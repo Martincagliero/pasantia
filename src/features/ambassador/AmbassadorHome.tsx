@@ -138,7 +138,7 @@ export default function AmbassadorHome() {
 
       {/* Accesos */}
       <div className="mt-6 grid gap-3 sm:grid-cols-3 sm:gap-4">
-        <QuickLink to="/app/oportunidades" icon={<Megaphone className="h-5 w-5" />} title="Difundir pasantías" desc="Compartí y sumá puntos" />
+        <QuickLink to="/app/anuncios" icon={<Megaphone className="h-5 w-5" />} title="Anuncios" desc="Publicá o difundí pasantías" />
         <QuickLink to="/app/ranking" icon={<Trophy className="h-5 w-5" />} title="Ranking" desc="Mirá cómo vas vs. otras comunidades" />
         <QuickLink to="/app/embajador-perfil" icon={<Share2 className="h-5 w-5" />} title="Mi comunidad" desc="Editá tus datos e Instagram" />
       </div>

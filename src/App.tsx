@@ -32,7 +32,6 @@ const CompanyOverview = lazy(() => import('./features/company/CompanyOverview'))
 const CompanyApplications = lazy(() => import('./features/company/CompanyApplications'));
 const TalentSearch = lazy(() => import('./features/company/TalentSearch'));
 const AmbassadorHome = lazy(() => import('./features/ambassador/AmbassadorHome'));
-const AmbassadorOpportunities = lazy(() => import('./features/ambassador/AmbassadorOpportunities'));
 const AmbassadorLeaderboard = lazy(() => import('./features/ambassador/AmbassadorLeaderboard'));
 const AmbassadorProfile = lazy(() => import('./features/ambassador/AmbassadorProfile'));
 const AmbassadorDirectory = lazy(() => import('./features/ambassador/AmbassadorDirectory'));
@@ -143,14 +142,6 @@ export default function App() {
               element={
                 <ProtectedRoute role="embajador">
                   <AmbassadorHome />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="oportunidades"
-              element={
-                <ProtectedRoute role="embajador">
-                  <AmbassadorOpportunities />
                 </ProtectedRoute>
               }
             />

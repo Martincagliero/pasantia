@@ -85,14 +85,9 @@ async function ensureProfile(user: User): Promise<Profile | null> {
     });
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
     prof = (data as Profile) ?? null;
-  } else if (metaRole && prof.role !== metaRole) {
-    await supabase
-      .from('profiles')
-      .update({ role: metaRole, full_name: metaName || prof.full_name })
-      .eq('id', user.id);
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
-    prof = (data as Profile) ?? null;
   } else if (metaName && !prof.full_name) {
+    // Solo completamos el nombre si está vacío. NO tocamos el rol de un perfil
+    // que ya existe (respetamos lo que haya en la base / correcciones manuales).
     await supabase.from('profiles').update({ full_name: metaName }).eq('id', user.id);
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
     prof = (data as Profile) ?? null;

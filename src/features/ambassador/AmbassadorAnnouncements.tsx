@@ -185,9 +185,7 @@ function FilterChip({ active, onClick, children }: {
     </button>
   );
 }
-import {
-  Building2, MapPin, Megaphone, Check, Copy, Send, Plus, Trash2, Loader2,
-} from 'lucide-react';
+
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type {

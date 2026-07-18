@@ -7,6 +7,7 @@ import { useAuth } from '../features/auth/AuthProvider';
 import type { Community, InternshipWithCompany, Modality } from '../lib/database.types';
 import { Button } from '../components/ui/Button';
 import { Card, EmptyState } from '../features/ui/primitives';
+import { useEarlyAccess } from '../components/early-access/EarlyAccess';
 
 const modalityLabel: Record<Modality, string> = {
   presencial: 'Presencial',
@@ -17,6 +18,7 @@ const modalityLabel: Record<Modality, string> = {
 export default function PublicCommunityPage() {
   const { id } = useParams<{ id: string }>();
   const { session, profile } = useAuth();
+  const { open: openEarlyAccess } = useEarlyAccess();
   const navigate = useNavigate();
   const [community, setCommunity] = useState<Community | null>(null);
   const [internships, setInternships] = useState<InternshipWithCompany[]>([]);
@@ -183,7 +185,16 @@ export default function PublicCommunityPage() {
           </div>
 
           <p className="text-xs text-white/40 mt-6">
-            ¿Necesitas una cuenta? {!session && <Link to="/registro" className="text-brand-300 hover:text-brand-200">Regístrate aquí</Link>}
+            ¿Necesitás una cuenta?{' '}
+            {!session && (
+              <button
+                type="button"
+                onClick={() => openEarlyAccess()}
+                className="text-brand-300 hover:text-brand-200"
+              >
+                Sumate al acceso anticipado
+              </button>
+            )}
           </p>
         </Card>
 

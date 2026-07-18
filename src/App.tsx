@@ -19,7 +19,6 @@ const Terminos = lazy(() => import('./pages/Terminos'));
 
 // --- Sistema interno (auth + panel) ---
 const Login = lazy(() => import('./features/auth/pages/Login'));
-const Register = lazy(() => import('./features/auth/pages/Register'));
 const DashboardHome = lazy(() => import('./features/dashboard/DashboardHome'));
 const BrowseInternships = lazy(() => import('./features/student/BrowseInternships'));
 const MyApplications = lazy(() => import('./features/student/MyApplications'));
@@ -51,8 +50,7 @@ export default function App() {
   // sin la Navbar ni el Footer de la landing.
   const isAppArea =
     location.pathname.startsWith('/app') ||
-    location.pathname === '/ingresar' ||
-    location.pathname === '/registro';
+    location.pathname === '/ingresar';
 
   return (
     <EarlyAccessProvider>
@@ -60,7 +58,6 @@ export default function App() {
         <Suspense fallback={fallback}>
           <Routes>
           <Route path="/ingresar" element={<Login />} />
-          <Route path="/registro" element={<Register />} />
           <Route
             path="/app"
             element={

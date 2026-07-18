@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { InternshipWithCompany, Modality } from '../../lib/database.types';
 import { Button } from '../../components/ui/Button';
-import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
+import { Card, EmptyState, PageLoader } from '../ui/primitives';
 import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 
 const modalityLabel: Record<Modality, string> = {
@@ -15,7 +15,7 @@ const modalityLabel: Record<Modality, string> = {
 };
 
 export default function BrowseInternships() {
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const [internships, setInternships] = useState<InternshipWithCompany[]>([]);
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
@@ -97,12 +97,19 @@ export default function BrowseInternships() {
 
   if (loading) return <PageLoader />;
 
+  const firstName = (profile?.full_name || 'estudiante').split(' ')[0];
+
   return (
     <div>
-      <PageHeader
-        title="Buscar pasantías"
-        description="Explorá las oportunidades activas y postulate en un clic."
-      />
+      <div className="mb-7">
+        <p className="text-sm text-white/55">Hola, {firstName}</p>
+        <h1 className="mt-0.5 text-xl font-bold tracking-tight text-white sm:text-2xl">
+          Buscar pasantías
+        </h1>
+        <p className="mt-1.5 text-[15px] text-white/60">
+          Explorá las oportunidades activas y postulate en un clic.
+        </p>
+      </div>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-center">
         <div className="relative">

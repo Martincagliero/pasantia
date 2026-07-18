@@ -6,24 +6,32 @@ import { useAuth } from '../auth/AuthProvider';
 import type { StudentProfile } from '../../lib/database.types';
 import { Button } from '../../components/ui/Button';
 import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
-import { Card, PageHeader, PageLoader } from '../ui/primitives';
+import { Card, PageLoader } from '../ui/primitives';
+import { AvatarUpload } from '../ui/AvatarUpload';
+import { ProfileHeader } from '../ui/ProfileHeader';
+import { UserPosts } from '../posts/UserPosts';
+import { whatsappLink } from '../../lib/constants';
 import { UniversityAutocomplete } from '../ui/UniversityAutocomplete';
 import { AVAILABILITY_OPTIONS, CAREERS, suggestFor } from './suggestions';
 
-const MAX_CV_MB = 5;
+const MAX_CV_MB = 20;
 
 export default function StudentProfileForm() {
   const { session, profile, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [verified, setVerified] = useState(false);
+  const [requested, setRequested] = useState(false);
   const [uploading, setUploading] = useState<'cv' | 'transcript' | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const transcriptInputRef = useRef<HTMLInputElement>(null);
 
   const [fullName, setFullName] = useState('');
-  const [form, setForm] = useState<Omit<StudentProfile, 'id' | 'skills'> & { skills: string }>({
+  const [form, setForm] = useState<Omit<StudentProfile, 'id' | 'skills' | 'verified' | 'verification_requested'> & { skills: string }>({
+    avatar_url: '',
     university: '',
     career: '',
     year: '',
@@ -54,6 +62,7 @@ export default function StudentProfileForm() {
       if (data) {
         const s = data as StudentProfile;
         setForm({
+          avatar_url: s.avatar_url ?? '',
           university: s.university ?? '',
           career: s.career ?? '',
           year: s.year ?? '',
@@ -71,6 +80,8 @@ export default function StudentProfileForm() {
           github_url: s.github_url ?? '',
           is_public: s.is_public ?? false,
         });
+        setVerified(!!s.verified);
+        setRequested(!!s.verification_requested);
       }
       setFullName(profile?.full_name ?? '');
       setLoading(false);
@@ -144,8 +155,31 @@ export default function StudentProfileForm() {
     setUploading(null);
   }
 
+  async function requestVerification() {
+    const msg =
+      `Hola! Quiero solicitar la verificación de mi cuenta de ESTUDIANTE en PasantIA.\n` +
+      `Nombre: ${fullName || '-'}\n` +
+      `Universidad: ${form.university || '-'}\n` +
+      `Email: ${profile?.email || '-'}`;
+    window.open(whatsappLink(msg), '_blank');
+    try {
+      await supabase
+        .from('student_profiles')
+        .update({ verification_requested: true })
+        .eq('id', session!.user.id);
+      setRequested(true);
+    } catch {
+      /* ignore */
+    }
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!(form.avatar_url ?? '').trim()) {
+      alert('Tenés que subir una foto de perfil para guardar tu perfil.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     setSaving(true);
     const uid = session!.user.id;
     await Promise.all([
@@ -153,6 +187,7 @@ export default function StudentProfileForm() {
       supabase
         .from('student_profiles')
         .update({
+          avatar_url: form.avatar_url || null,
           university: form.university || null,
           career: form.career || null,
           year: form.year || null,
@@ -177,18 +212,30 @@ export default function StudentProfileForm() {
     await refreshProfile();
     setSaving(false);
     setSaved(true);
+    setEditing(false);
   }
 
   if (loading) return <PageLoader />;
 
-  return (
-    <div>
-      <PageHeader
-        title="Mi perfil"
-        description="Completá tus datos para que las empresas te conozcan mejor."
-      />
+  if (editing) {
+    return (
+      <div className="max-w-3xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h1 className="text-xl font-bold tracking-tight text-white">Editar perfil</h1>
+          <Button as="button" variant="secondary" size="sm" onClick={() => setEditing(false)}>
+            Cancelar
+          </Button>
+        </div>
 
       <form onSubmit={handleSubmit}>
+        <Card className="mb-6">
+          <AvatarUpload
+            uid={session!.user.id}
+            value={form.avatar_url ?? ''}
+            onChange={(url) => set('avatar_url', url)}
+            hint="Tu cara ayuda a que las empresas te reconozcan. JPG, PNG o WEBP · máx 5 MB."
+          />
+        </Card>
         <div className="grid gap-6 lg:grid-cols-2">
           {/* ── Columna izquierda: datos académicos ── */}
           <Card>
@@ -371,6 +418,9 @@ export default function StudentProfileForm() {
               </FormRow>
 
           {/* Subir CV y analítico como archivo (PDF) */}
+          <p className="rounded-xl border border-amber-300/25 bg-amber-300/[0.06] px-4 py-2.5 text-xs text-amber-100/90">
+            El CV, el analítico y tu promedio solo son visibles para <strong>empresas</strong>. Otros estudiantes y embajadores no los ven.
+          </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <p className="mb-1.5 block text-sm font-medium text-white/80">
@@ -466,7 +516,7 @@ export default function StudentProfileForm() {
                   type="checkbox"
                   checked={form.is_public}
                   onChange={(e) => set('is_public', e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-white/30 bg-white/10 accent-white"
+                  className="mt-0.5 h-4 w-4 rounded border-white/30 bg-white/10 accent-brand-500"
                 />
                 <span className="text-sm text-white/80">
                   <span className="font-medium text-white">Perfil visible para empresas</span>
@@ -477,7 +527,7 @@ export default function StudentProfileForm() {
               </label>
 
               <div className="flex items-center gap-3 pt-2">
-                <Button type="submit" variant="secondary" size="sm" disabled={saving}>
+                <Button type="submit" variant="primary" size="sm" disabled={saving}>
                   {saving ? 'Guardando…' : 'Guardar cambios'}
                 </Button>
                 {saved && <span className="text-sm text-emerald-300">Guardado ✓</span>}
@@ -486,6 +536,82 @@ export default function StudentProfileForm() {
           </Card>
         </div>
       </form>
+      </div>
+    );
+  }
+
+  const skillsArr = form.skills.split(',').map((s) => s.trim()).filter(Boolean);
+
+  return (
+    <div className="max-w-3xl">
+      <ProfileHeader
+        name={fullName || 'Estudiante'}
+        subtitle={[form.career, form.university, form.year].filter(Boolean).join(' · ') || 'Estudiante'}
+        avatarUrl={form.avatar_url}
+        verified={verified}
+        requested={requested}
+        onEdit={() => setEditing(true)}
+        onRequestVerification={requestVerification}
+      />
+
+      <div className="grid gap-6">
+        <Card>
+          <h3 className="mb-3 text-base font-semibold text-white">Sobre mí</h3>
+          <p className="text-sm leading-relaxed text-white/70">
+            {form.bio || 'Todavía no agregaste una descripción. Tocá “Editar perfil” para completarla.'}
+          </p>
+          <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+            <SView label="Universidad" value={form.university} />
+            <SView label="Carrera" value={form.career} />
+            <SView label="Año" value={form.year} />
+            <SView label="Área de interés" value={form.area} />
+            <SView label="Disponibilidad" value={form.availability} />
+            <SView label="Ubicación" value={form.location} />
+          </dl>
+        </Card>
+
+        {skillsArr.length > 0 && (
+          <Card>
+            <h3 className="mb-3 text-base font-semibold text-white">Habilidades</h3>
+            <div className="flex flex-wrap gap-2">
+              {skillsArr.map((s) => (
+                <span key={s} className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-sm text-white/80">
+                  {s}
+                </span>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        <Card>
+          <h3 className="mb-3 text-base font-semibold text-white">Links y archivos</h3>
+          <div className="flex flex-wrap gap-2">
+            {linkChip(form.cv_url, 'CV')}
+            {linkChip(form.transcript_url, 'Analítico')}
+            {linkChip(form.linkedin_url, 'LinkedIn')}
+            {linkChip(form.github_url, 'GitHub')}
+            {linkChip(form.portfolio_url, 'Portfolio')}
+            {!form.cv_url &&
+              !form.transcript_url &&
+              !form.linkedin_url &&
+              !form.github_url &&
+              !form.portfolio_url && (
+                <p className="text-sm text-white/50">Todavía no agregaste links.</p>
+              )}
+          </div>
+          <p className="mt-4 text-xs text-white/45">
+            {form.is_public
+              ? 'Tu perfil es visible para empresas en el buscador de talento.'
+              : 'Tu perfil está oculto para las empresas. Activá la visibilidad al editar.'}
+          </p>
+        </Card>
+
+        <UserPosts
+          authorId={session!.user.id}
+          title="Mi actividad en Novedades"
+          emptyText="Todavía no publicaste nada en Novedades."
+        />
+      </div>
     </div>
   );
 }
@@ -527,5 +653,36 @@ function SuggestChips({
         })}
       </div>
     </div>
+  );
+}
+
+function safeHref(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const u = url.trim();
+  return /^https?:\/\//i.test(u) ? u : `https://${u}`;
+}
+
+function SView({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <div>
+      <dt className="text-xs uppercase tracking-wider text-white/40">{label}</dt>
+      <dd className="mt-0.5 text-sm text-white/80">{value || '—'}</dd>
+    </div>
+  );
+}
+
+function linkChip(url: string | null | undefined, label: string) {
+  const href = safeHref(url);
+  if (!href) return null;
+  return (
+    <a
+      key={label}
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-white/80 transition hover:bg-white/10"
+    >
+      {label}
+    </a>
   );
 }

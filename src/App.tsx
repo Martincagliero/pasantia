@@ -38,6 +38,7 @@ const AmbassadorProfile = lazy(() => import('./features/ambassador/AmbassadorPro
 const AmbassadorDirectory = lazy(() => import('./features/ambassador/AmbassadorDirectory'));
 const AmbassadorAnnouncements = lazy(() => import('./features/ambassador/AmbassadorAnnouncements'));
 const Novedades = lazy(() => import('./features/posts/Novedades'));
+const Explore = lazy(() => import('./features/directory/Explore'));
 const StudentCommunities = lazy(() => import('./features/student/StudentCommunities'));
 const CommunityDetailPage = lazy(() => import('./pages/CommunityDetailPage'));
 const PublicCommunityPage = lazy(() => import('./pages/PublicCommunityPage'));
@@ -192,6 +193,14 @@ export default function App() {
               }
             />
             {/* Novedades y Perfil (ambos roles) */}
+            <Route
+              path="explorar"
+              element={
+                <ProtectedRoute>
+                  <Explore />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="novedades"
               element={

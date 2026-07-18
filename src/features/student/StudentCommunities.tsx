@@ -22,12 +22,26 @@ export default function StudentCommunities() {
     let active = true;
     (async () => {
       try {
-        const { data } = await supabase
-          .from('communities')
-          .select('*')
-          .eq('creator_id', session!.user.id)
-          .order('created_at', { ascending: false });
-        if (active) setCommunities((data as Community[]) ?? []);
+        const uid = session!.user.id;
+        const [{ data: created }, { data: memberships }] = await Promise.all([
+          supabase.from('communities').select('*').eq('creator_id', uid),
+          supabase.from('community_members').select('community_id').eq('student_id', uid),
+        ]);
+
+        let joined: Community[] = [];
+        const joinedIds = (memberships ?? []).map((m) => m.community_id);
+        if (joinedIds.length > 0) {
+          const { data } = await supabase.from('communities').select('*').in('id', joinedIds);
+          joined = (data as Community[]) ?? [];
+        }
+
+        // Merge (dedupe por id) y ordenar por fecha desc.
+        const map = new Map<string, Community>();
+        [...((created as Community[]) ?? []), ...joined].forEach((c) => map.set(c.id, c));
+        const all = Array.from(map.values()).sort((a, b) =>
+          (b.created_at ?? '').localeCompare(a.created_at ?? '')
+        );
+        if (active) setCommunities(all);
       } catch { /* ignore */ } finally {
         if (active) setLoading(false);
       }
@@ -196,16 +210,18 @@ export default function StudentCommunities() {
                       </>
                     )}
                   </button>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleDelete(c.id);
-                    }}
-                    className="rounded-full p-2 text-white/40 transition hover:bg-white/10 hover:text-red-300"
-                    title="Eliminar"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  {c.creator_id === session!.user.id && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleDelete(c.id);
+                      }}
+                      className="rounded-full p-2 text-white/40 transition hover:bg-white/10 hover:text-red-300"
+                      title="Eliminar"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               </Card>
             </Link>

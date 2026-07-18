@@ -69,10 +69,10 @@ export default function AmbassadorHome() {
     <div>
       <div className="mb-7">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{name}</h1>
+          <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{name}</h1>
           <VerifiedBadge verified={!!amb?.verified} />
         </div>
-        <p className="mt-1 text-[15px] text-white/60">
+        <p className="mt-1.5 text-[15px] text-white/60">
           {orgTypeLabel(amb?.org_type)} · Panel de embajador de PasantIA
         </p>
       </div>
@@ -98,25 +98,33 @@ export default function AmbassadorHome() {
 
       {/* Métricas */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <Card className="!p-4 sm:!p-5">
-          <Trophy className="h-6 w-6 text-amber-300" strokeWidth={1.75} />
-          <p className="mt-3 text-3xl font-bold text-white">{points}</p>
-          <p className="mt-0.5 text-xs text-white/60 sm:text-sm">Puntos</p>
+        <Card className="!p-3.5 sm:!p-4">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white">
+            <Trophy className="h-[18px] w-[18px]" strokeWidth={2} />
+          </span>
+          <p className="mt-3 text-2xl font-bold text-white">{points}</p>
+          <p className="mt-0.5 text-xs text-white/55 sm:text-sm">Puntos</p>
         </Card>
-        <Card className="!p-4 sm:!p-5">
-          <Megaphone className="h-6 w-6 text-sky-300" strokeWidth={1.75} />
-          <p className="mt-3 text-3xl font-bold text-white">{diffusions}</p>
-          <p className="mt-0.5 text-xs text-white/60 sm:text-sm">Difusiones</p>
+        <Card className="!p-3.5 sm:!p-4">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white">
+            <Megaphone className="h-[18px] w-[18px]" strokeWidth={2} />
+          </span>
+          <p className="mt-3 text-2xl font-bold text-white">{diffusions}</p>
+          <p className="mt-0.5 text-xs text-white/55 sm:text-sm">Difusiones</p>
         </Card>
-        <Card className="!p-4 sm:!p-5">
-          <Sparkles className="h-6 w-6 text-violet-300" strokeWidth={1.75} />
-          <p className="mt-3 text-lg font-bold text-white">{level.name}</p>
-          <p className="mt-0.5 text-xs text-white/60 sm:text-sm">Nivel</p>
+        <Card className="!p-3.5 sm:!p-4">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white">
+            <Sparkles className="h-[18px] w-[18px]" strokeWidth={2} />
+          </span>
+          <p className="mt-3 text-base font-bold text-white">{level.name}</p>
+          <p className="mt-0.5 text-xs text-white/55 sm:text-sm">Nivel</p>
         </Card>
-        <Card className="!p-4 sm:!p-5">
-          <Trophy className="h-6 w-6 text-white" strokeWidth={1.75} />
-          <p className="mt-3 text-3xl font-bold text-white">{rank ? `#${rank}` : '—'}</p>
-          <p className="mt-0.5 text-xs text-white/60 sm:text-sm">Ranking</p>
+        <Card className="!p-3.5 sm:!p-4">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white">
+            <Trophy className="h-[18px] w-[18px]" strokeWidth={2} />
+          </span>
+          <p className="mt-3 text-2xl font-bold text-white">{rank ? `#${rank}` : '—'}</p>
+          <p className="mt-0.5 text-xs text-white/55 sm:text-sm">Ranking</p>
         </Card>
       </div>
 
@@ -130,7 +138,7 @@ export default function AmbassadorHome() {
         </div>
         <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/10">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-sky-400 to-violet-400 transition-all"
+            className="h-full rounded-full bg-brand-500 transition-all"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -150,7 +158,7 @@ function QuickLink({ to, icon, title, desc }: { to: string; icon: React.ReactNod
   return (
     <Link
       to={to}
-      className="glass group flex items-center justify-between gap-3 rounded-3xl border border-white/12 p-4 transition hover:-translate-y-0.5 hover:border-white/25 hover:shadow-xl hover:shadow-brand-950/30 sm:p-5"
+      className="glass group flex items-center justify-between gap-3 rounded-2xl border border-white/12 p-3.5 transition hover:-translate-y-0.5 hover:border-white/25 hover:shadow-xl hover:shadow-brand-950/30 sm:p-4"
     >
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-white">{icon}</div>

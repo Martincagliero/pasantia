@@ -93,13 +93,13 @@ export function UniversityAutocomplete({
           onChange={(e) => handleInputChange(e.target.value)}
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
-          className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-white placeholder-white/50 transition-colors hover:border-white/30 focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400/20"
+          className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-white placeholder:text-white/40 transition-colors hover:border-white/30 focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400/20"
         />
         <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40 pointer-events-none" />
       </div>
 
       {isOpen && (
-        <div className="absolute z-50 mt-2 w-full rounded-lg border border-white/20 bg-gradient-to-b from-white/10 to-white/5 backdrop-blur-sm shadow-xl max-h-64 overflow-y-auto">
+        <div className="dash-panel absolute z-50 mt-2 w-full overflow-y-auto rounded-lg border border-white/20 shadow-xl max-h-64">
           {filtered.length > 0 ? (
             <ul className="py-1">
               {filtered.map((university) => (

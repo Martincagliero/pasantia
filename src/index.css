@@ -62,6 +62,116 @@
   }
 }
 
+/* Neutralizar el fondo del autocompletado del navegador (evita el tinte azulado
+   y el efecto "dos colores" en los inputs precargados). */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff;
+  -webkit-box-shadow: 0 0 0 1000px #12151e inset;
+  caret-color: #ffffff;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+/* =============================================================================
+   TEMA DEL DASHBOARD (claro / oscuro)
+   El contenedor raíz del panel lleva class="dash-root" y data-theme="light|dark".
+   En modo claro se remapea la paleta basada en blanco a tinta oscura.
+   ============================================================================= */
+.dash-root {
+  background: var(--dash-bg);
+  color: var(--dash-ink);
+}
+.dash-root[data-theme='dark'] {
+  --dash-bg: #0c0e12;
+  --dash-ink: #ffffff;
+  --dash-panel: #14161d;
+}
+.dash-root[data-theme='light'] {
+  --dash-bg: #eef1f5;
+  --dash-ink: #0f172a;
+  --dash-panel: #ffffff;
+}
+.dash-panel {
+  background-color: var(--dash-panel);
+}
+.dash-root[data-theme='light'] input:-webkit-autofill,
+.dash-root[data-theme='light'] input:-webkit-autofill:hover,
+.dash-root[data-theme='light'] input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #0f172a;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  caret-color: #0f172a;
+}
+
+/* Superficies con color fijo */
+[data-theme='light'] .bg-\[\#16181D\] { background-color: #ffffff; }
+[data-theme='light'] .glass { background-color: #ffffff; border-color: rgb(15 23 42 / 0.08); }
+
+/* Texto (blanco -> tinta) */
+[data-theme='light'] .text-white,
+[data-theme='light'] .hover\:text-white:hover,
+[data-theme='light'] .group:hover .group-hover\:text-white { color: #0f172a; }
+[data-theme='light'] .text-white\/90 { color: rgb(15 23 42 / 0.9); }
+[data-theme='light'] .text-white\/85 { color: rgb(15 23 42 / 0.85); }
+[data-theme='light'] .text-white\/80 { color: rgb(15 23 42 / 0.8); }
+[data-theme='light'] .text-white\/75 { color: rgb(15 23 42 / 0.75); }
+[data-theme='light'] .text-white\/70 { color: rgb(15 23 42 / 0.72); }
+[data-theme='light'] .text-white\/65 { color: rgb(15 23 42 / 0.68); }
+[data-theme='light'] .text-white\/60 { color: rgb(15 23 42 / 0.62); }
+[data-theme='light'] .text-white\/55 { color: rgb(15 23 42 / 0.58); }
+[data-theme='light'] .text-white\/50 { color: rgb(15 23 42 / 0.55); }
+[data-theme='light'] .text-white\/45 { color: rgb(15 23 42 / 0.5); }
+[data-theme='light'] .text-white\/40 { color: rgb(15 23 42 / 0.48); }
+[data-theme='light'] .text-white\/35 { color: rgb(15 23 42 / 0.45); }
+[data-theme='light'] .text-white\/30 { color: rgb(15 23 42 / 0.4); }
+[data-theme='light'] .text-white\/25 { color: rgb(15 23 42 / 0.38); }
+[data-theme='light'] .text-white\/20 { color: rgb(15 23 42 / 0.35); }
+[data-theme='light'] .text-white\/15 { color: rgb(15 23 42 / 0.3); }
+
+/* Fondos blancos fraccionales -> tinta fraccional */
+[data-theme='light'] .bg-white\/5 { background-color: rgb(15 23 42 / 0.05); }
+[data-theme='light'] .bg-white\/10,
+[data-theme='light'] .hover\:bg-white\/10:hover,
+[data-theme='light'] .focus\:bg-white\/10:focus { background-color: rgb(15 23 42 / 0.07); }
+[data-theme='light'] .bg-white\/12 { background-color: rgb(15 23 42 / 0.08); }
+[data-theme='light'] .bg-white\/15 { background-color: rgb(15 23 42 / 0.1); }
+[data-theme='light'] .bg-white\/20 { background-color: rgb(15 23 42 / 0.12); }
+[data-theme='light'] .bg-white\/\[0\.02\] { background-color: rgb(15 23 42 / 0.025); }
+[data-theme='light'] .bg-white\/\[0\.03\] { background-color: rgb(15 23 42 / 0.03); }
+[data-theme='light'] .bg-white\/\[0\.04\] { background-color: rgb(15 23 42 / 0.04); }
+[data-theme='light'] .bg-white\/\[0\.06\],
+[data-theme='light'] .hover\:bg-white\/\[0\.06\]:hover { background-color: rgb(15 23 42 / 0.05); }
+[data-theme='light'] .hover\:bg-white\/\[0\.07\]:hover { background-color: rgb(15 23 42 / 0.06); }
+[data-theme='light'] .hover\:bg-white\/\[0\.08\]:hover { background-color: rgb(15 23 42 / 0.07); }
+
+/* Bordes */
+[data-theme='light'] .border-white\/10,
+[data-theme='light'] .border-white\/\[0\.08\] { border-color: rgb(15 23 42 / 0.1); }
+[data-theme='light'] .border-white\/12 { border-color: rgb(15 23 42 / 0.12); }
+[data-theme='light'] .border-white\/15 { border-color: rgb(15 23 42 / 0.14); }
+[data-theme='light'] .border-white\/20,
+[data-theme='light'] .hover\:border-white\/25:hover { border-color: rgb(15 23 42 / 0.2); }
+[data-theme='light'] .focus\:border-white\/50:focus { border-color: rgb(15 23 42 / 0.4); }
+
+/* Placeholders */
+[data-theme='light'] .placeholder\:text-white\/40::placeholder { color: rgb(15 23 42 / 0.4); }
+[data-theme='light'] .placeholder\:text-white\/35::placeholder { color: rgb(15 23 42 / 0.4); }
+
+/* Bordes extra */
+[data-theme='light'] .border-white\/25 { border-color: rgb(15 23 42 / 0.22); }
+[data-theme='light'] .border-white\/30 { border-color: rgb(15 23 42 / 0.24); }
+[data-theme='light'] .bg-white\/25 { background-color: rgb(15 23 42 / 0.14); }
+
+/* Pastillas "blancas con texto de marca" -> se rellenan de marca en modo claro
+   (botones primarios, chips activos, "Enviar mensaje", etc. no quedan blanco sobre blanco) */
+[data-theme='light'] .bg-white.text-brand-600,
+[data-theme='light'] .bg-white.text-brand-700 {
+  background-color: #0148fd;
+  color: #ffffff;
+  border-color: transparent;
+}
+
 /* Respeto de prefers-reduced-motion: cortar animaciones no esenciales */
 @media (prefers-reduced-motion: reduce) {
   *,

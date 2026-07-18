@@ -8,7 +8,7 @@ import type {
 } from 'react';
 
 const fieldBase =
-  'w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-[15px] text-white placeholder:text-white/40 outline-none transition focus:border-white/50 focus:bg-white/10 disabled:opacity-50';
+  'w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/40 outline-none transition focus:border-white/50 focus:bg-white/10 disabled:opacity-50';
 
 export function Label({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
   return (
@@ -39,7 +39,7 @@ export function SelectField({
       className={`${fieldBase} appearance-none bg-[right_1rem_center] bg-no-repeat pr-10 [&>option]:bg-white [&>option]:text-neutral-900 ${className}`}
       style={{
         backgroundImage:
-          "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='white' stroke-opacity='0.6' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
+          "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2394a3b8' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
       }}
       {...props}
     >

@@ -58,11 +58,17 @@ export default function CompanyOverview() {
 
   const firstName = (profile?.full_name || 'tu empresa').split(' ')[0];
 
-  const cards: { label: string; value: number; icon: LucideIcon; accent: string; to: string }[] = [
-    { label: 'Pasantías activas', value: stats.activas, icon: CheckCircle2, accent: 'text-emerald-300', to: '/app/mis-pasantias' },
-    { label: 'Pasantías totales', value: stats.total, icon: Briefcase, accent: 'text-white', to: '/app/mis-pasantias' },
-    { label: 'Postulaciones', value: stats.postulaciones, icon: Send, accent: 'text-sky-300', to: '/app/postulaciones-recibidas' },
-    { label: 'Nuevos sin revisar', value: stats.pendientes, icon: Clock, accent: 'text-amber-300', to: '/app/postulaciones-recibidas' },
+  const cards: {
+    label: string;
+    value: number;
+    icon: LucideIcon;
+    chip: string;
+    to: string;
+  }[] = [
+    { label: 'Pasantías activas', value: stats.activas, icon: CheckCircle2, chip: 'bg-white/10 text-white', to: '/app/mis-pasantias' },
+    { label: 'Pasantías totales', value: stats.total, icon: Briefcase, chip: 'bg-white/10 text-white', to: '/app/mis-pasantias' },
+    { label: 'Postulaciones', value: stats.postulaciones, icon: Send, chip: 'bg-white/10 text-white', to: '/app/postulaciones-recibidas' },
+    { label: 'Nuevos sin revisar', value: stats.pendientes, icon: Clock, chip: 'bg-white/10 text-white', to: '/app/postulaciones-recibidas' },
   ];
 
   const hour = new Date().getHours();
@@ -71,14 +77,14 @@ export default function CompanyOverview() {
   return (
     <div>
       {/* Header con saludo */}
-      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm text-white/60">{greeting} 👋</p>
-          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{firstName}</h1>
-          <p className="mt-1 text-[15px] text-white/60">
+          <p className="text-sm text-white/55">{greeting}</p>
+          <h1 className="mt-0.5 text-xl font-bold tracking-tight text-white sm:text-2xl">{firstName}</h1>
+          <p className="mt-1.5 text-[15px] text-white/60">
             {stats.pendientes > 0
               ? `Tenés ${stats.pendientes} postulación${stats.pendientes === 1 ? '' : 'es'} sin revisar.`
-              : 'No tenés postulaciones pendientes. ¡Todo al día!'}
+              : 'No tenés postulaciones pendientes. Todo al día.'}
           </p>
         </div>
         <Button as="link" to="/app/publicar" variant="primary" size="md">
@@ -88,18 +94,20 @@ export default function CompanyOverview() {
 
       {/* Métricas (clickeables) */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {cards.map(({ label, value, icon: Icon, accent, to }) => (
+        {cards.map(({ label, value, icon: Icon, chip, to }) => (
           <Link
             key={label}
             to={to}
-            className="glass group rounded-3xl border border-white/12 p-4 transition duration-200 hover:-translate-y-0.5 hover:border-white/25 hover:shadow-xl hover:shadow-brand-950/30 sm:p-5"
+            className="glass group rounded-2xl border border-white/12 p-3.5 transition duration-200 hover:-translate-y-0.5 hover:border-white/25 hover:shadow-xl hover:shadow-brand-950/30 sm:p-4"
           >
-            <Icon className={`h-6 w-6 ${accent}`} strokeWidth={1.75} />
-            <p className="mt-3 text-3xl font-bold tracking-tight text-white">{value}</p>
-            <p className="mt-0.5 flex items-center gap-1 text-xs text-white/60 sm:text-sm">
-              {label}
-              <ArrowRight className="h-3.5 w-3.5 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100" />
-            </p>
+            <div className="flex items-center justify-between">
+              <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${chip}`}>
+                <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
+              </span>
+              <ArrowRight className="h-4 w-4 text-white/30 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100" />
+            </div>
+            <p className="mt-3 text-2xl font-bold tracking-tight text-white">{value}</p>
+            <p className="mt-0.5 text-xs text-white/55 sm:text-sm">{label}</p>
           </Link>
         ))}
       </div>
@@ -161,7 +169,7 @@ function QuickLink({ to, title, desc }: { to: string; title: string; desc: strin
   return (
     <Link
       to={to}
-      className="glass group flex items-center justify-between gap-3 rounded-3xl border border-white/12 p-4 transition hover:border-white/25 hover:bg-white/[0.08] sm:p-5"
+      className="glass group flex items-center justify-between gap-3 rounded-2xl border border-white/12 p-3.5 transition hover:border-white/25 hover:bg-white/[0.08] sm:p-4"
     >
       <div className="min-w-0">
         <p className="font-semibold text-white">{title}</p>

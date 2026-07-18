@@ -5,10 +5,13 @@ import { useAuth } from '../auth/AuthProvider';
 import type { AmbassadorProfile, AmbassadorOrgType } from '../../lib/database.types';
 import { Button } from '../../components/ui/Button';
 import { TextField } from '../ui/Field';
-import { Card, PageHeader, PageLoader } from '../ui/primitives';
+import { Card, PageLoader } from '../ui/primitives';
 import { VerifiedBadge } from './VerifiedBadge';
-import { ORG_TYPES } from './ambassadorConfig';
+import { ORG_TYPES, orgTypeLabel } from './ambassadorConfig';
 import { UniversityAutocomplete } from '../ui/UniversityAutocomplete';
+import { ProfileHeader } from '../ui/ProfileHeader';
+import { UserPosts } from '../posts/UserPosts';
+import { whatsappLink } from '../../lib/constants';
 import { Upload } from 'lucide-react';
 
 export default function AmbassadorProfile() {
@@ -26,6 +29,8 @@ export default function AmbassadorProfile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [requested, setRequested] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -50,6 +55,7 @@ export default function AmbassadorProfile() {
           description: a.description ?? '',
           logo_url: a.logo_url ?? '',
         });
+        setRequested(!!a.verification_requested);
       }
       } catch { /* ignore */ } finally {
         if (active) setLoading(false);
@@ -69,10 +75,10 @@ export default function AmbassadorProfile() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validar tamaño (máximo 2MB)
-    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+    // Validar tamaño (máximo 5MB)
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
     if (file.size > MAX_SIZE) {
-      alert('El logo debe pesar menos de 2MB. Tu archivo pesa ' + (file.size / 1024 / 1024).toFixed(2) + 'MB');
+      alert('El logo debe pesar menos de 5MB. Tu archivo pesa ' + (file.size / 1024 / 1024).toFixed(2) + 'MB');
       return;
     }
 
@@ -111,8 +117,31 @@ export default function AmbassadorProfile() {
     setUploading(false);
   }
 
+  async function requestVerification() {
+    const msg =
+      `Hola! Quiero solicitar la verificación de mi comunidad (EMBAJADOR) en PasantIA.\n` +
+      `Comunidad: ${form.org_name || '-'}\n` +
+      `Instagram: ${form.instagram_url || '-'}\n` +
+      `Email: ${session?.user.email || '-'}`;
+    window.open(whatsappLink(msg), '_blank');
+    try {
+      await supabase
+        .from('ambassador_profiles')
+        .update({ verification_requested: true })
+        .eq('id', session!.user.id);
+      setRequested(true);
+    } catch {
+      /* ignore */
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.logo_url.trim()) {
+      alert('Tenés que subir un logo / foto para guardar tu comunidad.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     setSaving(true);
     await supabase
       .from('ambassador_profiles')
@@ -128,16 +157,67 @@ export default function AmbassadorProfile() {
       .eq('id', session!.user.id);
     setSaving(false);
     setSaved(true);
+    setEditing(false);
   }
 
   if (loading) return <PageLoader />;
 
+  if (!editing) {
+    return (
+      <div className="max-w-3xl">
+        <ProfileHeader
+          name={form.org_name || 'Comunidad'}
+          subtitle={[orgTypeLabel(form.org_type), form.university].filter(Boolean).join(' · ')}
+          avatarUrl={form.logo_url}
+          verified={!!amb?.verified}
+          requested={requested}
+          onEdit={() => setEditing(true)}
+          onRequestVerification={requestVerification}
+        />
+
+        <Card>
+          <h3 className="mb-3 text-base font-semibold text-white">Sobre la comunidad</h3>
+          <p className="text-sm leading-relaxed text-white/70">
+            {form.description || 'Todavía no agregaste una descripción. Tocá “Editar perfil” para completarla.'}
+          </p>
+          <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+            <AView label="Tipo" value={orgTypeLabel(form.org_type)} />
+            <AView label="Universidad / Institución" value={form.university} />
+            <AView label="Alcance" value={form.reach} />
+            <div>
+              <dt className="text-xs uppercase tracking-wider text-white/40">Instagram</dt>
+              <dd className="mt-0.5 text-sm text-white/80">
+                {form.instagram_url ? (
+                  <a href={form.instagram_url} target="_blank" rel="noopener noreferrer" className="text-brand-300 hover:underline">
+                    Ver perfil
+                  </a>
+                ) : (
+                  '—'
+                )}
+              </dd>
+            </div>
+          </dl>
+        </Card>
+
+        <UserPosts
+          authorId={session!.user.id}
+          title="Publicaciones en Novedades"
+          emptyText="Todavía no publicaste nada en Novedades."
+        />
+
+        {amb?.verified && <AmbassadorPerks />}
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <PageHeader
-        title="Mi comunidad"
-        description="Completá los datos de tu comunidad para que las empresas te conozcan."
-      />
+    <div className="max-w-4xl">
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-xl font-bold tracking-tight text-white">Editar comunidad</h1>
+        <Button as="button" variant="secondary" size="sm" onClick={() => setEditing(false)}>
+          Cancelar
+        </Button>
+      </div>
 
       <form onSubmit={handleSubmit}>
         <div className="grid gap-6 lg:grid-cols-2">
@@ -152,24 +232,15 @@ export default function AmbassadorProfile() {
 
               {/* Logo */}
               <div>
-                <label className="block text-sm font-medium text-white/80 mb-2">Logo / Avatar (máx 2MB)</label>
+                <label className="block text-sm font-medium text-white/80 mb-2">Logo / Avatar (máx 5MB) <span className="text-red-300">*</span></label>
                 <p className="text-xs text-white/50 mb-3">Recomendado: cuadrado, 500×500px</p>
                 <div className="flex items-end gap-3">
                   {form.logo_url && (
-                    <div className="relative">
-                      <img
-                        src={form.logo_url}
-                        alt="Logo"
-                        className="h-16 w-16 rounded-xl object-cover border border-white/10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => set('logo_url', '')}
-                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500/80 flex items-center justify-center text-white text-xs"
-                      >
-                        ✕
-                      </button>
-                    </div>
+                    <img
+                      src={form.logo_url}
+                      alt="Logo"
+                      className="h-16 w-16 rounded-xl object-cover border border-white/10"
+                    />
                   )}
                   <label className="flex-1 cursor-pointer">
                     <div className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-white/20 bg-white/5 px-4 py-3 transition hover:border-white/40 hover:bg-white/10">
@@ -270,56 +341,68 @@ export default function AmbassadorProfile() {
         </div>
       </form>
 
-      {amb?.verified && (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.07] p-5">
-            <p className="mb-0.5 text-xs font-semibold uppercase tracking-wider text-emerald-300/70">Estado</p>
-            <h3 className="mb-2 font-semibold text-white">Cuenta verificada</h3>
-            <p className="text-sm text-white/65">
-              Podés difundir pasantías en Instagram y tus seguidores podrán postularse directamente desde PasantIA.
-            </p>
-          </div>
+    </div>
+  );
+}
 
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-            <p className="mb-0.5 text-xs font-semibold uppercase tracking-wider text-white/40">Puntos</p>
-            <h4 className="mb-3 font-semibold text-white">Cómo ganar puntos</h4>
-            <ul className="space-y-2 text-sm text-white/65">
-              <li className="flex items-start gap-2">
-                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white/40" />
-                <span><strong className="text-white">+10 puntos</strong> por cada pasantía que difundas</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white/40" />
-                <span>Los puntos se suman cuando marcás "Difundida"</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white/40" />
-                <span>Competí en el ranking y demostrá tu influencia</span>
-              </li>
-            </ul>
-          </div>
+function AView({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <div>
+      <dt className="text-xs uppercase tracking-wider text-white/40">{label}</dt>
+      <dd className="mt-0.5 text-sm text-white/80">{value || '—'}</dd>
+    </div>
+  );
+}
 
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-            <p className="mb-0.5 text-xs font-semibold uppercase tracking-wider text-white/40">Flujo</p>
-            <h4 className="mb-3 font-semibold text-white">Cómo funciona</h4>
-            <ol className="space-y-2 text-sm text-white/65">
-              {[
-                'Las empresas publican pasantías en PasantIA',
-                'Te eligen para difundirlas en tu Instagram',
-                'Compartís el link con tus seguidores',
-                'Marcás la pasantía como "Difundida" y sumás puntos',
-              ].map((step, i) => (
-                <li key={i} className="flex items-start gap-2.5">
-                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] font-semibold text-white/50">
-                    {i + 1}
-                  </span>
-                  <span>{step}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
-      )}
+function AmbassadorPerks() {
+  return (
+    <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.07] p-5">
+        <p className="mb-0.5 text-xs font-semibold uppercase tracking-wider text-emerald-300/70">Estado</p>
+        <h3 className="mb-2 font-semibold text-white">Cuenta verificada</h3>
+        <p className="text-sm text-white/65">
+          Podés difundir pasantías en Instagram y tus seguidores podrán postularse directamente desde PasantIA.
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <p className="mb-0.5 text-xs font-semibold uppercase tracking-wider text-white/40">Puntos</p>
+        <h4 className="mb-3 font-semibold text-white">Cómo ganar puntos</h4>
+        <ul className="space-y-2 text-sm text-white/65">
+          <li className="flex items-start gap-2">
+            <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white/40" />
+            <span><strong className="text-white">+10 puntos</strong> por cada pasantía que difundas</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white/40" />
+            <span>Los puntos se suman cuando marcás "Difundida"</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white/40" />
+            <span>Competí en el ranking y demostrá tu influencia</span>
+          </li>
+        </ul>
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <p className="mb-0.5 text-xs font-semibold uppercase tracking-wider text-white/40">Flujo</p>
+        <h4 className="mb-3 font-semibold text-white">Cómo funciona</h4>
+        <ol className="space-y-2 text-sm text-white/65">
+          {[
+            'Las empresas publican pasantías en PasantIA',
+            'Te eligen para difundirlas en tu Instagram',
+            'Compartís el link con tus seguidores',
+            'Marcás la pasantía como "Difundida" y sumás puntos',
+          ].map((step, i) => (
+            <li key={i} className="flex items-start gap-2.5">
+              <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] font-semibold text-white/50">
+                {i + 1}
+              </span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
     </div>
   );
 }

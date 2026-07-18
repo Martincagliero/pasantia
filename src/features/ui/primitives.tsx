@@ -15,7 +15,7 @@ export function Card({
 }) {
   return (
     <div
-      className={`glass rounded-3xl border border-white/12 p-5 sm:p-6 ${
+      className={`glass rounded-2xl border border-white/12 p-4 sm:p-5 ${
         hover
           ? 'transition duration-200 hover:-translate-y-0.5 hover:border-white/25 hover:shadow-xl hover:shadow-brand-950/30'
           : ''
@@ -54,14 +54,14 @@ export function EmptyState({
   icon?: ReactNode;
 }) {
   return (
-    <div className="glass rounded-3xl border border-dashed border-white/15 px-6 py-14 text-center">
+    <div className="glass rounded-2xl border border-dashed border-white/15 px-6 py-10 text-center">
       {icon && (
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/70">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/70">
           {icon}
         </div>
       )}
-      <h3 className="text-lg font-semibold text-white">{title}</h3>
-      {description && <p className="mx-auto mt-2 max-w-sm text-[15px] text-white/60">{description}</p>}
+      <h3 className="text-base font-semibold text-white">{title}</h3>
+      {description && <p className="mx-auto mt-2 max-w-sm text-sm text-white/60">{description}</p>}
       {action && <div className="mt-6 flex justify-center">{action}</div>}
     </div>
   );
@@ -89,10 +89,10 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{title}</h1>
-        {description && <p className="mt-1 text-[15px] text-white/60">{description}</p>}
+        <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{title}</h1>
+        {description && <p className="mt-1 text-sm text-white/60">{description}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>

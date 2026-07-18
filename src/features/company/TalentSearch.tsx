@@ -154,7 +154,7 @@ export default function TalentSearch() {
           onClick={() => setSelected(null)}
         >
           <div
-            className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/15 bg-brand-600 p-6 shadow-2xl"
+            className="dash-panel relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/15 p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cerrar */}

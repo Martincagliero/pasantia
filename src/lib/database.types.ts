@@ -25,6 +25,9 @@ export interface Profile {
 
 export interface StudentProfile {
   id: string;
+  avatar_url: string | null;
+  verified: boolean;
+  verification_requested: boolean;
   university: string | null;
   career: string | null;
   year: string | null;
@@ -45,6 +48,9 @@ export interface StudentProfile {
 
 export interface CompanyProfile {
   id: string;
+  avatar_url: string | null;
+  verified: boolean;
+  verification_requested: boolean;
   company_name: string | null;
   industry: string | null;
   size: string | null;
@@ -72,6 +78,7 @@ export interface AmbassadorProfile {
   description: string | null;
   logo_url: string | null;
   verified: boolean;
+  verification_requested: boolean;
   created_at: string;
 }
 
@@ -162,6 +169,18 @@ export interface CommunityInternship {
   community_id: string;
   internship_id: string;
   published_at: string;
+}
+
+/** Anuncio/proyecto compartido dentro de una comunidad (estilo LinkedIn). */
+export interface CommunityPost {
+  id: string;
+  community_id: string;
+  author_id: string;
+  author_name: string;
+  author_role: Role;
+  content: string;
+  link_url: string | null;
+  created_at: string;
 }
 
 // --- Tipado genérico para el cliente de Supabase ---

@@ -404,21 +404,18 @@ function StepRole({
     {
       role: 'estudiante' as const,
       img: estudianteImg,
-      objectPos: 'object-[50%_32%]',
       label: 'Soy estudiante',
       desc: 'Busco una pasantía',
     },
     {
       role: 'empresa' as const,
       img: IMAGES.officeTeam,
-      objectPos: 'object-center',
       label: 'Soy empresa',
       desc: 'Busco talento joven',
     },
     {
       role: 'embajador' as const,
       img: IMAGES.ambassadorCommunity,
-      objectPos: 'object-center',
       label: 'Soy comunidad / embajador',
       desc: 'Comparto oportunidades con mi comunidad',
     },
@@ -443,7 +440,7 @@ function StepRole({
                 alt=""
                 aria-hidden
                 loading="lazy"
-                className={`h-24 w-full object-cover sm:h-32 md:h-40 ${o.objectPos} transition-transform duration-500 group-hover:scale-105`}
+                className="h-24 w-full object-cover object-center sm:h-32 md:h-40 transition-transform duration-500 group-hover:scale-105"
               />
             </div>
             <div className="px-2 pb-1.5 pt-3 sm:px-3 sm:pb-2 sm:pt-4">

@@ -1,10 +1,12 @@
 ﻿// Embajador: pasantías para difundir con tu comunidad
 import { useEffect, useMemo, useState } from 'react';
-import { Building2, MapPin, Megaphone, Check, Copy, Send } from 'lucide-react';
+import { Building2, MapPin, Megaphone, Check, Copy, Send, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { InternshipWithCompany, Modality } from '../../lib/database.types';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
+import { Button } from '../../components/ui/Button';
+import { AmbassadorInternshipForm } from './AmbassadorInternshipForm';
 
 const modalityLabel: Record<Modality, string> = {
   presencial: 'Presencial',
@@ -17,17 +19,19 @@ export default function AmbassadorAnnouncements() {
   const [items, setItems] = useState<InternshipWithCompany[]>([]);
   const [diffusedIds, setDiffusedIds] = useState<Set<string>>(new Set());
   const [broadcastIds, setBroadcastIds] = useState<Set<string>>(new Set());
+  const [ownIds, setOwnIds] = useState<Set<string>>(new Set());
   const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
   const [onlyForMe, setOnlyForMe] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
         const uid = session!.user.id;
-        const [{ data: list }, { data: diff }, { data: bc }, { data: prof }] = await Promise.all([
+        const [{ data: list }, { data: diff }, { data: bc }, { data: prof }, { data: own }] = await Promise.all([
           supabase
             .from('internships')
             .select('*, company:company_profiles(company_name, industry)')
@@ -36,11 +40,13 @@ export default function AmbassadorAnnouncements() {
           supabase.from('internship_diffusions').select('internship_id').eq('ambassador_id', uid),
           supabase.from('internship_broadcasts').select('internship_id').eq('ambassador_id', uid),
           supabase.from('ambassador_profiles').select('verified').eq('id', uid).single(),
+          supabase.from('internships').select('id').eq('company_id', uid),
         ]);
         if (!active) return;
         setItems((list as InternshipWithCompany[]) ?? []);
         setDiffusedIds(new Set((diff ?? []).map((d) => d.internship_id)));
         setBroadcastIds(new Set((bc ?? []).map((b) => b.internship_id)));
+        setOwnIds(new Set((own ?? []).map((o) => o.id)));
         setVerified(!!(prof as { verified: boolean } | null)?.verified);
       } catch { /* ignore */ } finally {
         if (active) setLoading(false);
@@ -77,6 +83,26 @@ export default function AmbassadorAnnouncements() {
     } catch { /* ignore */ }
   }
 
+  async function deleteOwnInternship(id: string) {
+    if (!confirm('¿Eliminar esta pasantía?')) return;
+    await supabase.from('internships').delete().eq('id', id);
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    setOwnIds((prev) => new Set([...prev].filter((oid) => oid !== id)));
+  }
+
+  async function handleInternshipCreated() {
+    // Recargar la lista
+    const uid = session!.user.id;
+    const { data: list } = await supabase
+      .from('internships')
+      .select('*, company:company_profiles(company_name, industry)')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+    setItems((list as InternshipWithCompany[]) ?? []);
+    const { data: own } = await supabase.from('internships').select('id').eq('company_id', uid);
+    setOwnIds(new Set((own ?? []).map((o) => o.id)));
+  }
+
   if (loading) return <PageLoader />;
 
   return (
@@ -84,7 +110,20 @@ export default function AmbassadorAnnouncements() {
       <PageHeader
         title="Pasantías para difundir"
         description="Compartí estas oportunidades con tu comunidad y sumá puntos."
+        action={
+          <Button as="button" variant="secondary" size="sm" onClick={() => setShowForm(true)}>
+            <Plus className="h-4 w-4" />
+            Publicar pasantía
+          </Button>
+        }
       />
+
+      {showForm && (
+        <AmbassadorInternshipForm
+          onClose={() => setShowForm(false)}
+          onCreated={handleInternshipCreated}
+        />
+      )}
 
       {!verified && (
         <Card className="mb-5 border-amber-300/25 bg-amber-400/[0.07]">
@@ -159,7 +198,21 @@ export default function AmbassadorAnnouncements() {
                       <Send className="h-4 w-4" /> Marcar difundida
                     </button>
                   )}
+                  {ownIds.has(i.id) && (
+                    <button
+                      onClick={() => deleteOwnInternship(i.id)}
+                      className="ml-auto rounded-full p-2 text-white/40 transition hover:bg-white/10 hover:text-red-300"
+                      title="Eliminar pasantía"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
+                {ownIds.has(i.id) && (
+                  <div className="mt-2 inline-block rounded-full border border-brand-300/30 bg-brand-400/15 px-3 py-1 text-[11px] font-medium text-brand-200">
+                    Tu pasantía
+                  </div>
+                )}
               </Card>
             );
           })}

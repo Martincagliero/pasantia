@@ -111,6 +111,28 @@ DROP POLICY IF EXISTS "internships_delete_own" ON internships;
 CREATE POLICY "internships_delete_own" ON internships
   FOR DELETE USING (company_id = auth.uid());
 
+-- Embajador puede crear/editar/borrar sus propias pasantías
+DROP POLICY IF EXISTS "internships_insert_ambassador" ON internships;
+CREATE POLICY "internships_insert_ambassador" ON internships
+  FOR INSERT WITH CHECK (
+    company_id = auth.uid() AND 
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'embajador')
+  );
+
+DROP POLICY IF EXISTS "internships_update_ambassador" ON internships;
+CREATE POLICY "internships_update_ambassador" ON internships
+  FOR UPDATE USING (
+    company_id = auth.uid() AND 
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'embajador')
+  );
+
+DROP POLICY IF EXISTS "internships_delete_ambassador" ON internships;
+CREATE POLICY "internships_delete_ambassador" ON internships
+  FOR DELETE USING (
+    company_id = auth.uid() AND 
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'embajador')
+  );
+
 
 -- ─────────────────────────────────────────────
 -- TABLA: applications (postulaciones de estudiantes)

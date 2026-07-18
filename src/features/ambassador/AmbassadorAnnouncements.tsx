@@ -186,7 +186,6 @@ function FilterChip({ active, onClick, children }: {
   );
 }
 
-import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type {
   InternshipWithCompany,

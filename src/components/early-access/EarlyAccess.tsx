@@ -20,6 +20,7 @@ import {
   UNIVERSIDADES,
 } from '../../lib/constants';
 import { IMAGES } from '../../lib/images';
+import { supabase } from '../../lib/supabase';
 import estudianteImg from '../../assets/images/estudiante.jpg';
 import logo from '../../assets/logo.png';
 
@@ -235,6 +236,15 @@ function Onboarding({
     };
 
     try {
+      // Guardar la solicitud en la base de datos (best-effort): queda en la
+      // tabla early_access_requests para poder activarla luego. Si la tabla no
+      // existe o falla, seguimos con la notificación habitual.
+      try {
+        await supabase.from('early_access_requests').insert(payload);
+      } catch {
+        /* ignore */
+      }
+
       if (SUPABASE_URL && SUPABASE_ANON_KEY) {
         const res = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`, {
           method: 'POST',

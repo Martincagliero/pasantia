@@ -202,13 +202,22 @@ CREATE POLICY "posts_delete_own" ON ambassador_posts
 
 
 -- ─────────────────────────────────────────────
--- TABLA: early_access (registro público)
+-- TABLA: early_access_requests (registro público)
+-- Nota: solo agregar si esta tabla existe en tu proyecto.
+-- Si el nombre es distinto, ajustarlo aquí.
 -- ─────────────────────────────────────────────
-ALTER TABLE early_access ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "early_access_insert_public" ON early_access;
-CREATE POLICY "early_access_insert_public" ON early_access
-  FOR INSERT WITH CHECK (true);
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'early_access_requests') THEN
+    EXECUTE 'ALTER TABLE early_access_requests ENABLE ROW LEVEL SECURITY';
+    EXECUTE 'DROP POLICY IF EXISTS "early_access_insert_public" ON early_access_requests';
+    EXECUTE 'CREATE POLICY "early_access_insert_public" ON early_access_requests FOR INSERT WITH CHECK (true)';
+  ELSIF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'early_access') THEN
+    EXECUTE 'ALTER TABLE early_access ENABLE ROW LEVEL SECURITY';
+    EXECUTE 'DROP POLICY IF EXISTS "early_access_insert_public" ON early_access';
+    EXECUTE 'CREATE POLICY "early_access_insert_public" ON early_access FOR INSERT WITH CHECK (true)';
+  END IF;
+END $$;
 
 
 -- =============================================================================

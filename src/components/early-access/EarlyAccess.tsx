@@ -355,7 +355,9 @@ function Onboarding({
           {/* Contenido */}
           <div className="flex flex-1 overflow-y-auto px-4 py-3 sm:px-8 sm:py-6">
             {submitted ? (
-              <Success role={data.role} onClose={onClose} />
+              <div className="m-auto w-full max-w-md">
+                <Success role={data.role} onClose={onClose} />
+              </div>
             ) : (
               <AnimatePresence mode="wait">
                 <motion.div

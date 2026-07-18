@@ -417,7 +417,7 @@ function StepRole({
     },
     {
       role: 'embajador' as const,
-      img: IMAGES.officeTeam,
+      img: IMAGES.ambassadorCommunity,
       objectPos: 'object-center',
       label: 'Soy comunidad / embajador',
       desc: 'Comparto oportunidades con mi comunidad',

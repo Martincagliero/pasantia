@@ -202,7 +202,60 @@ CREATE POLICY "posts_delete_own" ON ambassador_posts
 
 
 -- ─────────────────────────────────────────────
--- TABLA: early_access_requests (registro público)
+-- TABLA: internship_diffusions (difusiones de embajadores)
+-- ─────────────────────────────────────────────
+ALTER TABLE internship_diffusions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "diffusions_select_all_authenticated" ON internship_diffusions;
+CREATE POLICY "diffusions_select_all_authenticated" ON internship_diffusions
+  FOR SELECT USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "diffusions_insert_own" ON internship_diffusions;
+CREATE POLICY "diffusions_insert_own" ON internship_diffusions
+  FOR INSERT WITH CHECK (ambassador_id = auth.uid());
+
+DROP POLICY IF EXISTS "diffusions_delete_own" ON internship_diffusions;
+CREATE POLICY "diffusions_delete_own" ON internship_diffusions
+  FOR DELETE USING (ambassador_id = auth.uid());
+
+
+-- ─────────────────────────────────────────────
+-- TABLA: internship_broadcasts (pasantías enviadas a embajadores)
+-- ─────────────────────────────────────────────
+ALTER TABLE internship_broadcasts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "broadcasts_select_own" ON internship_broadcasts;
+CREATE POLICY "broadcasts_select_own" ON internship_broadcasts
+  FOR SELECT USING (ambassador_id = auth.uid());
+
+DROP POLICY IF EXISTS "broadcasts_insert_company" ON internship_broadcasts;
+CREATE POLICY "broadcasts_insert_company" ON internship_broadcasts
+  FOR INSERT WITH CHECK (
+    internship_id IN (SELECT id FROM internships WHERE company_id = auth.uid())
+  );
+
+
+-- ─────────────────────────────────────────────
+-- TABLA: posts (novedades de toda la comunidad)
+-- ─────────────────────────────────────────────
+ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "posts_select_authenticated" ON posts;
+CREATE POLICY "posts_select_authenticated" ON posts
+  FOR SELECT USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "posts_insert_own" ON posts;
+CREATE POLICY "posts_insert_own" ON posts
+  FOR INSERT WITH CHECK (author_id = auth.uid());
+
+DROP POLICY IF EXISTS "posts_delete_own" ON posts;
+CREATE POLICY "posts_delete_own" ON posts
+  FOR DELETE USING (author_id = auth.uid());
+
+
+-- =============================================================================
+-- FIN DEL SCRIPT
+-- =============================================================================
 -- Nota: solo agregar si esta tabla existe en tu proyecto.
 -- Si el nombre es distinto, ajustarlo aquí.
 -- ─────────────────────────────────────────────

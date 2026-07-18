@@ -25,26 +25,29 @@ export default function AmbassadorLeaderboard() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const [{ data: ambs }, { data: diff }] = await Promise.all([
-        supabase.from('ambassador_profiles').select('*'),
-        supabase.from('internship_diffusions').select('ambassador_id'),
-      ]);
-      if (!active) return;
-      const counts = new Map<string, number>();
-      (diff ?? []).forEach((d: { ambassador_id: string }) =>
-        counts.set(d.ambassador_id, (counts.get(d.ambassador_id) ?? 0) + 1)
-      );
-      const ranked: Ranked[] = ((ambs as AmbassadorProfile[]) ?? []).map((a) => ({
-        id: a.id,
-        name: a.org_name || 'Comunidad',
-        org_type: a.org_type,
-        instagram_url: a.instagram_url,
-        verified: a.verified,
-        diffusions: counts.get(a.id) ?? 0,
-      }));
-      ranked.sort((a, b) => b.diffusions - a.diffusions);
-      setRows(ranked);
-      setLoading(false);
+      try {
+        const [{ data: ambs }, { data: diff }] = await Promise.all([
+          supabase.from('ambassador_profiles').select('*'),
+          supabase.from('internship_diffusions').select('ambassador_id'),
+        ]);
+        if (!active) return;
+        const counts = new Map<string, number>();
+        (diff ?? []).forEach((d: { ambassador_id: string }) =>
+          counts.set(d.ambassador_id, (counts.get(d.ambassador_id) ?? 0) + 1)
+        );
+        const ranked: Ranked[] = ((ambs as AmbassadorProfile[]) ?? []).map((a) => ({
+          id: a.id,
+          name: a.org_name || 'Comunidad',
+          org_type: a.org_type,
+          instagram_url: a.instagram_url,
+          verified: a.verified,
+          diffusions: counts.get(a.id) ?? 0,
+        }));
+        ranked.sort((a, b) => b.diffusions - a.diffusions);
+        setRows(ranked);
+      } catch { /* ignore */ } finally {
+        if (active) setLoading(false);
+      }
     })();
     return () => {
       active = false;

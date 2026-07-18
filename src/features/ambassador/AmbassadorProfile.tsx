@@ -271,29 +271,50 @@ export default function AmbassadorProfile() {
 
       {amb?.verified && (
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-            <h3 className="mb-2 font-semibold text-white">✅ Cuenta verificada</h3>
-            <p className="text-sm text-white/70">
-              Ahora podés difundir todas las pasantías que quieras en Instagram y tus seguidores podrán postularse directamente desde PasantIA.
+          <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.07] p-5">
+            <p className="mb-0.5 text-xs font-semibold uppercase tracking-wider text-emerald-300/70">Estado</p>
+            <h3 className="mb-2 font-semibold text-white">Cuenta verificada</h3>
+            <p className="text-sm text-white/65">
+              Podés difundir pasantías en Instagram y tus seguidores podrán postularse directamente desde PasantIA.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-brand-500/20 bg-brand-500/10 p-5">
-            <h4 className="font-semibold text-brand-200 mb-2">🎯 Cómo ganar puntos:</h4>
-            <ul className="text-sm text-white/70 space-y-1">
-              <li>• <strong>+10 puntos</strong> por cada pasantía que difundas</li>
-              <li>• Los puntos se suman automáticamente cuando marcas "Difundida"</li>
-              <li>• Competí en el ranking y demostrá tu influencia</li>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p className="mb-0.5 text-xs font-semibold uppercase tracking-wider text-white/40">Puntos</p>
+            <h4 className="mb-3 font-semibold text-white">Cómo ganar puntos</h4>
+            <ul className="space-y-2 text-sm text-white/65">
+              <li className="flex items-start gap-2">
+                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white/40" />
+                <span><strong className="text-white">+10 puntos</strong> por cada pasantía que difundas</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white/40" />
+                <span>Los puntos se suman cuando marcás "Difundida"</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white/40" />
+                <span>Competí en el ranking y demostrá tu influencia</span>
+              </li>
             </ul>
           </div>
 
-          <div className="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-5">
-            <h4 className="font-semibold text-sky-200 mb-2">📱 Cómo funciona:</h4>
-            <ol className="text-sm text-white/70 space-y-1">
-              <li>1. Las empresas publican pasantías en PasantIA</li>
-              <li>2. Te eligen para difundirlas en tu Instagram</li>
-              <li>3. Compartís el link con tus seguidores</li>
-              <li>4. Marcás la pasantía como "Difundida" → ganan puntos</li>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p className="mb-0.5 text-xs font-semibold uppercase tracking-wider text-white/40">Flujo</p>
+            <h4 className="mb-3 font-semibold text-white">Cómo funciona</h4>
+            <ol className="space-y-2 text-sm text-white/65">
+              {[
+                'Las empresas publican pasantías en PasantIA',
+                'Te eligen para difundirlas en tu Instagram',
+                'Compartís el link con tus seguidores',
+                'Marcás la pasantía como "Difundida" y sumás puntos',
+              ].map((step, i) => (
+                <li key={i} className="flex items-start gap-2.5">
+                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] font-semibold text-white/50">
+                    {i + 1}
+                  </span>
+                  <span>{step}</span>
+                </li>
+              ))}
             </ol>
           </div>
         </div>

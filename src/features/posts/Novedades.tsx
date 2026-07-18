@@ -1,7 +1,7 @@
 // Novedades: panel compartido donde estudiantes y empresas publican
 // novedades, proyectos, búsquedas y recursos. Todos los logueados las ven.
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Plus, Trash2, ExternalLink, Building2, GraduationCap } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Building2, GraduationCap, Mail } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { Post, PostCategory } from '../../lib/database.types';
@@ -30,9 +30,13 @@ const categoryLabel: Record<PostCategory, string> = {
   recurso: 'Recurso',
 };
 
+interface PostWithAuthor extends Post {
+  author: { email: string } | null;
+}
+
 export default function Novedades() {
   const { session, profile } = useAuth();
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<PostWithAuthor[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState<'todas' | PostCategory>('todas');
@@ -42,10 +46,10 @@ export default function Novedades() {
     (async () => {
       const { data } = await supabase
         .from('posts')
-        .select('*')
+        .select('*, author:profiles!author_id(email)')
         .order('created_at', { ascending: false });
       if (!active) return;
-      setPosts((data as Post[]) ?? []);
+      setPosts((data as unknown as PostWithAuthor[]) ?? []);
       setLoading(false);
     })();
     return () => {
@@ -148,15 +152,27 @@ export default function Novedades() {
                 </a>
               )}
 
-              <div className="mt-4 flex items-center gap-2 border-t border-white/10 pt-3 text-xs text-white/50">
-                {p.author_role === 'empresa' ? (
-                  <Building2 className="h-4 w-4" />
-                ) : (
-                  <GraduationCap className="h-4 w-4" />
-                )}
-                <span className="truncate">{p.author_name || 'Usuario'}</span>
-                <span>·</span>
-                <span>{new Date(p.created_at).toLocaleDateString('es-AR')}</span>
+              <div className="mt-auto">
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-3">
+                  <div className="flex items-center gap-2 text-xs text-white/50">
+                    {p.author_role === 'empresa' ? (
+                      <Building2 className="h-4 w-4" />
+                    ) : (
+                      <GraduationCap className="h-4 w-4" />
+                    )}
+                    <span className="font-medium text-white/70">{p.author_name || 'Usuario'}</span>
+                    <span>·</span>
+                    <span>{new Date(p.created_at).toLocaleDateString('es-AR')}</span>
+                  </div>
+                  {p.author?.email && p.author_id !== session!.user.id && (
+                    <a
+                      href={`mailto:${p.author.email}`}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/70 transition hover:bg-white/10 hover:text-white"
+                    >
+                      <Mail className="h-3.5 w-3.5" /> Contactar
+                    </a>
+                  )}
+                </div>
               </div>
             </Card>
           ))}

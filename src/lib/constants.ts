@@ -200,6 +200,7 @@ export const NAV_LINKS = [
   { label: 'Inicio', to: '/' },
   { label: 'Estudiantes', to: '/estudiantes' },
   { label: 'Empresas', to: '/empresas' },
+  { label: 'Embajadores', to: '/embajadores' },
 ] as const;
 
 // Enlaces que hacen scroll a secciones del home (hash).

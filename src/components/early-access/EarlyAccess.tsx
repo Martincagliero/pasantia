@@ -23,7 +23,7 @@ import { IMAGES } from '../../lib/images';
 import estudianteImg from '../../assets/images/estudiante.jpg';
 import logo from '../../assets/logo.png';
 
-type Role = 'estudiante' | 'empresa';
+type Role = 'estudiante' | 'empresa' | 'embajador';
 
 interface EarlyAccessContextValue {
   open: (role?: Role) => void;
@@ -51,6 +51,9 @@ interface FormData {
   rubro: string;
   tamano: string;
   perfil: string;
+  org_name: string;
+  org_type: string;
+  reach: string;
   mensaje: string;
 }
 
@@ -68,6 +71,9 @@ const EMPTY: FormData = {
   rubro: '',
   tamano: '',
   perfil: '',
+  org_name: '',
+  org_type: '',
+  reach: '',
   mensaje: '',
 };
 
@@ -142,6 +148,8 @@ function Onboarding({
       return [...base, 'contacto', 'eduUni', 'eduArea', 'mensaje'];
     if (data.role === 'empresa')
       return [...base, 'contacto', 'empBasic', 'empDetail', 'mensaje'];
+    if (data.role === 'embajador')
+      return [...base, 'contacto', 'mensaje'];
     return base;
   }, [presetRole, data.role]);
 
@@ -407,11 +415,18 @@ function StepRole({
       label: 'Soy empresa',
       desc: 'Busco talento joven',
     },
+    {
+      role: 'embajador' as const,
+      img: IMAGES.officeTeam,
+      objectPos: 'object-center',
+      label: 'Soy comunidad / embajador',
+      desc: 'Comparto oportunidades con mi comunidad',
+    },
   ];
   return (
     <div>
       <Heading title="¿Cómo querés sumarte?" subtitle="Elegí una opción para empezar." />
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         {opts.map((o) => (
           <button
             key={o.role}

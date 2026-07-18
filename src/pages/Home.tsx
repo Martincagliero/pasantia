@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSeo } from '../hooks/useSeo';
+import { useEarlyAccess } from '../components/early-access/EarlyAccess';
 import { Section } from '../components/ui/Section';
 import { Button } from '../components/ui/Button';
 import { Reveal } from '../components/ui/Reveal';
@@ -114,6 +115,8 @@ export default function Home() {
       'PasantIA es la plataforma que conecta estudiantes con empresas para gestionar pasantías. Sumate al acceso anticipado.',
     path: '/',
   });
+
+  const { open: openEarlyAccess } = useEarlyAccess();
 
   return (
     <>
@@ -375,7 +378,7 @@ export default function Home() {
           </p>
         </Reveal>
 
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className="grid gap-5 lg:grid-cols-3">
           {[
             {
               to: '/estudiantes',
@@ -384,6 +387,7 @@ export default function Home() {
               desc: 'Accedé a pasantías reales, en empresas verificadas, sin mandar CVs a ciegas.',
               img: estudianteImg,
               imgClass: 'object-top',
+              isButton: false,
             },
             {
               to: '/empresas',
@@ -392,40 +396,84 @@ export default function Home() {
               desc: 'Encontrá talento joven filtrado y ahorrá tiempo en tu proceso de reclutamiento.',
               img: IMAGES.officeTeam,
               imgClass: 'object-center',
+              isButton: false,
+            },
+            {
+              to: '/',
+              icon: Megaphone,
+              title: 'Soy comunidad / embajador',
+              desc: 'Comparte oportunidades con tu comunidad y ganate puntos y reconocimiento.',
+              img: IMAGES.ambassadorCommunity,
+              imgClass: 'object-center',
+              isButton: true,
             },
           ].map((card) => (
-            <Reveal key={card.to}>
-              <Link
-                to={card.to}
-                className="group relative block overflow-hidden rounded-[2rem] border border-white/12"
-              >
-                <img
-                  src={card.img}
-                  alt=""
-                  aria-hidden
-                  loading="lazy"
-                  className={`h-[30rem] w-full object-cover sm:h-[34rem] ${card.imgClass} transition-transform duration-700 group-hover:scale-105`}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-brand-950 via-brand-950/40 to-transparent" />
-                <div className="absolute inset-0 flex flex-col justify-end p-8 sm:p-10">
-                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
-                    <card.icon size={22} />
-                  </span>
-                  <h3 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
-                    {card.title}
-                  </h3>
-                  <p className="mt-3 max-w-sm text-base font-light text-white/75">
-                    {card.desc}
-                  </p>
-                  <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-white">
-                    Ver más
-                    <ArrowRight
-                      size={16}
-                      className="transition-transform group-hover:translate-x-1"
-                    />
-                  </span>
-                </div>
-              </Link>
+            <Reveal key={card.to + card.title}>
+              {card.isButton ? (
+                <button
+                  onClick={() => openEarlyAccess('embajador')}
+                  className="group relative block w-full overflow-hidden rounded-[2rem] border border-white/12 text-left"
+                >
+                  <img
+                    src={card.img}
+                    alt=""
+                    aria-hidden
+                    loading="lazy"
+                    className={`h-[30rem] w-full object-cover sm:h-[34rem] ${card.imgClass} transition-transform duration-700 group-hover:scale-105`}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-brand-950 via-brand-950/40 to-transparent" />
+                  <div className="absolute inset-0 flex flex-col justify-end p-8 sm:p-10">
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
+                      <card.icon size={22} />
+                    </span>
+                    <h3 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
+                      {card.title}
+                    </h3>
+                    <p className="mt-3 max-w-sm text-base font-light text-white/75">
+                      {card.desc}
+                    </p>
+                    <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-white">
+                      Ver más
+                      <ArrowRight
+                        size={16}
+                        className="transition-transform group-hover:translate-x-1"
+                      />
+                    </span>
+                  </div>
+                </button>
+              ) : (
+                <Link
+                  to={card.to}
+                  className="group relative block overflow-hidden rounded-[2rem] border border-white/12"
+                >
+                  <img
+                    src={card.img}
+                    alt=""
+                    aria-hidden
+                    loading="lazy"
+                    className={`h-[30rem] w-full object-cover sm:h-[34rem] ${card.imgClass} transition-transform duration-700 group-hover:scale-105`}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-brand-950 via-brand-950/40 to-transparent" />
+                  <div className="absolute inset-0 flex flex-col justify-end p-8 sm:p-10">
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
+                      <card.icon size={22} />
+                    </span>
+                    <h3 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
+                      {card.title}
+                    </h3>
+                    <p className="mt-3 max-w-sm text-base font-light text-white/75">
+                      {card.desc}
+                    </p>
+                    <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-white">
+                      Ver más
+                      <ArrowRight
+                        size={16}
+                        className="transition-transform group-hover:translate-x-1"
+                      />
+                    </span>
+                  </div>
+                </Link>
+              )}
             </Reveal>
           ))}
         </div>

@@ -6,6 +6,9 @@ import { Footer } from './components/layout/Footer';
 import { SmoothScroll } from './components/layout/SmoothScroll';
 import { PageTransition } from './components/layout/PageTransition';
 import { EarlyAccessProvider } from './components/early-access/EarlyAccess';
+import { ProtectedRoute } from './features/auth/ProtectedRoute';
+import { useAuth } from './features/auth/AuthProvider';
+import { DashboardLayout } from './features/dashboard/DashboardLayout';
 import Home from './pages/Home';
 
 // Lazy load de las subpáginas para aligerar el bundle inicial.
@@ -14,8 +17,173 @@ const Empresas = lazy(() => import('./pages/Empresas'));
 const PoliticaPrivacidad = lazy(() => import('./pages/PoliticaPrivacidad'));
 const Terminos = lazy(() => import('./pages/Terminos'));
 
+// --- Sistema interno (auth + panel) ---
+const Login = lazy(() => import('./features/auth/pages/Login'));
+const DashboardHome = lazy(() => import('./features/dashboard/DashboardHome'));
+const BrowseInternships = lazy(() => import('./features/student/BrowseInternships'));
+const MyApplications = lazy(() => import('./features/student/MyApplications'));
+const SavedInternships = lazy(() => import('./features/student/SavedInternships'));
+const StudentProfileForm = lazy(() => import('./features/student/StudentProfileForm'));
+const MyInternships = lazy(() => import('./features/company/MyInternships'));
+const InternshipForm = lazy(() => import('./features/company/InternshipForm'));
+const InternshipApplicants = lazy(() => import('./features/company/InternshipApplicants'));
+const CompanyProfileForm = lazy(() => import('./features/company/CompanyProfileForm'));
+const CompanyOverview = lazy(() => import('./features/company/CompanyOverview'));
+const CompanyApplications = lazy(() => import('./features/company/CompanyApplications'));
+const TalentSearch = lazy(() => import('./features/company/TalentSearch'));
+const AmbassadorHome = lazy(() => import('./features/ambassador/AmbassadorHome'));
+const AmbassadorOpportunities = lazy(() => import('./features/ambassador/AmbassadorOpportunities'));
+const AmbassadorLeaderboard = lazy(() => import('./features/ambassador/AmbassadorLeaderboard'));
+const AmbassadorProfile = lazy(() => import('./features/ambassador/AmbassadorProfile'));
+const AmbassadorDirectory = lazy(() => import('./features/ambassador/AmbassadorDirectory'));
+const Novedades = lazy(() => import('./features/posts/Novedades'));
+
+const fallback = <div className="min-h-screen" aria-hidden />;
+
 export default function App() {
   const location = useLocation();
+  // El sistema interno (login y panel) usa su propio layout,
+  // sin la Navbar ni el Footer de la landing. El registro se hace con el
+  // "Acceso anticipado" (EarlyAccess) que vive en la landing.
+  const isAppArea =
+    location.pathname.startsWith('/app') ||
+    location.pathname === '/ingresar';
+
+  if (isAppArea) {
+    return (
+      <Suspense fallback={fallback}>
+        <Routes>
+          <Route path="/ingresar" element={<Login />} />
+          <Route
+            path="/app"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<DashboardHome />} />
+            {/* Estudiante */}
+            <Route
+              path="pasantias"
+              element={
+                <ProtectedRoute role="estudiante">
+                  <BrowseInternships />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="postulaciones"
+              element={
+                <ProtectedRoute role="estudiante">
+                  <MyApplications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="guardadas"
+              element={
+                <ProtectedRoute role="estudiante">
+                  <SavedInternships />
+                </ProtectedRoute>
+              }
+            />
+            {/* Empresa */}
+            <Route
+              path="inicio"
+              element={
+                <ProtectedRoute role="empresa">
+                  <CompanyOverview />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="mis-pasantias"
+              element={
+                <ProtectedRoute role="empresa">
+                  <MyInternships />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="postulaciones-recibidas"
+              element={
+                <ProtectedRoute role="empresa">
+                  <CompanyApplications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="publicar"
+              element={
+                <ProtectedRoute role="empresa">
+                  <InternshipForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="pasantia/:id"
+              element={
+                <ProtectedRoute role="empresa">
+                  <InternshipApplicants />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="talento"
+              element={
+                <ProtectedRoute role="empresa">
+                  <TalentSearch />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="embajador"
+              element={
+                <ProtectedRoute role="embajador">
+                  <AmbassadorHome />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="oportunidades"
+              element={
+                <ProtectedRoute role="embajador">
+                  <AmbassadorOpportunities />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="ranking"
+              element={
+                <ProtectedRoute role="embajador">
+                  <AmbassadorLeaderboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="embajador-perfil"
+              element={
+                <ProtectedRoute role="embajador">
+                  <AmbassadorProfile />
+                </ProtectedRoute>
+              }
+            />
+            {/* Novedades y Perfil (ambos roles) */}
+            <Route
+              path="novedades"
+              element={
+                <ProtectedRoute>
+                  <Novedades />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="perfil" element={<ProfileByRole />} />
+          </Route>
+        </Routes>
+      </Suspense>
+    );
+  }
 
   return (
     <EarlyAccessProvider>
@@ -25,7 +193,7 @@ export default function App() {
 
         <div className="flex-1">
           <AnimatePresence mode="wait">
-            <Suspense fallback={<div className="min-h-screen" aria-hidden />}>
+            <Suspense fallback={fallback}>
               <Routes location={location} key={location.pathname}>
                 <Route
                   path="/"
@@ -48,6 +216,14 @@ export default function App() {
                   element={
                     <PageTransition>
                       <Empresas />
+                    </PageTransition>
+                  }
+                />
+                <Route
+                  path="/embajadores"
+                  element={
+                    <PageTransition>
+                      <AmbassadorDirectory />
                     </PageTransition>
                   }
                 />
@@ -85,4 +261,18 @@ export default function App() {
       </div>
     </EarlyAccessProvider>
   );
+}
+
+// El perfil se renderiza según el rol del usuario logueado.
+function ProfileByRole() {
+  return (
+    <ProtectedRoute>
+      <ProfileSwitch />
+    </ProtectedRoute>
+  );
+}
+
+function ProfileSwitch() {
+  const { profile } = useAuth();
+  return profile?.role === 'empresa' ? <CompanyProfileForm /> : <StudentProfileForm />;
 }

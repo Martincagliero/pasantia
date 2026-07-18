@@ -1,6 +1,8 @@
 // Imágenes de Unsplash centralizadas.
 // TODO: si más adelante se quieren imágenes propias, reemplazar estas URLs
 // por archivos en /src/assets/images/ y actualizar acá.
+import ambassadorImg from '../assets/images/embajador.jpg';
+
 const p = (id: string, w = 1200) =>
   `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
 
@@ -21,6 +23,9 @@ export const IMAGES = {
   meeting: p('photo-1600880292089-90a7e086ee0c'),
   interview: p('photo-1521737711867-e3b97375f902'),
   modernOffice: p('photo-1497366811353-6870744d04b2'),
+
+  // Embajadores / Comunidades
+  ambassadorCommunity: ambassadorImg,
 
   // Pasos "cómo funciona"
   profile: p('photo-1499750310107-5fef28a66643'),

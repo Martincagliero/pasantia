@@ -54,6 +54,8 @@ interface FormData {
   org_name: string;
   org_type: string;
   reach: string;
+  instagram_link: string;
+  followers_range: string;
   mensaje: string;
 }
 
@@ -74,6 +76,8 @@ const EMPTY: FormData = {
   org_name: '',
   org_type: '',
   reach: '',
+  instagram_link: '',
+  followers_range: '',
   mensaje: '',
 };
 
@@ -86,6 +90,8 @@ type Screen =
   | 'eduArea'
   | 'empBasic'
   | 'empDetail'
+  | 'embBasic'
+  | 'embDetail'
   | 'mensaje';
 
 export function EarlyAccessProvider({ children }: { children: ReactNode }) {
@@ -149,7 +155,7 @@ function Onboarding({
     if (data.role === 'empresa')
       return [...base, 'contacto', 'empBasic', 'empDetail', 'mensaje'];
     if (data.role === 'embajador')
-      return [...base, 'contacto', 'mensaje'];
+      return [...base, 'contacto', 'embBasic', 'embDetail', 'mensaje'];
     return base;
   }, [presetRole, data.role]);
 
@@ -168,6 +174,10 @@ function Onboarding({
         return data.area !== '';
       case 'empBasic':
         return data.empresa.trim() !== '' && data.rubro !== '';
+      case 'embBasic':
+        return data.org_name.trim() !== '' && data.org_type !== '';
+      case 'embDetail':
+        return data.instagram_link.trim() !== '' && data.followers_range !== '';
       default:
         return true;
     }
@@ -216,6 +226,10 @@ function Onboarding({
       rubro: data.rubro,
       tamano: data.tamano,
       perfil: data.perfil,
+      org_name: data.org_name,
+      org_type: data.org_type,
+      instagram_link: data.instagram_link,
+      followers_range: data.followers_range,
       mensaje: data.mensaje,
       origen: typeof window !== 'undefined' ? window.location.pathname : '',
     };
@@ -305,7 +319,7 @@ function Onboarding({
           </div>
 
           {/* Contenido */}
-          <div className="flex flex-1 items-center justify-center overflow-y-auto px-4 py-6 sm:px-6 sm:py-10">
+          <div className="flex flex-1 items-start justify-center overflow-y-auto px-4 py-3 sm:px-6 sm:py-6">
             {submitted ? (
               <Success role={data.role} onClose={onClose} />
             ) : (
@@ -333,6 +347,8 @@ function Onboarding({
                   {current === 'eduArea' && <StepEduArea data={data} set={set} />}
                   {current === 'empBasic' && <StepEmpBasic data={data} set={set} />}
                   {current === 'empDetail' && <StepEmpDetail data={data} set={set} />}
+                  {current === 'embBasic' && <StepEmbBasic data={data} set={set} />}
+                  {current === 'embDetail' && <StepEmbDetail data={data} set={set} />}
                   {current === 'mensaje' && <StepMensaje data={data} set={set} error={error} />}
                 </motion.div>
               </AnimatePresence>
@@ -386,9 +402,9 @@ function Onboarding({
 
 function Heading({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <div className="mb-6 sm:mb-10 text-center">
-      <h2 className="text-xl font-semibold tracking-tighter sm:text-3xl md:text-5xl">{title}</h2>
-      {subtitle && <p className="mt-2 sm:mt-4 text-sm sm:text-base md:text-lg font-light text-white/60">{subtitle}</p>}
+    <div className="mb-4 sm:mb-6 text-center">
+      <h2 className="text-lg font-semibold tracking-tighter sm:text-3xl md:text-4xl">{title}</h2>
+      {subtitle && <p className="mt-1.5 sm:mt-3 text-xs sm:text-base md:text-lg font-light text-white/60">{subtitle}</p>}
     </div>
   );
 }
@@ -428,24 +444,24 @@ function StepRole({
           <button
             key={o.role}
             onClick={() => onPick(o.role)}
-            className={`group overflow-hidden rounded-2xl border p-2 text-left transition-all duration-200 sm:rounded-3xl sm:p-3 ${
+            className={`group flex flex-col overflow-hidden rounded-2xl border p-2 text-left transition-all duration-200 sm:rounded-3xl sm:p-3 ${
               value === o.role
                 ? 'border-white bg-white/10'
                 : 'border-white/15 bg-white/[0.03] hover:border-white/40 hover:bg-white/[0.07]'
             }`}
           >
-            <div className="overflow-hidden rounded-xl sm:rounded-2xl">
+            <div className="flex-shrink-0 overflow-hidden rounded-xl sm:rounded-2xl">
               <img
                 src={o.img}
                 alt=""
                 aria-hidden
                 loading="lazy"
-                className="h-24 w-full object-cover object-center sm:h-32 md:h-40 transition-transform duration-500 group-hover:scale-105"
+                className="h-20 w-full object-cover object-center sm:h-28 md:h-36 transition-transform duration-500 group-hover:scale-105"
               />
             </div>
-            <div className="px-2 pb-1.5 pt-3 sm:px-3 sm:pb-2 sm:pt-4">
-              <span className="block text-base font-semibold sm:text-xl">{o.label}</span>
-              <span className="mt-0.5 block text-sm text-white/55 sm:mt-1">{o.desc}</span>
+            <div className="flex flex-1 flex-col justify-start px-2 pb-1.5 pt-2.5 sm:px-3 sm:pb-2 sm:pt-4">
+              <span className="block text-[13px] font-semibold leading-snug sm:text-xl">{o.label}</span>
+              <span className="mt-0.5 block text-[11px] leading-snug text-white/55 sm:mt-1 sm:text-sm">{o.desc}</span>
             </div>
           </button>
         ))}
@@ -611,6 +627,66 @@ function StepEmpDetail({
           placeholder="Ej: pasante de marketing"
         />
       </div>
+    </div>
+  );
+}
+
+function StepEmbBasic({
+  data,
+  set,
+}: {
+  data: FormData;
+  set: (p: Partial<FormData>) => void;
+}) {
+  return (
+    <div>
+      <Heading title="Contanos sobre tu comunidad" />
+      <div className="mx-auto mb-6 sm:mb-8 max-w-md">
+        <Input
+          label="Nombre de la comunidad"
+          value={data.org_name}
+          onChange={(v) => set({ org_name: v })}
+          placeholder="Ej: Python Buenos Aires"
+          autoFocus
+        />
+      </div>
+      <SubGroup label="Tipo de comunidad" center>
+        <ChipGroup
+          options={FORM_OPTIONS.communityTypes}
+          value={data.org_type}
+          onChange={(v) => set({ org_type: v })}
+        />
+      </SubGroup>
+    </div>
+  );
+}
+
+function StepEmbDetail({
+  data,
+  set,
+}: {
+  data: FormData;
+  set: (p: Partial<FormData>) => void;
+}) {
+  return (
+    <div>
+      <Heading title="Tu presencia en redes" />
+      <div className="mx-auto mb-6 sm:mb-8 max-w-md">
+        <Input
+          label="Instagram"
+          value={data.instagram_link}
+          onChange={(v) => set({ instagram_link: v })}
+          placeholder="https://instagram.com/tucuenta"
+          autoFocus
+        />
+      </div>
+      <SubGroup label="Cantidad de seguidores" center>
+        <ChipGroup
+          options={FORM_OPTIONS.followerRanges}
+          value={data.followers_range}
+          onChange={(v) => set({ followers_range: v })}
+        />
+      </SubGroup>
     </div>
   );
 }

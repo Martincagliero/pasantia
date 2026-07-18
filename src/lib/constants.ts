@@ -194,6 +194,22 @@ export const FORM_OPTIONS = {
     'Otro',
   ],
   tamanoEmpresa: ['1-10', '11-50', '51-200', '200+'],
+  communityTypes: [
+    'Instagram',
+    'Grupo de Discord',
+    'Grupo de Telegram',
+    'Centro de Estudiantes',
+    'Universidad',
+    'Otro',
+  ],
+  followerRanges: [
+    'Menos de 1K',
+    '1K - 5K',
+    '5K - 10K',
+    '10K - 50K',
+    '50K - 100K',
+    '100K+',
+  ],
 } as const;
 
 export const NAV_LINKS = [

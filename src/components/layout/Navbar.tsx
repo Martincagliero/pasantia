@@ -82,7 +82,13 @@ export function Navbar() {
         </ul>
 
         {/* CTA desktop */}
-        <div className="hidden items-center gap-1 md:flex">
+        <div className="hidden items-center gap-3 md:flex">
+          <Link
+            to="/ingresar"
+            className="text-sm font-medium text-white/60 transition-colors hover:text-white"
+          >
+            Ingresar
+          </Link>
           <Button onClick={() => open()} size="sm">
             Acceso anticipado
           </Button>
@@ -172,6 +178,13 @@ export function Navbar() {
               >
                 Acceso anticipado
               </Button>
+              <Link
+                to="/ingresar"
+                onClick={() => setMenuOpen(false)}
+                className="text-base font-medium text-white/60 transition-colors hover:text-white"
+              >
+                Ingresar
+              </Link>
             </motion.div>
           </motion.div>
         )}

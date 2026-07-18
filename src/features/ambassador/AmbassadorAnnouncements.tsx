@@ -1,5 +1,5 @@
 ﻿// Embajador: pasantías para difundir con tu comunidad
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Building2, MapPin, Megaphone, Check, Copy, Send, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
@@ -23,7 +23,6 @@ export default function AmbassadorAnnouncements() {
   const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
-  const [onlyForMe, setOnlyForMe] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
@@ -54,11 +53,6 @@ export default function AmbassadorAnnouncements() {
     })();
     return () => { active = false; };
   }, [session]);
-
-  const list = useMemo(
-    () => (onlyForMe ? items.filter((i) => broadcastIds.has(i.id)) : items),
-    [items, onlyForMe, broadcastIds]
-  );
 
   async function markDiffused(i: InternshipWithCompany) {
     if (diffusedIds.has(i.id)) return;
@@ -134,13 +128,10 @@ export default function AmbassadorAnnouncements() {
       )}
 
       <div className="mb-5 flex gap-2">
-        <Chip active={!onlyForMe} onClick={() => setOnlyForMe(false)}>Todas</Chip>
-        <Chip active={onlyForMe} onClick={() => setOnlyForMe(true)}>
-          Dirigidas a mi comunidad ({broadcastIds.size})
-        </Chip>
+        <Chip active>Todas</Chip>
       </div>
 
-      {list.length === 0 ? (
+      {items.length === 0 ? (
         <EmptyState
           icon={<Megaphone className="h-6 w-6" />}
           title="No hay pasantías para difundir"
@@ -148,7 +139,7 @@ export default function AmbassadorAnnouncements() {
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {list.map((i) => {
+          {items.map((i) => {
             const done = diffusedIds.has(i.id);
             const forMe = broadcastIds.has(i.id);
             return (
@@ -222,17 +213,16 @@ export default function AmbassadorAnnouncements() {
   );
 }
 
-function Chip({ active, onClick, children }: {
-  active: boolean; onClick: () => void; children: React.ReactNode;
+function Chip({ active, children }: {
+  active: boolean; children: React.ReactNode;
 }) {
   return (
-    <button
-      onClick={onClick}
-      className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
-        active ? 'border-white bg-white text-brand-600' : 'border-white/15 bg-white/5 text-white/70 hover:bg-white/10'
+    <span
+      className={`rounded-full border px-4 py-1.5 text-sm font-medium ${
+        active ? 'border-white bg-white text-brand-600' : 'border-white/15 bg-white/5 text-white/70'
       }`}
     >
       {children}
-    </button>
+    </span>
   );
 }

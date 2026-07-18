@@ -402,6 +402,7 @@ create policy "df_delete_own" on public.internship_diffusions
 -- ============================================================================
 -- Panel de Novedades: posts que publican estudiantes y empresas
 -- ============================================================================
+do $$ begin
   create type post_category as enum ('novedad', 'proyecto', 'busqueda', 'recurso');
 exception when duplicate_object then null; end $$;
 

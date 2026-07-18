@@ -102,6 +102,14 @@ CREATE POLICY "comm_internships_delete_company" ON community_internships
 -- 2. RLS POLÍTICAS COMPLETAS
 -- =============================================================================
 
+-- Helper SECURITY DEFINER: rol del usuario actual sin disparar RLS.
+-- Se usa en las políticas de internships para EVITAR la recursión infinita
+-- (profiles -> internships -> profiles).
+CREATE OR REPLACE FUNCTION public.auth_role()
+RETURNS user_role
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$ SELECT role FROM public.profiles WHERE id = auth.uid() $$;
+
 -- TABLA: profiles
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
@@ -196,22 +204,19 @@ CREATE POLICY "internships_delete_own" ON internships
 DROP POLICY IF EXISTS "internships_insert_ambassador" ON internships;
 CREATE POLICY "internships_insert_ambassador" ON internships
   FOR INSERT WITH CHECK (
-    company_id = auth.uid() AND 
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'embajador')
+    company_id = auth.uid() AND public.auth_role() = 'embajador'
   );
 
 DROP POLICY IF EXISTS "internships_update_ambassador" ON internships;
 CREATE POLICY "internships_update_ambassador" ON internships
   FOR UPDATE USING (
-    company_id = auth.uid() AND 
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'embajador')
+    company_id = auth.uid() AND public.auth_role() = 'embajador'
   );
 
 DROP POLICY IF EXISTS "internships_delete_ambassador" ON internships;
 CREATE POLICY "internships_delete_ambassador" ON internships
   FOR DELETE USING (
-    company_id = auth.uid() AND 
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'embajador')
+    company_id = auth.uid() AND public.auth_role() = 'embajador'
   );
 
 -- TABLA: applications
@@ -350,29 +355,25 @@ END $$;
 DROP POLICY IF EXISTS "internships_select_own_student" ON internships;
 CREATE POLICY "internships_select_own_student" ON internships
   FOR SELECT USING (
-    company_id = auth.uid() AND 
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'estudiante')
+    company_id = auth.uid() AND public.auth_role() = 'estudiante'
   );
 
 DROP POLICY IF EXISTS "internships_insert_student" ON internships;
 CREATE POLICY "internships_insert_student" ON internships
   FOR INSERT WITH CHECK (
-    company_id = auth.uid() AND 
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'estudiante')
+    company_id = auth.uid() AND public.auth_role() = 'estudiante'
   );
 
 DROP POLICY IF EXISTS "internships_update_student" ON internships;
 CREATE POLICY "internships_update_student" ON internships
   FOR UPDATE USING (
-    company_id = auth.uid() AND 
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'estudiante')
+    company_id = auth.uid() AND public.auth_role() = 'estudiante'
   );
 
 DROP POLICY IF EXISTS "internships_delete_student" ON internships;
 CREATE POLICY "internships_delete_student" ON internships
   FOR DELETE USING (
-    company_id = auth.uid() AND 
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'estudiante')
+    company_id = auth.uid() AND public.auth_role() = 'estudiante'
   );
 
 -- =============================================================================

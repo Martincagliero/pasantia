@@ -199,7 +199,7 @@ export default function AmbassadorProfile() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-white/80">Universidad / Institución</label>
+            <label className="block text-sm font-medium text-white/80">Universidad / Institución (opcional)</label>
             <TextField
               value={form.university}
               onChange={(e) => set('university', e.target.value)}

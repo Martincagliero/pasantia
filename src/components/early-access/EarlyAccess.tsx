@@ -319,7 +319,7 @@ function Onboarding({
           </div>
 
           {/* Contenido */}
-          <div className="flex flex-1 items-start justify-center overflow-y-auto px-4 py-3 sm:px-6 sm:py-6">
+          <div className="flex flex-1 overflow-y-auto px-4 py-3 sm:px-8 sm:py-6">
             {submitted ? (
               <Success role={data.role} onClose={onClose} />
             ) : (
@@ -330,7 +330,7 @@ function Onboarding({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -16 }}
                   transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                  className="w-full max-w-md sm:max-w-lg md:max-w-2xl"
+                  className="m-auto w-full max-w-lg sm:max-w-2xl md:max-w-4xl"
                 >
                   {current === 'role' && (
                     <StepRole
@@ -402,9 +402,9 @@ function Onboarding({
 
 function Heading({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <div className="mb-4 sm:mb-6 text-center">
-      <h2 className="text-lg font-semibold tracking-tighter sm:text-3xl md:text-4xl">{title}</h2>
-      {subtitle && <p className="mt-1.5 sm:mt-3 text-xs sm:text-base md:text-lg font-light text-white/60">{subtitle}</p>}
+    <div className="mb-5 sm:mb-8 text-center">
+      <h2 className="text-xl font-semibold tracking-tighter sm:text-4xl md:text-5xl">{title}</h2>
+      {subtitle && <p className="mt-2 sm:mt-4 text-sm sm:text-lg md:text-xl font-light text-white/60">{subtitle}</p>}
     </div>
   );
 }
@@ -456,12 +456,12 @@ function StepRole({
                 alt=""
                 aria-hidden
                 loading="lazy"
-                className="h-20 w-full object-cover object-center sm:h-28 md:h-36 transition-transform duration-500 group-hover:scale-105"
+                className="h-24 w-full object-cover object-center sm:h-36 md:h-44 transition-transform duration-500 group-hover:scale-105"
               />
             </div>
-            <div className="flex flex-1 flex-col justify-start px-2 pb-1.5 pt-2.5 sm:px-3 sm:pb-2 sm:pt-4">
-              <span className="block text-[13px] font-semibold leading-snug sm:text-xl">{o.label}</span>
-              <span className="mt-0.5 block text-[11px] leading-snug text-white/55 sm:mt-1 sm:text-sm">{o.desc}</span>
+            <div className="flex flex-1 flex-col justify-start px-2 pb-2 pt-3 sm:px-3 sm:pb-3 sm:pt-4">
+              <span className="block text-sm font-semibold leading-snug sm:text-2xl">{o.label}</span>
+              <span className="mt-1 block text-[11px] leading-snug text-white/55 sm:mt-1.5 sm:text-base">{o.desc}</span>
             </div>
           </button>
         ))}

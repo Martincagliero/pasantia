@@ -74,12 +74,19 @@ export default function AmbassadorProfile() {
 
     // Validar que sea imagen
     if (!file.type.startsWith('image/')) {
-      alert('Solo se permiten archivos de imagen (JPG, PNG, etc)');
+      alert('Solo se permiten archivos de imagen (JPG, PNG, GIF o WEBP)');
+      return;
+    }
+
+    // Validar extensión
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const validExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    if (!validExts.includes(ext)) {
+      alert('Formato de imagen no válido. Usa JPG, PNG, GIF o WEBP');
       return;
     }
 
     setUploading(true);
-    const ext = file.name.split('.').pop();
     const path = `ambassadors/${session!.user.id}/logo.${ext}`;
 
     const { error: uploadError } = await supabase.storage

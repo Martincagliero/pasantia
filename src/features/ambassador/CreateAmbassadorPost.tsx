@@ -24,13 +24,23 @@ export default function CreateAmbassadorPost({ onPostCreated }: CreatePostProps)
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validar tamaño (máximo 2MB)
     if (file.size > MAX_IMAGE_SIZE) {
-      setError('La imagen debe pesar menos de 2MB');
+      setError(`La imagen debe pesar menos de 2MB. Tu archivo pesa ${(file.size / 1024 / 1024).toFixed(2)}MB`);
       return;
     }
 
+    // Validar que sea imagen
     if (!file.type.startsWith('image/')) {
-      setError('Por favor selecciona una imagen válida');
+      setError('Por favor selecciona una imagen válida (JPG, PNG, GIF o WEBP)');
+      return;
+    }
+
+    // Validar extensión
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const validExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    if (!validExts.includes(ext)) {
+      setError('Formato de imagen no válido. Usa JPG, PNG, GIF o WEBP');
       return;
     }
 
@@ -67,15 +77,28 @@ export default function CreateAmbassadorPost({ onPostCreated }: CreatePostProps)
 
       // Upload imagen si existe
       if (imageFile) {
-        const ext = imageFile.name.split('.').pop() || 'jpg';
-        const filename = `ambassador-posts/${session.user.id}/${Date.now()}.${ext}`;
+        // Validar extensión
+        const ext = imageFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const validExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        if (!validExts.includes(ext)) {
+          throw new Error('Formato de imagen no válido. Usa JPG, PNG, GIF o WEBP');
+        }
 
+        // Crear path único con timestamp
+        const timestamp = Date.now();
+        const randomId = Math.random().toString(36).substring(7);
+        const filename = `ambassador-posts/${session.user.id}/${timestamp}-${randomId}.${ext}`;
+
+        // Upload con upsert para evitar conflictos
         const { error: uploadError } = await supabase.storage
           .from('cvs')
-          .upload(filename, imageFile);
+          .upload(filename, imageFile, { upsert: false });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          throw new Error(`Error subiendo imagen: ${uploadError.message}`);
+        }
 
+        // Obtener URL pública
         const { data: urlData } = supabase.storage
           .from('cvs')
           .getPublicUrl(filename);
@@ -91,7 +114,9 @@ export default function CreateAmbassadorPost({ onPostCreated }: CreatePostProps)
         image_url: imageUrl,
       });
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        throw new Error(`Error guardando anuncio: ${dbError.message}`);
+      }
 
       // Limpiar formulario
       setTitle('');
@@ -100,7 +125,9 @@ export default function CreateAmbassadorPost({ onPostCreated }: CreatePostProps)
       setImagePreview(null);
       onPostCreated();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al crear el anuncio');
+      const errorMessage = err instanceof Error ? err.message : 'Error al crear el anuncio';
+      setError(errorMessage);
+      console.error('Upload error:', err);
     } finally {
       setUploading(false);
     }

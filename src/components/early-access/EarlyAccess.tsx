@@ -424,27 +424,23 @@ function StepRole({
     <div>
       <Heading title="¿Cómo querés sumarte?" subtitle="Elegí una opción para empezar." />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-        {opts.map((o, idx) => (
+        {opts.map((o) => (
           <button
             key={o.role}
             onClick={() => onPick(o.role)}
             className={`group overflow-hidden rounded-2xl border p-2 text-left transition-all duration-200 sm:rounded-3xl sm:p-3 ${
-              idx === 2 ? 'sm:border-l-2 sm:border-l-white/30' : ''
-            } ${
               value === o.role
                 ? 'border-white bg-white/10'
                 : 'border-white/15 bg-white/[0.03] hover:border-white/40 hover:bg-white/[0.07]'
             }`}
           >
-            <div className={`overflow-hidden rounded-xl sm:rounded-2xl ${o.role === 'embajador' ? 'h-28 sm:h-36 md:h-44' : 'h-24 sm:h-32 md:h-40'}`}>
+            <div className="overflow-hidden rounded-xl sm:rounded-2xl">
               <img
                 src={o.img}
                 alt=""
                 aria-hidden
                 loading="lazy"
-                className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
-                  o.role === 'embajador' ? 'object-center' : 'object-center'
-                }`}
+                className="h-24 w-full object-cover object-center sm:h-32 md:h-40 transition-transform duration-500 group-hover:scale-105"
               />
             </div>
             <div className="px-2 pb-1.5 pt-3 sm:px-3 sm:pb-2 sm:pt-4">

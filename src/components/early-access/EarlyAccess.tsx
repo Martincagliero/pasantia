@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, ArrowRight, ArrowLeft, Check } from 'lucide-react';
+import { X, ArrowRight, ArrowLeft, Check, Eye, EyeOff } from 'lucide-react';
 import {
   CONTACT,
   FORM_ENDPOINT,
@@ -819,15 +819,55 @@ function Input({
   return (
     <label className="block text-left">
       <span className="mb-2 block text-sm font-medium text-white/75">{label}</span>
-      <input
+      <PasswordAwareInput
         type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        autoFocus={autoFocus}
+      />
+    </label>
+  );
+}
+
+// Input que, si es de tipo password, muestra un botón de ojo para ver/ocultar.
+function PasswordAwareInput({
+  type,
+  value,
+  onChange,
+  placeholder,
+  autoFocus,
+}: {
+  type: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  autoFocus?: boolean;
+}) {
+  const [show, setShow] = useState(false);
+  const isPassword = type === 'password';
+  const inputType = isPassword ? (show ? 'text' : 'password') : type;
+  return (
+    <div className="relative">
+      <input
+        type={inputType}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         autoFocus={autoFocus}
-        className={inputCls}
+        className={`${inputCls} ${isPassword ? 'pr-12' : ''}`}
       />
-    </label>
+      {isPassword && (
+        <button
+          type="button"
+          onClick={() => setShow((s) => !s)}
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-white/45 transition hover:text-white"
+          aria-label={show ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+        >
+          {show ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
+        </button>
+      )}
+    </div>
   );
 }
 

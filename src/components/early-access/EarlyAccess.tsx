@@ -21,6 +21,8 @@ import {
 } from '../../lib/constants';
 import { IMAGES } from '../../lib/images';
 import { supabase } from '../../lib/supabase';
+import { isSupabaseConfigured } from '../../lib/supabase';
+import { useAuth } from '../../features/auth/AuthProvider';
 import estudianteImg from '../../assets/images/estudiante.jpg';
 import logo from '../../assets/logo.png';
 
@@ -42,6 +44,7 @@ interface FormData {
   role: Role | '';
   nombre: string;
   email: string;
+  password: string;
   telefono: string;
   universidad: string;
   carrera: string;
@@ -64,6 +67,7 @@ const EMPTY: FormData = {
   role: '',
   nombre: '',
   email: '',
+  password: '',
   telefono: '',
   universidad: '',
   carrera: '',
@@ -125,6 +129,7 @@ function Onboarding({
   presetRole?: Role;
   onClose: () => void;
 }) {
+  const { signUp, signOut } = useAuth();
   const [step, setStep] = useState(0);
   const [data, setData] = useState<FormData>(EMPTY);
   const [submitting, setSubmitting] = useState(false);
@@ -168,7 +173,11 @@ function Onboarding({
       case 'role':
         return data.role !== '';
       case 'contacto':
-        return data.nombre.trim().length > 1 && isEmail(data.email);
+        return (
+          data.nombre.trim().length > 1 &&
+          isEmail(data.email) &&
+          data.password.trim().length >= 6
+        );
       case 'eduUni':
         return data.universidad.trim() !== '' && data.carrera.trim() !== '';
       case 'eduArea':
@@ -236,6 +245,21 @@ function Onboarding({
     };
 
     try {
+      // Crear la cuenta con la contraseña elegida, para que luego pueda ingresar
+      // con su email + contraseña. No dejamos la sesión abierta: es lista de espera.
+      if (isSupabaseConfigured && data.role && data.password) {
+        const { error: suErr } = await signUp({
+          email: data.email.trim(),
+          password: data.password,
+          fullName: data.nombre.trim(),
+          role: data.role as Role,
+        });
+        if (suErr && !/ya existe una cuenta/i.test(suErr)) {
+          throw new Error(suErr);
+        }
+        await signOut();
+      }
+
       // Guardar la solicitud en la base de datos (best-effort): queda en la
       // tabla early_access_requests para poder activarla luego. Si la tabla no
       // existe o falla, seguimos con la notificación habitual.
@@ -506,6 +530,13 @@ function StepContacto({
           placeholder="tucorreo@email.com"
         />
         <Input
+          label="Contraseña"
+          type="password"
+          value={data.password}
+          onChange={(v) => set({ password: v })}
+          placeholder="Al menos 6 caracteres"
+        />
+        <Input
           label="Teléfono (opcional)"
           value={data.telefono}
           onChange={(v) => set({ telefono: v })}
@@ -747,7 +778,8 @@ function Success({ role, onClose }: { role: FormData['role']; onClose: () => voi
         ¡Estás en la lista!
       </h2>
       <p className="mx-auto mt-5 max-w-md text-lg font-light text-white/65">
-        Recibimos tu registro. Te contactamos apenas abramos el acceso
+        Ya estás en la lista de espera. Vas a poder ingresar con tu email y
+        contraseña cuando habilitemos el acceso
         {role === 'empresa'
           ? ' para empresas.'
           : role === 'estudiante'

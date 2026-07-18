@@ -208,12 +208,13 @@ export default function AmbassadorProfile() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-white/80">Instagram (opcional)</label>
+            <label className="block text-sm font-medium text-white/80">Instagram *</label>
             <TextField
               value={form.instagram_url}
               onChange={(e) => set('instagram_url', e.target.value)}
               type="url"
               placeholder="https://instagram.com/…"
+              required
             />
           </div>
 

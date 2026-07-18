@@ -305,7 +305,7 @@ function Onboarding({
           </div>
 
           {/* Contenido */}
-          <div className="flex flex-1 items-center justify-center overflow-y-auto px-5 py-8 sm:px-6 sm:py-10">
+          <div className="flex flex-1 items-center justify-center overflow-y-auto px-4 py-6 sm:px-6 sm:py-10">
             {submitted ? (
               <Success role={data.role} onClose={onClose} />
             ) : (
@@ -316,7 +316,7 @@ function Onboarding({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -16 }}
                   transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                  className="w-full max-w-2xl"
+                  className="w-full max-w-md sm:max-w-lg md:max-w-2xl"
                 >
                   {current === 'role' && (
                     <StepRole
@@ -341,7 +341,7 @@ function Onboarding({
 
           {/* Footer navegación */}
           {!submitted && current !== 'role' && (
-            <footer className="flex items-center justify-between gap-4 border-t border-white/10 px-6 py-5 sm:px-10">
+            <footer className="flex items-center justify-between gap-2 border-t border-white/10 px-4 py-3 text-sm sm:gap-4 sm:px-10 sm:py-5">
               <button
                 onClick={back}
                 disabled={step === 0}
@@ -426,29 +426,29 @@ function StepRole({
   return (
     <div>
       <Heading title="¿Cómo querés sumarte?" subtitle="Elegí una opción para empezar." />
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
         {opts.map((o) => (
           <button
             key={o.role}
             onClick={() => onPick(o.role)}
-            className={`group overflow-hidden rounded-3xl border p-3 text-left transition-all duration-200 ${
+            className={`group overflow-hidden rounded-2xl border p-2 text-left transition-all duration-200 sm:rounded-3xl sm:p-3 ${
               value === o.role
                 ? 'border-white bg-white/10'
                 : 'border-white/15 bg-white/[0.03] hover:border-white/40 hover:bg-white/[0.07]'
             }`}
           >
-            <div className="overflow-hidden rounded-2xl">
+            <div className="overflow-hidden rounded-xl sm:rounded-2xl">
               <img
                 src={o.img}
                 alt=""
                 aria-hidden
                 loading="lazy"
-                className={`h-32 w-full object-cover ${o.objectPos} transition-transform duration-500 group-hover:scale-105 sm:h-40`}
+                className={`h-24 w-full object-cover sm:h-32 md:h-40 ${o.objectPos} transition-transform duration-500 group-hover:scale-105`}
               />
             </div>
-            <div className="px-3 pb-2 pt-4">
-              <span className="block text-xl font-semibold">{o.label}</span>
-              <span className="mt-1 block text-white/55">{o.desc}</span>
+            <div className="px-2 pb-1.5 pt-3 sm:px-3 sm:pb-2 sm:pt-4">
+              <span className="block text-base font-semibold sm:text-xl">{o.label}</span>
+              <span className="mt-0.5 block text-sm text-white/55 sm:mt-1">{o.desc}</span>
             </div>
           </button>
         ))}

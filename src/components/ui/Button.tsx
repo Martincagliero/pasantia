@@ -9,13 +9,13 @@ const base =
   'group relative inline-flex items-center justify-center gap-2 rounded-full font-semibold tracking-tight transition-[background-color,color,box-shadow,border-color] duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-500 disabled:opacity-50 disabled:pointer-events-none';
 
 const variants: Record<Variant, string> = {
-  // CTA primario: Violeta moderno con hover más oscuro
+  // CTA primario: blanco → azul profundo al hover (cambio de color animado).
   primary:
-    'bg-gradient-to-br from-brand-500 to-brand-600 text-white shadow-lg shadow-brand-900/40 hover:shadow-xl hover:shadow-brand-900/60 hover:from-brand-600 hover:to-brand-700',
-  // Secundario glass: transparente con violeta al hover
+    'bg-white text-brand-600 shadow-lg shadow-brand-950/30 hover:bg-brand-950 hover:text-white hover:shadow-xl hover:shadow-brand-950/50',
+  // Secundario glass: transparente → blanco sólido al hover.
   secondary:
-    'glass border border-white/20 text-white hover:bg-brand-500/10 hover:border-brand-500/50 hover:text-white',
-  // Ghost: texto blanco sutil, fondo al hover
+    'glass text-white hover:bg-white hover:text-brand-600 hover:border-white',
+  // Ghost: gana fondo y color al hover.
   ghost: 'text-white/80 hover:bg-white/10 hover:text-white',
 };
 

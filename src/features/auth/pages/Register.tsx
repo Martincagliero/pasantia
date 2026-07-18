@@ -121,7 +121,7 @@ export default function Register() {
       footer={
         <>
           ¿Ya tenés cuenta?{' '}
-          <Link to="/ingresar" className="font-semibold text-brand-400 hover:text-brand-300">
+          <Link to="/ingresar" className="font-semibold text-white hover:underline">
             Ingresá aquí
           </Link>
         </>
@@ -192,7 +192,7 @@ export default function Register() {
           >
             Atrás
           </Button>
-          <Button type="submit" variant="primary" className="flex-1" disabled={loading}>
+          <Button type="submit" variant="secondary" className="flex-1" disabled={loading}>
             {loading ? 'Registrando…' : 'Registrarse'}
           </Button>
         </div>

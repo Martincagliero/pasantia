@@ -14,29 +14,20 @@ export default {
     },
     extend: {
       colors: {
-        // Paleta de marca renovada: Violeta moderno + Índigo para ambiente profesional y acogedor
-        // Color primario: Violeta #7C3AED (modern, professional, warm)
+        // Azul de marca extraído del logo real (loog.png) = #0148FD
         brand: {
-          50: '#FAF5FF',
-          100: '#F3E8FF',
-          200: '#E9D5FF',
-          300: '#D8B4FE',
-          400: '#C084FC',
-          500: '#A855F7', // Color principal - violeta moderno
-          600: '#9333EA', // Para hover
-          700: '#7E22CE',
-          800: '#6B21A8',
-          900: '#581C87',
-          950: '#3F0F5C', // Secciones profundas
-          DEFAULT: '#A855F7',
-        },
-        // Colores secundarios para acentos
-        accent: {
-          primary: '#06B6D4', // Cyan para contrastes
-          secondary: '#8B5CF6', // Púrpura adicional
-          success: '#10B981', // Verde mint
-          warning: '#F59E0B', // Ámbar
-          danger: '#EF4444', // Rojo
+          50: '#EBF0FF',
+          100: '#D6E1FF',
+          200: '#ADC2FF',
+          300: '#7D9CFF',
+          400: '#4A73FF',
+          500: '#0148FD', // DEFAULT — fondo base de la web
+          600: '#0139D6',
+          700: '#012BA8',
+          800: '#02207E',
+          900: '#03175A',
+          950: '#020E38', // secciones profundas
+          DEFAULT: '#0148FD',
         },
       },
       fontFamily: {

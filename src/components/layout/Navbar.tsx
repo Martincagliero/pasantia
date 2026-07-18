@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
@@ -12,6 +12,14 @@ export function Navbar() {
   const scrolled = useScrolled(20);
   const [menuOpen, setMenuOpen] = useState(false);
   const { open } = useEarlyAccess();
+
+  // Bloquea el scroll del fondo mientras el menú mobile está abierto.
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen]);
 
   return (
     <motion.header
@@ -28,7 +36,7 @@ export function Navbar() {
         transition={{ duration: 0.3 }}
         className={`relative z-50 mx-auto mt-3 flex w-[min(1180px,92vw)] items-center justify-between rounded-full px-4 sm:px-6 transition-all duration-300 ${
           scrolled
-            ? 'glass-strong shadow-lg shadow-brand-950/20'
+            ? 'border border-white/15 bg-brand-600/70 shadow-lg shadow-brand-950/20 backdrop-blur-md md:bg-white/[0.07] md:backdrop-blur-2xl'
             : 'border border-transparent bg-transparent'
         }`}
       >
@@ -82,7 +90,7 @@ export function Navbar() {
 
         {/* Botón menú mobile */}
         <button
-          className="relative z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 text-white md:hidden"
+          className="relative z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 text-white transition-transform active:scale-90 md:hidden"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
           aria-expanded={menuOpen}

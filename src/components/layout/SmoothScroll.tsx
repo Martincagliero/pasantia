@@ -20,8 +20,14 @@ export function SmoothScroll() {
       '(prefers-reduced-motion: reduce)'
     ).matches;
 
-    if (prefersReduced) {
-      // Sin animación de scroll: solo aseguramos volver al tope por ruta.
+    // En dispositivos táctiles (mobile/tablet) usamos scroll NATIVO: es más
+    // fluido y liviano que el scroll sintético de Lenis, que suele "trabar".
+    const isTouch =
+      window.matchMedia('(pointer: coarse)').matches ||
+      'ontouchstart' in window;
+
+    if (prefersReduced || isTouch) {
+      // Sin scroll sintético: solo aseguramos volver al tope por ruta.
       window.scrollTo({ top: 0, behavior: 'auto' });
       return;
     }

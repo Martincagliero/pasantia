@@ -33,13 +33,13 @@ export default function Login() {
 
   return (
     <AuthShell
-      title="Ingresar"
-      subtitle="Accedé a tu panel de PasantIA."
+      title="Bienvenido"
+      subtitle="Ingresá a tu cuenta para continuar."
       footer={
         <>
-          ¿Todavía no te sumaste?{' '}
-          <Link to="/" className="font-semibold text-white hover:underline">
-            Pedí acceso anticipado
+          ¿Eres nuevo?{' '}
+          <Link to="/registro" className="font-semibold text-brand-400 hover:text-brand-300">
+            Creá una cuenta
           </Link>
         </>
       }
@@ -82,7 +82,7 @@ export default function Login() {
           </p>
         )}
 
-        <Button type="submit" variant="secondary" className="w-full" disabled={loading}>
+        <Button type="submit" variant="primary" className="w-full" disabled={loading}>
           {loading ? 'Ingresando…' : 'Ingresar'}
         </Button>
       </form>

@@ -53,10 +53,11 @@ export default function App() {
     location.pathname === '/ingresar' ||
     location.pathname === '/registro';
 
-  if (isAppArea) {
-    return (
-      <Suspense fallback={fallback}>
-        <Routes>
+  return (
+    <EarlyAccessProvider>
+      {isAppArea ? (
+        <Suspense fallback={fallback}>
+          <Routes>
           <Route path="/ingresar" element={<Login />} />
           <Route path="/registro" element={<Register />} />
           <Route
@@ -202,15 +203,11 @@ export default function App() {
             <Route path="perfil" element={<ProfileByRole />} />
           </Route>
         </Routes>
-      </Suspense>
-    );
-  }
-
-  return (
-    <EarlyAccessProvider>
-      <div className="flex min-h-screen flex-col">
-        <SmoothScroll />
-        <Navbar />
+        </Suspense>
+      ) : (
+        <div className="flex min-h-screen flex-col">
+          <SmoothScroll />
+          <Navbar />
 
         <div className="flex-1">
           <AnimatePresence mode="wait">
@@ -288,6 +285,7 @@ export default function App() {
 
         <Footer />
       </div>
+      )}
     </EarlyAccessProvider>
   );
 }

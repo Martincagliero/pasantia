@@ -8,6 +8,7 @@ import { TextField } from '../ui/Field';
 import { Card, PageHeader, PageLoader } from '../ui/primitives';
 import { VerifiedBadge } from './VerifiedBadge';
 import { ORG_TYPES } from './ambassadorConfig';
+import { UniversityAutocomplete } from '../ui/UniversityAutocomplete';
 import { Upload } from 'lucide-react';
 
 export default function AmbassadorProfile() {
@@ -214,10 +215,10 @@ export default function AmbassadorProfile() {
 
               <div>
                 <label className="block text-sm font-medium text-white/80 mb-1.5">Universidad / Institución (opcional)</label>
-                <TextField
+                <UniversityAutocomplete
                   value={form.university}
-                  onChange={(e) => set('university', e.target.value)}
-                  placeholder="Ej: UTN, UB, UNLP"
+                  onChange={(v: string) => set('university', v)}
+                  placeholder="Busca tu universidad o institución..."
                 />
               </div>
             </div>

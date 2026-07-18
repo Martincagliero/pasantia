@@ -386,9 +386,9 @@ function Onboarding({
 
 function Heading({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <div className="mb-10 text-center">
-      <h2 className="text-3xl font-semibold tracking-tighter sm:text-5xl">{title}</h2>
-      {subtitle && <p className="mt-4 text-lg font-light text-white/60">{subtitle}</p>}
+    <div className="mb-6 sm:mb-10 text-center">
+      <h2 className="text-xl font-semibold tracking-tighter sm:text-3xl md:text-5xl">{title}</h2>
+      {subtitle && <p className="mt-2 sm:mt-4 text-sm sm:text-base md:text-lg font-light text-white/60">{subtitle}</p>}
     </div>
   );
 }
@@ -537,7 +537,7 @@ function StepEduArea({
         value={data.area}
         onChange={(v) => set({ area: v })}
       />
-      <div className="mx-auto mt-10 max-w-md space-y-6">
+      <div className="mx-auto mt-6 sm:mt-10 max-w-md space-y-4 sm:space-y-6">
         <SubGroup label="Año de cursada">
           <ChipGroup
             small
@@ -569,7 +569,7 @@ function StepEmpBasic({
   return (
     <div>
       <Heading title="Contanos sobre tu empresa" />
-      <div className="mx-auto mb-8 max-w-md">
+      <div className="mx-auto mb-6 sm:mb-8 max-w-md">
         <Input
           label="Empresa"
           value={data.empresa}
@@ -606,7 +606,7 @@ function StepEmpDetail({
           onChange={(v) => set({ tamano: v })}
         />
       </SubGroup>
-      <div className="mx-auto mt-8 max-w-md">
+      <div className="mx-auto mt-6 sm:mt-8 max-w-md">
         <Input
           label="Perfil que buscás (opcional)"
           value={data.perfil}
@@ -745,7 +745,7 @@ function ChipGroup({
   small?: boolean;
 }) {
   return (
-    <div className="flex flex-wrap justify-center gap-2.5">
+    <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2.5">
       {options.map((o) => {
         const active = value === o;
         return (
@@ -754,7 +754,9 @@ function ChipGroup({
             type="button"
             onClick={() => onChange(o)}
             className={`rounded-full border transition-all duration-200 ${
-              small ? 'px-4 py-2 text-sm' : 'px-5 py-2.5 text-[15px]'
+              small
+                ? 'px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm'
+                : 'px-3 py-1.5 text-xs sm:px-5 sm:py-2.5 sm:text-[15px]'
             } ${
               active
                 ? 'border-white bg-white text-brand-600'

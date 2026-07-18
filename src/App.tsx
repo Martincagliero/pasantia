@@ -38,6 +38,7 @@ const AmbassadorDirectory = lazy(() => import('./features/ambassador/AmbassadorD
 const AmbassadorAnnouncements = lazy(() => import('./features/ambassador/AmbassadorAnnouncements'));
 const Novedades = lazy(() => import('./features/posts/Novedades'));
 const StudentCommunities = lazy(() => import('./features/student/StudentCommunities'));
+const CommunityDetailPage = lazy(() => import('./pages/CommunityDetailPage'));
 const PublicCommunityPage = lazy(() => import('./pages/PublicCommunityPage'));
 
 const fallback = <div className="min-h-screen" aria-hidden />;
@@ -95,6 +96,14 @@ export default function App() {
               element={
                 <ProtectedRoute role="estudiante">
                   <StudentCommunities />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="comunidad/:id"
+              element={
+                <ProtectedRoute role="estudiante">
+                  <CommunityDetailPage />
                 </ProtectedRoute>
               }
             />

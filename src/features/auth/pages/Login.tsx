@@ -6,8 +6,8 @@ import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useAuth } from '../AuthProvider';
 import { isSupabaseConfigured } from '../../../lib/supabase';
 import { useEarlyAccess } from '../../../components/early-access/EarlyAccess';
-import logo from '../../../assets/logo.png';
 import loginLogo from '../../../assets/images/logoingresar.png';
+import logoP from '../../../assets/images/logo-p-blanco.png';
 
 export default function Login() {
   const { signIn } = useAuth();
@@ -107,7 +107,7 @@ export default function Login() {
 
           <div className="rounded-2xl border border-white/10 bg-[#0B0F1A]/80 p-5 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.75)] ring-1 ring-inset ring-white/[0.05] backdrop-blur-xl sm:p-8">
             <div>
-              <img src={logo} alt="PasantIA" className="mb-5 hidden h-9 w-auto lg:block" />
+              <img src={logoP} alt="PasantIA" className="mx-auto mb-5 hidden h-11 w-auto lg:block" />
 
               <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
                 Bienvenido a <span className="text-brand-400">PasantIA</span>

@@ -16,15 +16,20 @@ CREATE TABLE IF NOT EXISTS public.ambassador_posts (
 );
 
 -- 2. Crear índices
-CREATE INDEX idx_ambassador_posts_ambassador_id ON public.ambassador_posts(ambassador_id);
-CREATE INDEX idx_ambassador_posts_created_at ON public.ambassador_posts(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ambassador_posts_ambassador_id ON public.ambassador_posts(ambassador_id);
+CREATE INDEX IF NOT EXISTS idx_ambassador_posts_created_at ON public.ambassador_posts(created_at DESC);
 
 -- 3. Habilitar RLS
 ALTER TABLE public.ambassador_posts ENABLE ROW LEVEL SECURITY;
 
 -- 4. Políticas RLS
+-- El embajador puede ver y editar sus propios posts (antes de verificación)
+CREATE POLICY "Embajador ve sus propios posts" ON public.ambassador_posts
+  FOR SELECT
+  USING (ambassador_id = auth.uid());
+
 -- Cualquiera puede ver posts de embajadores verificados
-CREATE POLICY "Ver posts de embajadores verificados" ON public.ambassador_posts
+CREATE POLICY "Público ve posts verificados" ON public.ambassador_posts
   FOR SELECT
   USING (
     EXISTS (
@@ -34,15 +39,18 @@ CREATE POLICY "Ver posts de embajadores verificados" ON public.ambassador_posts
     )
   );
 
--- El embajador dueño puede crear, editar y eliminar sus propios posts
+-- El embajador dueño puede crear sus posts
 CREATE POLICY "Embajador crea sus posts" ON public.ambassador_posts
   FOR INSERT
   WITH CHECK (ambassador_id = auth.uid());
 
+-- El embajador dueño puede editar sus posts
 CREATE POLICY "Embajador edita sus posts" ON public.ambassador_posts
   FOR UPDATE
-  USING (ambassador_id = auth.uid());
+  USING (ambassador_id = auth.uid())
+  WITH CHECK (ambassador_id = auth.uid());
 
+-- El embajador dueño puede eliminar sus posts
 CREATE POLICY "Embajador elimina sus posts" ON public.ambassador_posts
   FOR DELETE
   USING (ambassador_id = auth.uid());

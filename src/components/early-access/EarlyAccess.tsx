@@ -257,6 +257,37 @@ function Onboarding({
         if (suErr && !/ya existe una cuenta/i.test(suErr)) {
           throw new Error(suErr);
         }
+
+        // Con la sesión recién creada, dejamos su PERFIL con el rol elegido
+        // (no dependemos del trigger de la base). Cada cuenta = su rol + panel.
+        try {
+          const { data: sess } = await supabase.auth.getSession();
+          const uid = sess.session?.user?.id;
+          if (uid) {
+            await supabase.from('profiles').upsert(
+              {
+                id: uid,
+                role: data.role,
+                full_name: data.nombre.trim(),
+                email: data.email.trim(),
+              },
+              { onConflict: 'id' }
+            );
+            if (data.role === 'empresa') {
+              await supabase.from('company_profiles').upsert({ id: uid }, { onConflict: 'id' });
+            } else if (data.role === 'embajador') {
+              await supabase.from('ambassador_profiles').upsert(
+                { id: uid, org_name: data.org_name || data.nombre.trim() },
+                { onConflict: 'id' }
+              );
+            } else {
+              await supabase.from('student_profiles').upsert({ id: uid }, { onConflict: 'id' });
+            }
+          }
+        } catch {
+          /* si falla, el perfil se crea igual al iniciar sesión */
+        }
+
         await signOut();
       }
 

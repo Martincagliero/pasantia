@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { useScrolled } from '../../hooks/useScrolled';
 import { NAV_LINKS, HASH_LINKS } from '../../lib/constants';
-import { Button } from '../ui/Button';
 import logo from '../../assets/logo.png';
 
 export function Navbar() {
@@ -79,19 +78,7 @@ export function Navbar() {
           ))}
         </ul>
 
-        {/* CTA desktop */}
-        <div className="hidden items-center gap-2 md:flex">
-          <Link to="/ingresar">
-            <Button variant="ghost" size="sm">
-              Ingresar
-            </Button>
-          </Link>
-          <Link to="/registro">
-            <Button size="sm">
-              Registrarse
-            </Button>
-          </Link>
-        </div>
+        {/* CTA desktop — Removed */}
 
         {/* Botón menú mobile */}
         <button
@@ -160,24 +147,7 @@ export function Navbar() {
               ))}
             </motion.nav>
 
-            {/* CTA abajo */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.35, duration: 0.4 }}
-              className="flex flex-col items-center gap-3 px-6 pb-12"
-            >
-              <Link to="/ingresar" className="w-full max-w-xs" onClick={() => setMenuOpen(false)}>
-                <Button size="lg" variant="ghost" className="w-full justify-center">
-                  Ingresar
-                </Button>
-              </Link>
-              <Link to="/registro" className="w-full max-w-xs" onClick={() => setMenuOpen(false)}>
-                <Button size="lg" className="w-full justify-center">
-                  Registrarse
-                </Button>
-              </Link>
-            </motion.div>
+            {/* CTA abajo — Removed */}
           </motion.div>
         )}
       </AnimatePresence>

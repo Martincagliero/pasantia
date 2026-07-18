@@ -3,11 +3,11 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
-import type { Internship, Modality, AmbassadorProfile } from '../../lib/database.types';
+import type { Internship, Modality, AmbassadorProfile, Community } from '../../lib/database.types';
 import { Button } from '../../components/ui/Button';
 import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { Card, PageHeader, PageLoader } from '../ui/primitives';
-import { BadgeCheck } from 'lucide-react';
+import { BadgeCheck, Users } from 'lucide-react';
 
 const emptyForm = {
   title: '',
@@ -31,6 +31,8 @@ export default function InternshipForm() {
   const [error, setError] = useState<string | null>(null);
   const [ambassadors, setAmbassadors] = useState<AmbassadorProfile[]>([]);
   const [selectedAmbassadors, setSelectedAmbassadors] = useState<string[]>([]);
+  const [communities, setCommunities] = useState<Community[]>([]);
+  const [selectedCommunities, setSelectedCommunities] = useState<string[]>([]);
 
   useEffect(() => {
     if (!editId) return;
@@ -71,6 +73,23 @@ export default function InternshipForm() {
         .eq('verified', true);
       if (!active) return;
       setAmbassadors((data as AmbassadorProfile[]) || []);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Cargar comunidades públicas de estudiantes
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from('communities')
+        .select('*')
+        .eq('is_public', true)
+        .order('name');
+      if (!active) return;
+      setCommunities((data as Community[]) || []);
     })();
     return () => {
       active = false;
@@ -127,6 +146,25 @@ export default function InternshipForm() {
 
       // Luego, insertar los nuevos
       await supabase.from('internship_broadcasts').insert(broadcasts);
+    }
+
+    // Si hay comunidades seleccionadas, crear community_internships
+    if (selectedCommunities.length > 0 && internshipId) {
+      const commInternships = selectedCommunities.map((commId) => ({
+        community_id: commId,
+        internship_id: internshipId,
+      }));
+
+      // Primero, borrar las relaciones anteriores si estamos editando
+      if (editId) {
+        await supabase
+          .from('community_internships')
+          .delete()
+          .eq('internship_id', editId);
+      }
+
+      // Luego, insertar las nuevas
+      await supabase.from('community_internships').insert(commInternships);
     }
 
     navigate('/app/mis-pasantias');
@@ -246,6 +284,52 @@ export default function InternshipForm() {
                         {amb.org_type === 'cuenta_instagram' ? amb.university : amb.org_type} •{' '}
                         {amb.reach || '?'} seguidores
                       </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Publicar en comunidades de estudiantes */}
+          {communities.length > 0 && (
+            <div className="border-t border-white/10 pt-4">
+              <h3 className="mb-3 text-sm font-semibold text-white flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Publicar en comunidades de estudiantes
+              </h3>
+              <p className="mb-3 text-xs text-white/60">
+                Seleccioná las comunidades donde se verá esta pasantía (opcional).
+              </p>
+              <div className="space-y-2">
+                {communities.map((comm) => (
+                  <label
+                    key={comm.id}
+                    className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 transition hover:border-white/20 hover:bg-white/10"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedCommunities.includes(comm.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedCommunities([...selectedCommunities, comm.id]);
+                        } else {
+                          setSelectedCommunities(
+                            selectedCommunities.filter((id) => id !== comm.id)
+                          );
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-white/30 bg-white/10 accent-white"
+                    />
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-white">{comm.name}</div>
+                      {comm.description && (
+                        <div className="text-xs text-white/50 line-clamp-1">{comm.description}</div>
+                      )}
+                    </div>
+                    <div className="text-xs text-white/40 flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {comm.members_count}
                     </div>
                   </label>
                 ))}

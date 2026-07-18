@@ -139,6 +139,31 @@ export interface AmbassadorPost {
   updated_at: string;
 }
 
+export interface Community {
+  id: string;
+  creator_id: string;
+  name: string;
+  description: string | null;
+  is_public: boolean;
+  members_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CommunityMember {
+  id: string;
+  community_id: string;
+  student_id: string;
+  joined_at: string;
+}
+
+export interface CommunityInternship {
+  id: string;
+  community_id: string;
+  internship_id: string;
+  published_at: string;
+}
+
 // --- Tipado genérico para el cliente de Supabase ---
 // Mantenido intencionalmente simple; el SDK igual funciona sin tipos exhaustivos.
 export interface Database {

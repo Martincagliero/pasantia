@@ -65,10 +65,11 @@ export function AmbassadorInternshipForm({ onClose, onCreated }: AmbassadorInter
     e.preventDefault();
     setError(null);
     setSaving(true);
+    const companyName = form.company_name.trim();
     const payload = {
       company_id: session!.user.id,
       title: form.title.trim(),
-      company_name: form.company_name.trim(),
+      company_name: companyName,
       area: form.area.trim(),
       modality: form.modality,
       location: form.location.trim() || null,
@@ -78,11 +79,26 @@ export function AmbassadorInternshipForm({ onClose, onCreated }: AmbassadorInter
       is_active: true,
     };
 
-    const result = await supabase
-      .from('internships')
-      .insert(payload)
-      .select()
-      .single();
+    let result = await supabase.from('internships').insert(payload).select().single();
+
+    // Si faltan las columnas nuevas (migración no corrida), reintentar sin ellas
+    // para que la pasantía SE PUBLIQUE igual (la empresa queda en la descripción).
+    if (
+      result.error &&
+      /company_name|image_url|column|schema cache|does not exist/i.test(result.error.message)
+    ) {
+      const fallback = {
+        company_id: session!.user.id,
+        title: payload.title,
+        area: payload.area,
+        modality: payload.modality,
+        location: payload.location,
+        description: companyName ? `Empresa: ${companyName}\n\n${payload.description}` : payload.description,
+        requirements: payload.requirements,
+        is_active: true,
+      };
+      result = await supabase.from('internships').insert(fallback).select().single();
+    }
 
     if (result.error) {
       setSaving(false);
@@ -105,7 +121,7 @@ export function AmbassadorInternshipForm({ onClose, onCreated }: AmbassadorInter
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-white/15 bg-gradient-to-b from-brand-950 to-black p-6 sm:p-8">
+      <div className="dash-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-white/15 p-6 sm:p-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-white">Publicar pasantía</h2>
           <button

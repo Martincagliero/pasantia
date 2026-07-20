@@ -188,7 +188,10 @@ input:-webkit-autofill:active {
 [data-theme='light'] .bg-brand-600,
 [data-theme='light'] .bg-brand-700,
 [data-theme='light'] .hover\:bg-brand-950:hover,
-[data-theme='light'] .hover\:bg-brand-400:hover {
+[data-theme='light'] .hover\:bg-brand-400:hover,
+[data-theme='light'] .bg-brand-500 .text-white,
+[data-theme='light'] .bg-brand-600 .text-white,
+[data-theme='light'] .bg-brand-700 .text-white {
   color: #ffffff !important;
 }
 
@@ -218,6 +221,12 @@ input:-webkit-autofill:active {
 .dash-root .text-brand-200 { color: #a9ccf2 !important; }
 .dash-root .text-brand-600,
 .dash-root .text-brand-700 { color: #0a66c2 !important; }
+
+/* En modo claro, los textos azul claro no se leen: usar azul oscuro legible. */
+.dash-root[data-theme='light'] .text-brand-300,
+.dash-root[data-theme='light'] .hover\:text-brand-300:hover,
+.dash-root[data-theme='light'] .group-hover\:text-brand-300,
+.dash-root[data-theme='light'] .text-brand-200 { color: #0a66c2 !important; }
 
 /* Estados en gris neutro (sin colores) */
 .dash-root .text-emerald-300,

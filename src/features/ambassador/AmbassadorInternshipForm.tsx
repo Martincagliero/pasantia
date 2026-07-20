@@ -102,7 +102,16 @@ export function AmbassadorInternshipForm({ onClose, onCreated }: AmbassadorInter
 
     if (result.error) {
       setSaving(false);
-      setError('No se pudo publicar la pasantía. Revisá los datos e intentá de nuevo.');
+      const msg = result.error.message || '';
+      if (/row-level security|violates|policy|permission|not authorized/i.test(msg)) {
+        setError(
+          'Tu cuenta no tiene permiso para publicar pasantías (regla de seguridad). ' +
+            'El dueño debe correr supabase/migracion-fix-rls-recursion.sql en Supabase y verificar que tu rol sea "embajador". ' +
+            'Detalle: ' + msg
+        );
+      } else {
+        setError('No se pudo publicar la pasantía. Detalle: ' + msg);
+      }
       return;
     }
 

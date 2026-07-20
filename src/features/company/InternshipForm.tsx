@@ -1,5 +1,5 @@
 // Empresa: publicar una nueva pasantía o editar una existente (?id=...).
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
@@ -7,7 +7,7 @@ import type { Internship, Modality, AmbassadorProfile } from '../../lib/database
 import { Button } from '../../components/ui/Button';
 import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { Card, PageHeader, PageLoader } from '../ui/primitives';
-import { BadgeCheck, ChevronDown, X } from 'lucide-react';
+import { BadgeCheck, ChevronDown, X, ImagePlus, Trash2 } from 'lucide-react';
 
 const emptyForm = {
   title: '',
@@ -16,6 +16,7 @@ const emptyForm = {
   location: '',
   description: '',
   requirements: '',
+  image_url: '',
   is_active: true,
 };
 
@@ -43,6 +44,7 @@ export default function InternshipForm({
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(Boolean(editId));
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ambassadors, setAmbassadors] = useState<AmbassadorProfile[]>([]);
   const [selectedAmbassadors, setSelectedAmbassadors] = useState<string[]>([]);
@@ -67,6 +69,7 @@ export default function InternshipForm({
           location: i.location ?? '',
           description: i.description,
           requirements: i.requirements ?? '',
+          image_url: i.image_url ?? '',
           is_active: i.is_active,
         });
       }
@@ -99,6 +102,33 @@ export default function InternshipForm({
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  async function handleImage(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setError(null);
+    if (!file.type.startsWith('image/')) {
+      setError('El archivo debe ser una imagen (JPG, PNG o WEBP).');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('La imagen no puede superar los 5 MB.');
+      return;
+    }
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const path = `internships/${session!.user.id}-${Date.now()}.${ext}`;
+    setUploading(true);
+    const { error: upErr } = await supabase.storage.from('cvs').upload(path, file, { upsert: true });
+    if (upErr) {
+      setError('No se pudo subir la imagen. Verificá que el bucket "cvs" exista.');
+      setUploading(false);
+      return;
+    }
+    const { data } = supabase.storage.from('cvs').getPublicUrl(path);
+    set('image_url', `${data.publicUrl}?t=${Date.now()}`);
+    setUploading(false);
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -110,16 +140,27 @@ export default function InternshipForm({
       location: form.location.trim() || null,
       description: form.description.trim(),
       requirements: form.requirements.trim() || null,
+      image_url: form.image_url.trim() || null,
       is_active: form.is_active,
     };
 
-    const result = editId
-      ? await supabase.from('internships').update(payload).eq('id', editId)
-      : await supabase
-          .from('internships')
-          .insert({ ...payload, company_id: session!.user.id })
-          .select()
-          .single();
+    async function save(pl: typeof payload | Omit<typeof payload, 'image_url'>) {
+      return editId
+        ? await supabase.from('internships').update(pl).eq('id', editId)
+        : await supabase
+            .from('internships')
+            .insert({ ...pl, company_id: session!.user.id })
+            .select()
+            .single();
+    }
+
+    let result = await save(payload);
+    // Si falta la columna image_url (migración no corrida), guardar sin ella.
+    if (result.error && /image_url|column|schema cache|does not exist/i.test(result.error.message)) {
+      const { image_url, ...rest } = payload;
+      void image_url;
+      result = await save(rest);
+    }
 
     setSaving(false);
     if (result.error) {
@@ -256,6 +297,37 @@ export default function InternshipForm({
             />
           </FormRow>
 
+          <div>
+            <label className="mb-2 block text-sm font-medium text-white/80">Imagen (opcional)</label>
+            {form.image_url ? (
+              <div className="flex items-center gap-3">
+                <div className="h-20 w-28 overflow-hidden rounded-xl border border-white/12 bg-white/5">
+                  <img src={form.image_url} alt="Pasantía" className="h-full w-full object-cover" />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => set('image_url', '')}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-white/10"
+                >
+                  <Trash2 className="h-4 w-4" /> Quitar
+                </button>
+              </div>
+            ) : (
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10">
+                <ImagePlus className="h-4 w-4" />
+                {uploading ? 'Subiendo…' : 'Subir imagen'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImage}
+                  disabled={uploading}
+                  className="hidden"
+                />
+              </label>
+            )}
+            <p className="mt-1.5 text-xs text-white/45">JPG, PNG o WEBP · máx 5 MB</p>
+          </div>
+
           {/* Difundir en embajadores verificados */}
           {ambassadors.length > 0 && (
             <div className="border-t border-white/10 pt-4">
@@ -336,7 +408,7 @@ export default function InternshipForm({
           )}
 
           <div className="flex items-center gap-3 pt-2">
-            <Button type="submit" variant="secondary" size="sm" disabled={saving}>
+            <Button type="submit" variant="secondary" size="sm" disabled={saving || uploading}>
               {saving ? 'Guardando…' : editId ? 'Guardar cambios' : 'Publicar'}
             </Button>
             <Button as="button" type="button" variant="ghost" size="sm" onClick={handleCancel}>

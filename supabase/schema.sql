@@ -73,6 +73,7 @@ alter table public.student_profiles add column if not exists location text;
 alter table public.student_profiles add column if not exists gpa text;
 alter table public.student_profiles add column if not exists transcript_url text;
 alter table public.student_profiles add column if not exists github_url text;
+alter table public.student_profiles add column if not exists instagram_url text;
 alter table public.student_profiles add column if not exists is_public boolean not null default false;
 
 -- ----------------------------------------------------------------------------

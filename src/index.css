@@ -182,6 +182,16 @@ input:-webkit-autofill:active {
   border-color: transparent;
 }
 
+/* Botones/insignias con fondo azul sólido: el texto SIEMPRE blanco en modo claro
+   (si no, text-white se remapea a tinta oscura y no se lee sobre el azul). */
+[data-theme='light'] .bg-brand-500,
+[data-theme='light'] .bg-brand-600,
+[data-theme='light'] .bg-brand-700,
+[data-theme='light'] .hover\:bg-brand-950:hover,
+[data-theme='light'] .hover\:bg-brand-400:hover {
+  color: #ffffff !important;
+}
+
 /* =============================================================================
    ESTILO MINIMALISTA DEL PANEL (solo .dash-root)
    Un único acento: azul LinkedIn #0A66C2. El resto de estados (verde/ámbar/

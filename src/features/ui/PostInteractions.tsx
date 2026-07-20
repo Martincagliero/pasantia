@@ -1,0 +1,264 @@
+// Reacciones con emojis + comentarios para publicaciones, proyectos y pasantías.
+// Visible para todos los usuarios autenticados. Degrada si faltan las tablas.
+import { useCallback, useEffect, useState } from 'react';
+import { MessageCircle, Trash2, SmilePlus, Send } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../auth/AuthProvider';
+
+export type InteractionTarget = 'post' | 'community_post' | 'internship';
+
+const EMOJIS = ['👍', '❤️', '🎉', '👏', '🔥'];
+
+interface Comment {
+  id: string;
+  user_id: string;
+  author_name: string | null;
+  content: string;
+  created_at: string;
+}
+
+function initials(name: string): string {
+  const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'U';
+  return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase();
+}
+
+function timeAgo(d: string): string {
+  try {
+    const diff = Date.now() - new Date(d).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return 'ahora';
+    if (m < 60) return `hace ${m} min`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `hace ${h} h`;
+    const days = Math.floor(h / 24);
+    if (days < 7) return `hace ${days} d`;
+    return new Date(d).toLocaleDateString('es-AR');
+  } catch {
+    return '';
+  }
+}
+
+export function PostInteractions({
+  targetType,
+  targetId,
+}: {
+  targetType: InteractionTarget;
+  targetId: string;
+}) {
+  const { session, profile } = useAuth();
+  const uid = session?.user.id;
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [myEmoji, setMyEmoji] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [showComments, setShowComments] = useState(false);
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const [{ data: reacts }, { data: cmts }] = await Promise.all([
+        supabase
+          .from('post_reactions')
+          .select('emoji, user_id')
+          .eq('target_type', targetType)
+          .eq('target_id', targetId),
+        supabase
+          .from('post_comments')
+          .select('id, user_id, author_name, content, created_at')
+          .eq('target_type', targetType)
+          .eq('target_id', targetId)
+          .order('created_at', { ascending: true }),
+      ]);
+      const c: Record<string, number> = {};
+      let mine: string | null = null;
+      for (const r of (reacts as { emoji: string; user_id: string }[]) ?? []) {
+        c[r.emoji] = (c[r.emoji] ?? 0) + 1;
+        if (r.user_id === uid) mine = r.emoji;
+      }
+      setCounts(c);
+      setMyEmoji(mine);
+      setComments((cmts as Comment[]) ?? []);
+    } catch {
+      /* tablas no creadas: degradar */
+    }
+  }, [targetType, targetId, uid]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function react(emoji: string) {
+    if (!uid) return;
+    setPickerOpen(false);
+    const prev = myEmoji;
+    // Optimista
+    setCounts((c) => {
+      const next = { ...c };
+      if (prev) next[prev] = Math.max(0, (next[prev] ?? 1) - 1);
+      if (prev !== emoji) next[emoji] = (next[emoji] ?? 0) + 1;
+      return next;
+    });
+    setMyEmoji(prev === emoji ? null : emoji);
+    try {
+      if (prev === emoji) {
+        await supabase
+          .from('post_reactions')
+          .delete()
+          .eq('target_type', targetType)
+          .eq('target_id', targetId)
+          .eq('user_id', uid);
+      } else {
+        await supabase.from('post_reactions').upsert(
+          { target_type: targetType, target_id: targetId, user_id: uid, emoji },
+          { onConflict: 'target_type,target_id,user_id' }
+        );
+      }
+    } catch (err: any) {
+      if (/post_reactions|does not exist|relation|schema cache/i.test(err?.message ?? '')) {
+        alert('Falta crear las tablas de reacciones/comentarios.\nEjecutá supabase/migracion-reacciones-comentarios.sql en Supabase.');
+      }
+      load();
+    }
+  }
+
+  async function addComment() {
+    if (!text.trim() || !uid) return;
+    setSending(true);
+    try {
+      const { error } = await supabase.from('post_comments').insert({
+        target_type: targetType,
+        target_id: targetId,
+        user_id: uid,
+        author_name: profile?.full_name ?? null,
+        content: text.trim(),
+      });
+      if (error) throw error;
+      setText('');
+      await load();
+    } catch (err: any) {
+      if (/post_comments|does not exist|relation|schema cache/i.test(err?.message ?? '')) {
+        alert('Falta crear las tablas de reacciones/comentarios.\nEjecutá supabase/migracion-reacciones-comentarios.sql en Supabase.');
+      }
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function removeComment(id: string) {
+    setComments((cs) => cs.filter((c) => c.id !== id));
+    await supabase.from('post_comments').delete().eq('id', id);
+  }
+
+  const totalReactions = Object.values(counts).reduce((s, n) => s + n, 0);
+  const activeEmojis = EMOJIS.filter((e) => (counts[e] ?? 0) > 0);
+
+  return (
+    <div className="mt-3 border-t border-white/10 pt-2.5">
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Botón reaccionar */}
+        <div className="relative">
+          <button
+            onClick={() => setPickerOpen((v) => !v)}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+              myEmoji
+                ? 'border-brand-400/40 bg-brand-500/15 text-brand-200'
+                : 'border-white/12 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            {myEmoji ? <span className="text-base leading-none">{myEmoji}</span> : <SmilePlus className="h-4 w-4" />}
+            {myEmoji ? 'Reaccionaste' : 'Reaccionar'}
+          </button>
+          {pickerOpen && (
+            <div className="absolute bottom-full left-0 z-20 mb-2 flex gap-1 rounded-full border border-white/12 bg-[#16181D] p-1.5 shadow-xl">
+              {EMOJIS.map((e) => (
+                <button
+                  key={e}
+                  onClick={() => react(e)}
+                  className={`flex h-9 w-9 items-center justify-center rounded-full text-lg transition hover:scale-125 ${
+                    myEmoji === e ? 'bg-brand-500/20' : 'hover:bg-white/10'
+                  }`}
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Resumen de reacciones */}
+        {totalReactions > 0 && (
+          <span className="inline-flex items-center gap-1 text-sm text-white/55">
+            <span className="flex -space-x-1">
+              {activeEmojis.slice(0, 3).map((e) => (
+                <span key={e} className="text-base leading-none">{e}</span>
+              ))}
+            </span>
+            {totalReactions}
+          </span>
+        )}
+
+        {/* Comentar */}
+        <button
+          onClick={() => setShowComments((v) => !v)}
+          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/5 px-3 py-1.5 text-sm font-medium text-white/70 transition hover:bg-white/10 hover:text-white"
+        >
+          <MessageCircle className="h-4 w-4" />
+          {comments.length > 0 ? comments.length : ''} Comentar
+        </button>
+      </div>
+
+      {showComments && (
+        <div className="mt-3 space-y-3">
+          {comments.map((c) => (
+            <div key={c.id} className="flex items-start gap-2.5">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-white">
+                {initials(c.author_name || 'U')}
+              </span>
+              <div className="min-w-0 flex-1 rounded-2xl bg-white/[0.04] px-3.5 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="truncate text-sm font-semibold text-white">{c.author_name || 'Usuario'}</span>
+                  <span className="text-xs text-white/40">{timeAgo(c.created_at)}</span>
+                  {c.user_id === uid && (
+                    <button
+                      onClick={() => removeComment(c.id)}
+                      className="ml-auto rounded p-1 text-white/35 transition hover:text-red-300"
+                      title="Eliminar comentario"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+                <p className="mt-0.5 whitespace-pre-wrap break-words text-sm text-white/80">{c.content}</p>
+              </div>
+            </div>
+          ))}
+
+          <div className="flex items-center gap-2">
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  addComment();
+                }
+              }}
+              placeholder="Escribí un comentario…"
+              className="min-w-0 flex-1 rounded-full border border-white/12 bg-white/5 px-3.5 py-2 text-sm text-white placeholder:text-white/35 outline-none focus:border-brand-400/60"
+            />
+            <button
+              onClick={addComment}
+              disabled={sending || !text.trim()}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500 !text-white transition hover:bg-brand-400 disabled:opacity-50"
+              aria-label="Comentar"
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

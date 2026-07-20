@@ -7,6 +7,7 @@ import type { InternshipWithCompany, Modality } from '../../lib/database.types';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
 import { Button } from '../../components/ui/Button';
 import { AmbassadorInternshipForm } from './AmbassadorInternshipForm';
+import { PostInteractions } from '../ui/PostInteractions';
 
 const modalityLabel: Record<Modality, string> = {
   presencial: 'Presencial',
@@ -215,6 +216,7 @@ export default function AmbassadorAnnouncements() {
                     Tu pasantía
                   </div>
                 )}
+                <PostInteractions targetType="internship" targetId={i.id} />
               </Card>
             );
           })}

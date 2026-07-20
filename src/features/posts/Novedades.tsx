@@ -9,6 +9,7 @@ import { Button } from '../../components/ui/Button';
 import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
 import { LinkPreview } from '../ui/LinkPreview';
+import { PostInteractions } from '../ui/PostInteractions';
 
 const CATEGORIES: { value: PostCategory; label: string }[] = [
   { value: 'novedad', label: 'Novedad' },
@@ -165,6 +166,7 @@ export default function Novedades() {
                     </a>
                   )}
                 </div>
+                <PostInteractions targetType="post" targetId={p.id} />
               </div>
             </Card>
           ))}

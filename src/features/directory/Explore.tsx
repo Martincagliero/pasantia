@@ -61,6 +61,16 @@ function safeHref(url: string | null | undefined): string | null {
   return `https://${u}`;
 }
 
+/** Normaliza un Instagram: acepta "@usuario", "usuario" o una URL completa. */
+function instaHref(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const v = value.trim();
+  if (/^https?:\/\//i.test(v)) return v;
+  const handle = v.replace(/^@/, '').replace(/^instagram\.com\//i, '');
+  if (!handle) return null;
+  return `https://instagram.com/${handle}`;
+}
+
 function Avatar({
   url,
   name,
@@ -107,14 +117,13 @@ export default function Explore() {
   useEffect(() => {
     let active = true;
     // Privacidad: qué datos del estudiante se traen según el rol de quien mira.
-    //  - Empresa: todo.  - Embajador: nombre + universidad/carrera/año + teléfono.
-    //  - Estudiante: datos básicos (sin promedio/CV/analítico ni skills/bio).
+    //  - Empresa: todo (incluye CV/analítico/promedio).
+    //  - Embajador y estudiante: perfil público completo (estudios, contacto,
+    //    redes, descripción y actividad) PERO sin CV/analítico/promedio.
+    const publicStudentCols =
+      'id, avatar_url, verified, university, career, year, area, location, phone, instagram_url, linkedin_url, github_url, portfolio_url, bio, skills, profile:profiles(full_name, email)';
     const studentSelect =
-      viewerRole === 'empresa'
-        ? '*, profile:profiles(full_name, email)'
-        : viewerRole === 'embajador'
-          ? 'id, avatar_url, verified, university, career, year, phone, profile:profiles(full_name)'
-          : 'id, avatar_url, verified, university, career, year, area, location, phone, profile:profiles(full_name, email)';
+      viewerRole === 'empresa' ? '*, profile:profiles(full_name, email)' : publicStudentCols;
     (async () => {
       const [{ data: st }, { data: co }, { data: am }] = await Promise.all([
         supabase.from('student_profiles').select(studentSelect).eq('is_public', true),
@@ -453,6 +462,16 @@ function StudentDetail({ row, onMessage }: { row: StudentRow; onMessage: (id: st
             <Phone size={16} /> {row.phone}
           </a>
         )}
+        {row.phone && (
+          <a
+            href={`https://wa.me/${row.phone.replace(/[^0-9]/g, '')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+          >
+            <MessageSquare size={16} /> WhatsApp
+          </a>
+        )}
         <ReportButton targetType="profile" targetId={row.id} variant="button" />
       </div>
 
@@ -474,9 +493,12 @@ function StudentDetail({ row, onMessage }: { row: StudentRow; onMessage: (id: st
         </Section>
       )}
 
-      {(safeHref(row.linkedin_url) || safeHref(row.github_url) || safeHref(row.portfolio_url)) && (
+      {(safeHref(row.linkedin_url) || safeHref(row.github_url) || safeHref(row.portfolio_url) || instaHref(row.instagram_url)) && (
         <Section title="Links">
           <div className="flex flex-wrap gap-3">
+            {instaHref(row.instagram_url) && (
+              <LinkChip href={instaHref(row.instagram_url)!} label="Instagram" icon={<Link2 size={15} />} />
+            )}
             {safeHref(row.linkedin_url) && (
               <LinkChip href={safeHref(row.linkedin_url)!} label="LinkedIn" icon={<Link2 size={15} />} />
             )}

@@ -30,6 +30,7 @@ import { Card, EmptyState, PageHeader, PageLoader } from '../features/ui/primiti
 import { TextArea } from '../features/ui/Field';
 import { ReportButton } from '../features/ui/ReportButton';
 import { LinkPreview } from '../features/ui/LinkPreview';
+import { PostInteractions } from '../features/ui/PostInteractions';
 
 const modalityLabel: Record<Modality, string> = {
   presencial: 'Presencial',
@@ -596,6 +597,7 @@ function PostCard({
             {post.content}
           </p>
           {url && <LinkPreview url={url} className="mt-3 max-w-full" />}
+          <PostInteractions targetType="community_post" targetId={post.id} />
         </div>
       </div>
     </Card>
@@ -650,6 +652,7 @@ function InternshipCard({
           </span>
         </div>
       </button>
+      <PostInteractions targetType="internship" targetId={i.id} />
     </Card>
   );
 }

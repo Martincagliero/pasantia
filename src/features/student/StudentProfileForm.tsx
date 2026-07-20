@@ -47,6 +47,7 @@ export default function StudentProfileForm() {
     gpa: '',
     transcript_url: '',
     github_url: '',
+    instagram_url: '',
     is_public: false,
   });
 
@@ -78,6 +79,7 @@ export default function StudentProfileForm() {
           gpa: s.gpa ?? '',
           transcript_url: s.transcript_url ?? '',
           github_url: s.github_url ?? '',
+          instagram_url: s.instagram_url ?? '',
           is_public: s.is_public ?? false,
         });
         setVerified(!!s.verified);
@@ -205,6 +207,7 @@ export default function StudentProfileForm() {
           gpa: form.gpa || null,
           transcript_url: form.transcript_url || null,
           github_url: form.github_url || null,
+          instagram_url: form.instagram_url || null,
           is_public: form.is_public,
         })
         .eq('id', uid),
@@ -375,6 +378,14 @@ export default function StudentProfileForm() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
+                <FormRow label="Instagram (opcional)" htmlFor="instagram">
+                  <TextField
+                    id="instagram"
+                    value={form.instagram_url ?? ''}
+                    onChange={(e) => set('instagram_url', e.target.value)}
+                    placeholder="@tuusuario o instagram.com/tuusuario"
+                  />
+                </FormRow>
                 <FormRow label="GitHub (opcional)" htmlFor="github">
                   <TextField
                     id="github"
@@ -590,11 +601,13 @@ export default function StudentProfileForm() {
             {linkChip(form.transcript_url, 'Analítico')}
             {linkChip(form.linkedin_url, 'LinkedIn')}
             {linkChip(form.github_url, 'GitHub')}
+            {linkChip(form.instagram_url, 'Instagram')}
             {linkChip(form.portfolio_url, 'Portfolio')}
             {!form.cv_url &&
               !form.transcript_url &&
               !form.linkedin_url &&
               !form.github_url &&
+              !form.instagram_url &&
               !form.portfolio_url && (
                 <p className="text-sm text-white/50">Todavía no agregaste links.</p>
               )}

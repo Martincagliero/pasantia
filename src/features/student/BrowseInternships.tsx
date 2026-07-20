@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { Card, EmptyState, PageLoader } from '../ui/primitives';
 import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { ReportButton } from '../ui/ReportButton';
+import { PostInteractions } from '../ui/PostInteractions';
 
 const modalityLabel: Record<Modality, string> = {
   presencial: 'Presencial',
@@ -214,6 +215,7 @@ export default function BrowseInternships() {
                     </Button>
                   )}
                 </div>
+                <PostInteractions targetType="internship" targetId={i.id} />
               </Card>
             );
           })}

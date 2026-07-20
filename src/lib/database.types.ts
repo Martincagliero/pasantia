@@ -43,6 +43,7 @@ export interface StudentProfile {
   gpa: string | null;
   transcript_url: string | null;
   github_url: string | null;
+  instagram_url: string | null;
   is_public: boolean;
 }
 

@@ -7,7 +7,7 @@ import type { Internship, Modality, AmbassadorProfile } from '../../lib/database
 import { Button } from '../../components/ui/Button';
 import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { Card, PageHeader, PageLoader } from '../ui/primitives';
-import { BadgeCheck } from 'lucide-react';
+import { BadgeCheck, ChevronDown } from 'lucide-react';
 
 const emptyForm = {
   title: '',
@@ -31,6 +31,7 @@ export default function InternshipForm() {
   const [error, setError] = useState<string | null>(null);
   const [ambassadors, setAmbassadors] = useState<AmbassadorProfile[]>([]);
   const [selectedAmbassadors, setSelectedAmbassadors] = useState<string[]>([]);
+  const [commOpen, setCommOpen] = useState(false);
 
   useEffect(() => {
     if (!editId) return;
@@ -211,49 +212,61 @@ export default function InternshipForm() {
           {/* Difundir en embajadores verificados */}
           {ambassadors.length > 0 && (
             <div className="border-t border-white/10 pt-4">
-              <h3 className="mb-3 text-sm font-semibold text-white">
-                Difundir en comunidades
-              </h3>
-              <p className="mb-3 text-xs text-white/60">
-                Seleccioná las comunidades que van a recibir un punto directo a esta pasantía.
-              </p>
-              <div className="space-y-2">
-                {ambassadors.map((amb) => (
-                  <label
-                    key={amb.id}
-                    className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 transition hover:border-white/20 hover:bg-white/10"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedAmbassadors.includes(amb.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedAmbassadors([...selectedAmbassadors, amb.id]);
-                        } else {
-                          setSelectedAmbassadors(
-                            selectedAmbassadors.filter((id) => id !== amb.id)
-                          );
-                        }
-                      }}
-                      className="h-4 w-4 rounded border-white/30 bg-white/10 accent-white"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-white">
-                          {amb.org_name}
-                        </span>
-                        {amb.verified && (
-                          <BadgeCheck className="h-4 w-4 text-sky-400" />
-                        )}
+              <button
+                type="button"
+                onClick={() => setCommOpen((v) => !v)}
+                className="flex w-full items-center justify-between gap-2 text-left"
+              >
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Difundir en comunidades</h3>
+                  <p className="mt-0.5 text-xs text-white/60">
+                    Elegí las comunidades que reciben un punto directo a esta pasantía.
+                    {selectedAmbassadors.length > 0 && ` (${selectedAmbassadors.length} seleccionada${selectedAmbassadors.length > 1 ? 's' : ''})`}
+                  </p>
+                </div>
+                <ChevronDown
+                  className={`h-5 w-5 shrink-0 text-white/50 transition-transform ${commOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {commOpen && (
+                <div className="mt-3 space-y-2">
+                  {ambassadors.map((amb) => (
+                    <label
+                      key={amb.id}
+                      className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 transition hover:border-white/20 hover:bg-white/10"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedAmbassadors.includes(amb.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedAmbassadors([...selectedAmbassadors, amb.id]);
+                          } else {
+                            setSelectedAmbassadors(
+                              selectedAmbassadors.filter((id) => id !== amb.id)
+                            );
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-white/30 bg-white/10 accent-white"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-white">
+                            {amb.org_name}
+                          </span>
+                          {amb.verified && (
+                            <BadgeCheck className="h-4 w-4 text-sky-400" />
+                          )}
+                        </div>
+                        <div className="text-xs text-white/50">
+                          {amb.org_type === 'cuenta_instagram' ? amb.university : amb.org_type} •{' '}
+                          {amb.reach || '?'} seguidores
+                        </div>
                       </div>
-                      <div className="text-xs text-white/50">
-                        {amb.org_type === 'cuenta_instagram' ? amb.university : amb.org_type} •{' '}
-                        {amb.reach || '?'} seguidores
-                      </div>
-                    </div>
-                  </label>
-                ))}
-              </div>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

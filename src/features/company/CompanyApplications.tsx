@@ -13,6 +13,7 @@ import {
   Code2,
   X,
   Download,
+  ChevronDown,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
@@ -56,6 +57,7 @@ export default function CompanyApplications() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('todas');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [selected, setSelected] = useState<Row | null>(null);
 
   useEffect(() => {
@@ -156,30 +158,47 @@ export default function CompanyApplications() {
       </div>
 
       {/* Contadores / filtros */}
-      <div className="mb-6 flex flex-wrap gap-2">
-        {filterChips.map((c) => {
-          const active = filter === c.key;
-          return (
-            <button
-              key={c.key}
-              onClick={() => setFilter(c.key)}
-              className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
-                active
-                  ? 'border-white bg-white text-brand-600'
-                  : 'border-white/15 bg-white/5 text-white/70 hover:bg-white/10'
-              }`}
-            >
-              {c.label}
-              <span
-                className={`rounded-full px-1.5 text-xs ${
-                  active ? 'bg-brand-600/15 text-brand-700' : 'bg-white/10 text-white/60'
+      <div className="mb-6">
+        {/* En mobile: desplegable */}
+        <button
+          type="button"
+          onClick={() => setFiltersOpen((v) => !v)}
+          className="mb-2 flex w-full items-center justify-between rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white sm:hidden"
+        >
+          <span>
+            Filtro: {filterChips.find((c) => c.key === filter)?.label}{' '}
+            <span className="text-white/50">({filterChips.find((c) => c.key === filter)?.count ?? 0})</span>
+          </span>
+          <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
+        </button>
+        <div className={`flex-wrap gap-2 ${filtersOpen ? 'flex' : 'hidden'} sm:flex`}>
+          {filterChips.map((c) => {
+            const active = filter === c.key;
+            return (
+              <button
+                key={c.key}
+                onClick={() => {
+                  setFilter(c.key);
+                  setFiltersOpen(false);
+                }}
+                className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+                  active
+                    ? 'border-white bg-white text-brand-600'
+                    : 'border-white/15 bg-white/5 text-white/70 hover:bg-white/10'
                 }`}
               >
-                {c.count}
-              </span>
-            </button>
-          );
-        })}
+                {c.label}
+                <span
+                  className={`rounded-full px-1.5 text-xs ${
+                    active ? 'bg-brand-600/15 text-brand-700' : 'bg-white/10 text-white/60'
+                  }`}
+                >
+                  {c.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {filtered.length === 0 ? (

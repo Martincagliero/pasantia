@@ -1,7 +1,7 @@
 // Novedades: panel compartido donde estudiantes y empresas publican
 // novedades, proyectos, búsquedas y recursos. Todos los logueados las ven.
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Plus, Trash2, Building2, GraduationCap, Mail } from 'lucide-react';
+import { Plus, Trash2, Building2, GraduationCap, Mail, ChevronDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { Post, PostCategory } from '../../lib/database.types';
@@ -42,6 +42,7 @@ export default function Novedades() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState<'todas' | PostCategory>('todas');
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -89,24 +90,37 @@ export default function Novedades() {
       />
 
       {/* Filtros por categoría */}
-      <div className="mb-6 flex flex-wrap gap-2">
-        {(['todas', ...CATEGORIES.map((c) => c.value)] as const).map((c) => {
-          const active = filter === c;
-          const label = c === 'todas' ? 'Todas' : categoryLabel[c as PostCategory];
-          return (
-            <button
-              key={c}
-              onClick={() => setFilter(c)}
-              className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
-                active
-                  ? 'border-white bg-white text-brand-600'
-                  : 'border-white/15 bg-white/5 text-white/70 hover:bg-white/10'
-              }`}
-            >
-              {label}
-            </button>
-          );
-        })}
+      <div className="mb-6">
+        <button
+          type="button"
+          onClick={() => setFiltersOpen((v) => !v)}
+          className="mb-2 flex w-full items-center justify-between rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white sm:hidden"
+        >
+          <span>Categoría: {filter === 'todas' ? 'Todas' : categoryLabel[filter]}</span>
+          <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
+        </button>
+        <div className={`flex-wrap gap-2 ${filtersOpen ? 'flex' : 'hidden'} sm:flex`}>
+          {(['todas', ...CATEGORIES.map((c) => c.value)] as const).map((c) => {
+            const active = filter === c;
+            const label = c === 'todas' ? 'Todas' : categoryLabel[c as PostCategory];
+            return (
+              <button
+                key={c}
+                onClick={() => {
+                  setFilter(c);
+                  setFiltersOpen(false);
+                }}
+                className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
+                  active
+                    ? 'border-white bg-white text-brand-600'
+                    : 'border-white/15 bg-white/5 text-white/70 hover:bg-white/10'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {filtered.length === 0 ? (

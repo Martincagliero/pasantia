@@ -228,25 +228,25 @@ export default function Explore() {
       />
 
       {/* Tabs */}
-      <div className="mb-5 flex flex-wrap gap-2">
+      <div className="mb-4 flex gap-1.5 sm:mb-5 sm:gap-2">
         {TABS.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
+            className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[13px] font-medium transition sm:flex-none sm:px-4 sm:py-2 sm:text-sm ${
               tab === key
                 ? 'border-brand-400/50 bg-brand-500/15 text-white'
                 : 'border-white/10 bg-white/[0.03] text-white/65 hover:bg-white/[0.06] hover:text-white'
             }`}
           >
-            <Icon className="h-4 w-4" />
-            {label}
+            <Icon className="h-4 w-4 shrink-0" />
+            <span className="truncate">{label}</span>
           </button>
         ))}
       </div>
 
       {/* Buscador */}
-      <div className="relative mb-6">
+      <div className="relative mb-5 sm:mb-6">
         <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/40" />
         <TextField
           value={query}
@@ -263,7 +263,7 @@ export default function Explore() {
           description="No encontramos perfiles que coincidan con tu búsqueda."
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
           {tab === 'estudiantes' &&
             filteredStudents.map((r) => (
               <ProfileCard

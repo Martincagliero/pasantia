@@ -253,7 +253,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       {children}
 
       {uid && (
-        <div className="fixed bottom-16 right-4 z-50 w-[320px] max-w-[calc(100vw-2rem)] lg:bottom-0">
+        <div className="fixed bottom-16 right-3 z-50 w-[290px] max-w-[calc(100vw-1.5rem)] sm:right-4 sm:w-[320px] lg:bottom-0">
           <div className="dash-panel overflow-hidden rounded-t-2xl border border-b-0 border-white/12 shadow-2xl shadow-black/40">
             {/* Header */}
             <button
@@ -261,7 +261,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                 setOpen((v) => !v);
                 if (!open) loadConversations();
               }}
-              className="flex w-full items-center gap-2.5 px-4 py-3 text-left"
+              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left sm:px-4 sm:py-3"
             >
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-500/15 text-brand-300">
                 <MessageSquare className="h-[18px] w-[18px]" />
@@ -283,7 +283,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
               <div className="border-t border-white/10">
                 {active ? (
                   /* ── Hilo ── */
-                  <div className="flex h-[380px] flex-col">
+                  <div className="flex h-[340px] flex-col sm:h-[380px]">
                     <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
                       <button
                         onClick={() => setActive(null)}
@@ -367,7 +367,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                   </div>
                 ) : (
                   /* ── Lista de conversaciones ── */
-                  <div className="max-h-[380px] overflow-y-auto">
+                  <div className="max-h-[340px] overflow-y-auto sm:max-h-[380px]">
                     {convos.length === 0 ? (
                       <p className="px-4 py-8 text-center text-xs text-white/45">
                         Todavía no tenés conversaciones.<br />

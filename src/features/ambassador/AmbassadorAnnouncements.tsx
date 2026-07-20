@@ -14,6 +14,30 @@ const modalityLabel: Record<Modality, string> = {
   hibrido: 'Híbrido',
 };
 
+// Trae las pasantías activas SIN depender del embed a company_profiles
+// (el embed puede fallar/ocultar filas). Junta el nombre de empresa aparte.
+async function fetchActiveInternships(): Promise<InternshipWithCompany[]> {
+  const { data: list } = await supabase
+    .from('internships')
+    .select('*')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+  const items = (list ?? []) as InternshipWithCompany[];
+  if (items.length === 0) return [];
+  const ids = Array.from(new Set(items.map((i) => i.company_id)));
+  const { data: comps } = await supabase
+    .from('company_profiles')
+    .select('id, company_name, industry')
+    .in('id', ids);
+  const map = new Map(
+    (comps as { id: string; company_name: string; industry: string | null }[] | null ?? []).map((c) => [
+      c.id,
+      { company_name: c.company_name, industry: c.industry },
+    ])
+  );
+  return items.map((i) => ({ ...i, company: map.get(i.company_id) ?? null }));
+}
+
 export default function AmbassadorAnnouncements() {
   const { session } = useAuth();
   const [items, setItems] = useState<InternshipWithCompany[]>([]);
@@ -30,19 +54,15 @@ export default function AmbassadorAnnouncements() {
     (async () => {
       try {
         const uid = session!.user.id;
-        const [{ data: list }, { data: diff }, { data: bc }, { data: prof }, { data: own }] = await Promise.all([
-          supabase
-            .from('internships')
-            .select('*, company:company_profiles(company_name, industry)')
-            .eq('is_active', true)
-            .order('created_at', { ascending: false }),
+        const [items, { data: diff }, { data: bc }, { data: prof }, { data: own }] = await Promise.all([
+          fetchActiveInternships(),
           supabase.from('internship_diffusions').select('internship_id').eq('ambassador_id', uid),
           supabase.from('internship_broadcasts').select('internship_id').eq('ambassador_id', uid),
           supabase.from('ambassador_profiles').select('verified').eq('id', uid).single(),
           supabase.from('internships').select('id').eq('company_id', uid),
         ]);
         if (!active) return;
-        setItems((list as InternshipWithCompany[]) ?? []);
+        setItems(items);
         setDiffusedIds(new Set((diff ?? []).map((d) => d.internship_id)));
         setBroadcastIds(new Set((bc ?? []).map((b) => b.internship_id)));
         setOwnIds(new Set((own ?? []).map((o) => o.id)));
@@ -87,12 +107,7 @@ export default function AmbassadorAnnouncements() {
   async function handleInternshipCreated() {
     // Recargar la lista
     const uid = session!.user.id;
-    const { data: list } = await supabase
-      .from('internships')
-      .select('*, company:company_profiles(company_name, industry)')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
-    setItems((list as InternshipWithCompany[]) ?? []);
+    setItems(await fetchActiveInternships());
     const { data: own } = await supabase.from('internships').select('id').eq('company_id', uid);
     setOwnIds(new Set((own ?? []).map((o) => o.id)));
     // La pasantía recién publicada ya cuenta como difundida (suma puntos).

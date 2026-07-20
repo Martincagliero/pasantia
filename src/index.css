@@ -177,9 +177,9 @@ input:-webkit-autofill:active {
    (botones primarios, chips activos, "Enviar mensaje", etc. no quedan blanco sobre blanco) */
 [data-theme='light'] .bg-white.text-brand-600,
 [data-theme='light'] .bg-white.text-brand-700 {
-  background-color: #0a66c2;
-  color: #ffffff;
-  border-color: transparent;
+  background-color: #0a66c2 !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
 }
 
 /* Botones/insignias con fondo azul sólido: el texto SIEMPRE blanco en modo claro

@@ -16,6 +16,29 @@ const modalityLabel: Record<Modality, string> = {
   hibrido: 'Híbrido',
 };
 
+// Trae las pasantías activas SIN depender del embed a company_profiles.
+async function fetchActiveInternships(): Promise<InternshipWithCompany[]> {
+  const { data: list } = await supabase
+    .from('internships')
+    .select('*')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+  const items = (list ?? []) as InternshipWithCompany[];
+  if (items.length === 0) return [];
+  const ids = Array.from(new Set(items.map((i) => i.company_id)));
+  const { data: comps } = await supabase
+    .from('company_profiles')
+    .select('id, company_name, industry')
+    .in('id', ids);
+  const map = new Map(
+    (comps as { id: string; company_name: string; industry: string | null }[] | null ?? []).map((c) => [
+      c.id,
+      { company_name: c.company_name, industry: c.industry },
+    ])
+  );
+  return items.map((i) => ({ ...i, company: map.get(i.company_id) ?? null }));
+}
+
 export default function BrowseInternships() {
   const { session, profile } = useAuth();
   const [internships, setInternships] = useState<InternshipWithCompany[]>([]);
@@ -30,17 +53,13 @@ export default function BrowseInternships() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const [{ data: list }, { data: apps }, { data: saved }] = await Promise.all([
-        supabase
-          .from('internships')
-          .select('*, company:company_profiles(company_name, industry)')
-          .eq('is_active', true)
-          .order('created_at', { ascending: false }),
+      const [items, { data: apps }, { data: saved }] = await Promise.all([
+        fetchActiveInternships(),
         supabase.from('applications').select('internship_id').eq('student_id', session!.user.id),
         supabase.from('saved_internships').select('internship_id').eq('student_id', session!.user.id),
       ]);
       if (!active) return;
-      setInternships((list as InternshipWithCompany[]) ?? []);
+      setInternships(items);
       setAppliedIds(new Set((apps ?? []).map((a) => a.internship_id)));
       setSavedIds(new Set((saved ?? []).map((s) => s.internship_id)));
       setLoading(false);

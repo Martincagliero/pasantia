@@ -272,7 +272,7 @@ export default function CompanyApplications() {
                   >
                     {STATUS_ORDER.map((s) => (
                       <option key={s} value={s}>
-                        {STATUS_META[s].emoji} {STATUS_META[s].label}
+                        {STATUS_META[s].label}
                       </option>
                     ))}
                   </SelectField>
@@ -455,7 +455,7 @@ function CandidateModal({
           <SelectField value={st} onChange={(e) => onStatus(e.target.value as AppStatus)}>
             {STATUS_ORDER.map((s) => (
               <option key={s} value={s}>
-                {STATUS_META[s].emoji} {STATUS_META[s].label}
+                {STATUS_META[s].label}
               </option>
             ))}
           </SelectField>

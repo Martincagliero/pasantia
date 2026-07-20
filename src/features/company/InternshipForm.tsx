@@ -147,7 +147,7 @@ export default function InternshipForm() {
       />
 
       <Card>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <FormRow label="Título" htmlFor="title">
             <TextField
               id="title"
@@ -158,7 +158,7 @@ export default function InternshipForm() {
             />
           </FormRow>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             <FormRow label="Área" htmlFor="area">
               <TextField
                 id="area"
@@ -194,18 +194,22 @@ export default function InternshipForm() {
             <TextArea
               id="description"
               required
+              rows={3}
               value={form.description}
               onChange={(e) => set('description', e.target.value)}
               placeholder="Tareas, objetivos y qué se espera del pasante."
+              className="min-h-[70px]"
             />
           </FormRow>
 
           <FormRow label="Requisitos (opcional)" htmlFor="requirements">
             <TextArea
               id="requirements"
+              rows={2}
               value={form.requirements}
               onChange={(e) => set('requirements', e.target.value)}
               placeholder="Conocimientos, año de cursada, habilidades deseadas."
+              className="min-h-[56px]"
             />
           </FormRow>
 

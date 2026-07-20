@@ -15,15 +15,34 @@ export default function MyApplications() {
   useEffect(() => {
     let active = true;
     (async () => {
+      // internship por FK directa (confiable); la empresa se junta aparte (robusto).
       const { data } = await supabase
         .from('applications')
-        .select(
-          '*, internship:internships(*, company:company_profiles(company_name, industry))'
-        )
+        .select('*, internship:internships(*)')
         .eq('student_id', session!.user.id)
         .order('created_at', { ascending: false });
       if (!active) return;
-      setApps((data as ApplicationWithInternship[]) ?? []);
+      const rows = (data as ApplicationWithInternship[]) ?? [];
+      const companyIds = Array.from(
+        new Set(rows.map((r) => r.internship?.company_id).filter((x): x is string => Boolean(x)))
+      );
+      if (companyIds.length > 0) {
+        const { data: comps } = await supabase
+          .from('company_profiles')
+          .select('id, company_name, industry')
+          .in('id', companyIds);
+        const cmap = new Map(
+          (comps as { id: string; company_name: string | null; industry: string | null }[] | null ?? []).map((c) => [
+            c.id,
+            { company_name: c.company_name, industry: c.industry },
+          ])
+        );
+        rows.forEach((r) => {
+          if (r.internship) r.internship.company = cmap.get(r.internship.company_id) ?? null;
+        });
+      }
+      if (!active) return;
+      setApps(rows);
       setLoading(false);
     })();
     return () => {

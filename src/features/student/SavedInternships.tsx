@@ -14,10 +14,6 @@ const modalityLabel: Record<Modality, string> = {
   hibrido: 'Híbrido',
 };
 
-interface SavedRow {
-  internship: InternshipWithCompany | null;
-}
-
 export default function SavedInternships() {
   const { session } = useAuth();
   const [items, setItems] = useState<InternshipWithCompany[]>([]);
@@ -32,15 +28,37 @@ export default function SavedInternships() {
       const [{ data: saved }, { data: apps }] = await Promise.all([
         supabase
           .from('saved_internships')
-          .select('internship:internships(*, company:company_profiles(company_name, industry))')
+          .select('internship_id')
           .eq('student_id', uid)
           .order('created_at', { ascending: false }),
         supabase.from('applications').select('internship_id').eq('student_id', uid),
       ]);
       if (!active) return;
-      const list = ((saved as unknown as SavedRow[]) ?? [])
-        .map((r) => r.internship)
-        .filter((i): i is InternshipWithCompany => Boolean(i));
+
+      const savedIds = (saved ?? []).map((s) => s.internship_id);
+      let list: InternshipWithCompany[] = [];
+      if (savedIds.length > 0) {
+        // Sin embed: traemos las pasantías y juntamos la empresa aparte (robusto).
+        const { data: ints } = await supabase.from('internships').select('*').in('id', savedIds);
+        const items = (ints ?? []) as InternshipWithCompany[];
+        const companyIds = Array.from(new Set(items.map((i) => i.company_id)));
+        const { data: comps } = await supabase
+          .from('company_profiles')
+          .select('id, company_name, industry')
+          .in('id', companyIds);
+        const cmap = new Map(
+          (comps as { id: string; company_name: string | null; industry: string | null }[] | null ?? []).map((c) => [
+            c.id,
+            { company_name: c.company_name, industry: c.industry },
+          ])
+        );
+        const byId = new Map(items.map((i) => [i.id, { ...i, company: cmap.get(i.company_id) ?? null }]));
+        // Respetar el orden en que se guardaron.
+        list = savedIds
+          .map((id) => byId.get(id))
+          .filter((i): i is InternshipWithCompany => Boolean(i));
+      }
+      if (!active) return;
       setItems(list);
       setAppliedIds(new Set((apps ?? []).map((a) => a.internship_id)));
       setLoading(false);

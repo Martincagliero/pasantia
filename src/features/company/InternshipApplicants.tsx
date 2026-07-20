@@ -27,6 +27,22 @@ function studentDetails(s: ApplicantRow['student']): StudentProfile | null {
   return Array.isArray(s.student_profiles) ? s.student_profiles[0] ?? null : s.student_profiles;
 }
 
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'U';
+  return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase();
+}
+
+function Avatar({ url, name, className = '' }: { url?: string | null; name: string; className?: string }) {
+  return url ? (
+    <img src={url} alt={name} loading="lazy" className={`${className} shrink-0 rounded-2xl border border-white/12 object-cover`} />
+  ) : (
+    <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-white/10 font-bold text-white`}>
+      {initials(name)}
+    </div>
+  );
+}
+
 export default function InternshipApplicants() {
   const { id } = useParams<{ id: string }>();
   const [title, setTitle] = useState('');
@@ -96,6 +112,11 @@ export default function InternshipApplicants() {
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
+                      <Avatar
+                        url={d?.avatar_url}
+                        name={r.student?.full_name || 'Estudiante'}
+                        className="h-10 w-10 text-xs"
+                      />
                       <h3 className="text-lg font-semibold text-white">
                         {r.student?.full_name || 'Estudiante'}
                       </h3>

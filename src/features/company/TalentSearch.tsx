@@ -11,6 +11,22 @@ interface TalentRow extends StudentProfile {
   profile: { full_name: string; email: string } | null;
 }
 
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'U';
+  return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase();
+}
+
+function Avatar({ url, name, className = '' }: { url?: string | null; name: string; className?: string }) {
+  return url ? (
+    <img src={url} alt={name} loading="lazy" className={`${className} shrink-0 rounded-2xl border border-white/12 object-cover`} />
+  ) : (
+    <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-white/10 font-bold text-white`}>
+      {initials(name)}
+    </div>
+  );
+}
+
 export default function TalentSearch() {
   const [rows, setRows] = useState<TalentRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,15 +120,22 @@ export default function TalentSearch() {
             >
               <Card className="h-full cursor-pointer hover:border-white/30">
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">
-                      {r.profile?.full_name || 'Estudiante'}
-                    </h3>
-                    {(r.career || r.university) && (
-                      <p className="mt-0.5 text-sm text-white/55">
-                        {[r.career, r.university, r.year].filter(Boolean).join(' · ')}
-                      </p>
-                    )}
+                  <div className="flex items-start gap-3">
+                    <Avatar
+                      url={r.avatar_url}
+                      name={r.profile?.full_name || 'Estudiante'}
+                      className="h-11 w-11 text-sm"
+                    />
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-semibold text-white">
+                        {r.profile?.full_name || 'Estudiante'}
+                      </h3>
+                      {(r.career || r.university) && (
+                        <p className="mt-0.5 text-sm text-white/55">
+                          {[r.career, r.university, r.year].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                    </div>
                   </div>
                   {r.area && (
                     <span className="shrink-0 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/70">
@@ -166,11 +189,17 @@ export default function TalentSearch() {
             </button>
 
             {/* Header */}
-            <div className="mb-5">
-              <h2 className="text-2xl font-bold text-white">
-                {selected.profile?.full_name || 'Estudiante'}
-              </h2>
-              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-white/60">
+            <div className="mb-5 flex items-start gap-4">
+              <Avatar
+                url={selected.avatar_url}
+                name={selected.profile?.full_name || 'Estudiante'}
+                className="h-14 w-14 text-lg"
+              />
+              <div className="min-w-0">
+                <h2 className="text-2xl font-bold text-white">
+                  {selected.profile?.full_name || 'Estudiante'}
+                </h2>
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-white/60">
                 {(selected.career || selected.university) && (
                   <span className="inline-flex items-center gap-1.5">
                     <GraduationCap size={15} />
@@ -187,6 +216,7 @@ export default function TalentSearch() {
                     <Calendar size={15} /> {selected.availability}
                   </span>
                 )}
+                </div>
               </div>
             </div>
 

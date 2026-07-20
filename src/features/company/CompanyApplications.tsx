@@ -49,6 +49,21 @@ function initials(name: string): string {
   return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase();
 }
 
+function Avatar({ url, name, className = '' }: { url?: string | null; name: string; className?: string }) {
+  return url ? (
+    <img
+      src={url}
+      alt={name}
+      loading="lazy"
+      className={`${className} shrink-0 rounded-2xl border border-white/12 object-cover`}
+    />
+  ) : (
+    <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-white/10 font-bold text-white`}>
+      {initials(name)}
+    </div>
+  );
+}
+
 type Filter = 'todas' | 'favoritos' | AppStatus;
 
 export default function CompanyApplications() {
@@ -219,9 +234,11 @@ export default function CompanyApplications() {
             return (
               <Card key={r.id} hover className="group flex flex-col">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-sm font-bold text-white">
-                    {initials(r.student?.full_name || '')}
-                  </div>
+                  <Avatar
+                    url={details(r.student)?.avatar_url}
+                    name={r.student?.full_name || ''}
+                    className="h-11 w-11 text-sm"
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="truncate font-semibold text-white">
@@ -345,9 +362,11 @@ function CandidateModal({
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-base font-bold text-white">
-              {initials(row.student?.full_name || '')}
-            </div>
+            <Avatar
+              url={details(row.student)?.avatar_url}
+              name={row.student?.full_name || ''}
+              className="h-12 w-12 text-base"
+            />
             <div>
               <h2 className="text-xl font-bold text-white">{row.student?.full_name || 'Estudiante'}</h2>
               <p className="text-sm text-white/50">{[d?.career, d?.university].filter(Boolean).join(' · ')}</p>

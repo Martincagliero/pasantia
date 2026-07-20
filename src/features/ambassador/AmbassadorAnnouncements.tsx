@@ -5,7 +5,6 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { InternshipWithCompany, Modality } from '../../lib/database.types';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
-import { Button } from '../../components/ui/Button';
 import { AmbassadorInternshipForm } from './AmbassadorInternshipForm';
 import { PostInteractions } from '../ui/PostInteractions';
 
@@ -112,10 +111,13 @@ export default function AmbassadorAnnouncements() {
         title="Pasantías para difundir"
         description="Compartí estas oportunidades con tu comunidad y sumá puntos."
         action={
-          <Button as="button" variant="secondary" size="sm" onClick={() => setShowForm(true)}>
+          <button
+            onClick={() => setShowForm(true)}
+            className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold !text-white shadow-sm transition hover:bg-brand-400"
+          >
             <Plus className="h-4 w-4" />
             Publicar pasantía
-          </Button>
+          </button>
         }
       />
 

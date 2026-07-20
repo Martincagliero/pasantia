@@ -7,7 +7,7 @@ import type { Internship, Modality, AmbassadorProfile } from '../../lib/database
 import { Button } from '../../components/ui/Button';
 import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { Card, PageHeader, PageLoader } from '../ui/primitives';
-import { BadgeCheck, ChevronDown } from 'lucide-react';
+import { BadgeCheck, ChevronDown, X } from 'lucide-react';
 
 const emptyForm = {
   title: '',
@@ -19,11 +19,26 @@ const emptyForm = {
   is_active: true,
 };
 
-export default function InternshipForm() {
+export default function InternshipForm({
+  editId: editIdProp,
+  asModal,
+  onDone,
+  onCancel,
+}: {
+  editId?: string | null;
+  asModal?: boolean;
+  onDone?: () => void;
+  onCancel?: () => void;
+} = {}) {
   const { session } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const editId = params.get('id');
+  const editId = editIdProp !== undefined ? editIdProp : params.get('id');
+
+  function handleCancel() {
+    if (onCancel) onCancel();
+    else navigate(-1);
+  }
 
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(Boolean(editId));
@@ -132,22 +147,50 @@ export default function InternshipForm() {
       await supabase.from('internship_broadcasts').insert(broadcasts);
     }
 
-
-
-    navigate('/app/mis-pasantias');
+    if (onDone) onDone();
+    else navigate('/app/mis-pasantias');
   }
 
   if (loading) return <PageLoader />;
 
   return (
-    <div className="max-w-2xl">
-      <PageHeader
-        title={editId ? 'Editar pasantía' : 'Publicar pasantía'}
-        description="Describí la oportunidad para atraer a los mejores candidatos."
-      />
+    <div
+      className={asModal ? 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4' : 'max-w-2xl'}
+      onClick={asModal ? handleCancel : undefined}
+    >
+      {!asModal && (
+        <PageHeader
+          title={editId ? 'Editar pasantía' : 'Publicar pasantía'}
+          description="Describí la oportunidad para atraer a los mejores candidatos."
+        />
+      )}
 
-      <Card>
-        <form onSubmit={handleSubmit} className="space-y-3">
+      <div
+        className={asModal ? 'w-full max-w-2xl' : 'contents'}
+        onClick={asModal ? (e) => e.stopPropagation() : undefined}
+      >
+        <Card className={asModal ? 'max-h-[85vh] overflow-y-auto' : ''}>
+          {asModal && (
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-white">
+                  {editId ? 'Editar pasantía' : 'Publicar pasantía'}
+                </h2>
+                <p className="mt-0.5 text-sm text-white/60">
+                  Describí la oportunidad para atraer a los mejores candidatos.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="rounded-full p-1.5 text-white/50 transition hover:bg-white/10 hover:text-white"
+                aria-label="Cerrar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-3">
           <FormRow label="Título" htmlFor="title">
             <TextField
               id="title"
@@ -296,12 +339,13 @@ export default function InternshipForm() {
             <Button type="submit" variant="secondary" size="sm" disabled={saving}>
               {saving ? 'Guardando…' : editId ? 'Guardar cambios' : 'Publicar'}
             </Button>
-            <Button as="button" type="button" variant="ghost" size="sm" onClick={() => navigate(-1)}>
+            <Button as="button" type="button" variant="ghost" size="sm" onClick={handleCancel}>
               Cancelar
             </Button>
           </div>
         </form>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

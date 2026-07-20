@@ -1,12 +1,13 @@
 // Empresa: lista sus pasantías, con acciones de activar/pausar, editar, ver postulantes.
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Users, Pencil, Trash2, Eye, EyeOff, Plus } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { Internship, Modality } from '../../lib/database.types';
 import { Button } from '../../components/ui/Button';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
+import InternshipForm from './InternshipForm';
 
 const modalityLabel: Record<Modality, string> = {
   presencial: 'Presencial',
@@ -22,23 +23,32 @@ export default function MyInternships() {
   const { session } = useAuth();
   const [items, setItems] = useState<InternshipWithCount[]>([]);
   const [loading, setLoading] = useState(true);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    const { data } = await supabase
+      .from('internships')
+      .select('*, applications(count)')
+      .eq('company_id', session!.user.id)
+      .order('created_at', { ascending: false });
+    setItems((data as InternshipWithCount[]) ?? []);
+    setLoading(false);
+  }, [session]);
 
   useEffect(() => {
-    let active = true;
-    (async () => {
-      const { data } = await supabase
-        .from('internships')
-        .select('*, applications(count)')
-        .eq('company_id', session!.user.id)
-        .order('created_at', { ascending: false });
-      if (!active) return;
-      setItems((data as InternshipWithCount[]) ?? []);
-      setLoading(false);
-    })();
-    return () => {
-      active = false;
-    };
-  }, [session]);
+    load();
+  }, [load]);
+
+  function openNew() {
+    setEditingId(null);
+    setFormOpen(true);
+  }
+
+  function openEdit(id: string) {
+    setEditingId(id);
+    setFormOpen(true);
+  }
 
   async function toggleActive(item: InternshipWithCount) {
     const { error } = await supabase
@@ -67,19 +77,32 @@ export default function MyInternships() {
         title="Mis pasantías"
         description="Gestioná tus publicaciones y revisá los postulantes."
         action={
-          <Button as="link" to="/app/publicar" variant="secondary" size="sm">
-            Publicar pasantía
+          <Button as="button" variant="secondary" size="sm" onClick={openNew}>
+            <Plus className="h-4 w-4" /> Publicar pasantía
           </Button>
         }
       />
+
+      {formOpen && (
+        <InternshipForm
+          asModal
+          editId={editingId}
+          onCancel={() => setFormOpen(false)}
+          onDone={() => {
+            setFormOpen(false);
+            setLoading(true);
+            load();
+          }}
+        />
+      )}
 
       {items.length === 0 ? (
         <EmptyState
           title="Todavía no publicaste pasantías"
           description="Creá tu primera oferta y empezá a recibir postulaciones."
           action={
-            <Button as="link" to="/app/publicar" variant="secondary" size="sm">
-              Publicar pasantía
+            <Button as="button" variant="secondary" size="sm" onClick={openNew}>
+              <Plus className="h-4 w-4" /> Publicar pasantía
             </Button>
           }
         />
@@ -129,13 +152,13 @@ export default function MyInternships() {
                   >
                     {i.is_active ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
-                  <Link
-                    to={`/app/publicar?id=${i.id}`}
+                  <button
+                    onClick={() => openEdit(i.id)}
                     className="rounded-xl p-2 text-white/60 transition hover:bg-white/10 hover:text-white"
                     title="Editar"
                   >
                     <Pencil className="h-4 w-4" />
-                  </Link>
+                  </button>
                   <button
                     onClick={() => remove(i.id)}
                     className="rounded-xl p-2 text-white/60 transition hover:bg-white/10 hover:text-red-300"

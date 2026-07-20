@@ -7,7 +7,6 @@ import {
   Send,
   UserRound,
   Briefcase,
-  PlusCircle,
   Inbox,
   LayoutDashboard,
   Newspaper,
@@ -46,7 +45,6 @@ const studentNav: NavItem[] = [
 const companyNav: NavItem[] = [
   { to: '/app/inicio', label: 'Resumen', icon: LayoutDashboard },
   { to: '/app/mis-pasantias', label: 'Mis pasantías', icon: Briefcase },
-  { to: '/app/publicar', label: 'Publicar pasantía', icon: PlusCircle },
   { to: '/app/postulaciones-recibidas', label: 'Postulaciones', icon: Inbox },
   { to: '/app/talento', label: 'Buscar talento', icon: Users },
   { to: '/app/explorar', label: 'Explorar perfiles', icon: Compass },

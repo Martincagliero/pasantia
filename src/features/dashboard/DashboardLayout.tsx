@@ -24,6 +24,7 @@ import type { LucideIcon } from 'lucide-react';
 import logo from '../../assets/logo.png';
 import { useAuth } from '../auth/AuthProvider';
 import { MessagesProvider } from '../messages/MessagesProvider';
+import { supabase } from '../../lib/supabase';
 
 interface NavItem {
   to: string;
@@ -92,7 +93,35 @@ export function DashboardLayout() {
 
   const [accountOpen, setAccountOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const accountRef = useRef<HTMLDivElement>(null);
+
+  // Carga la foto de perfil del usuario según su rol (avatar_url para
+  // estudiante/empresa, logo_url para embajador) para mostrarla en el círculo.
+  useEffect(() => {
+    const uid = profile?.id;
+    if (!uid) {
+      setAvatarUrl(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const table =
+        role === 'empresa'
+          ? 'company_profiles'
+          : role === 'embajador'
+            ? 'ambassador_profiles'
+            : 'student_profiles';
+      const column = role === 'embajador' ? 'logo_url' : 'avatar_url';
+      const { data } = await supabase.from(table).select(column).eq('id', uid).maybeSingle();
+      if (cancelled) return;
+      const url = (data as Record<string, string | null> | null)?.[column] ?? null;
+      setAvatarUrl(url);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.id, role]);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -177,8 +206,18 @@ export function DashboardLayout() {
                   className="flex items-center gap-1.5 rounded-full py-1 pl-1 pr-1.5 transition hover:bg-white/10"
                   aria-label="Cuenta"
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-xs font-bold text-white">
-                    {initials(profile?.full_name || '')}
+                  <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-white/15 text-xs font-bold text-white">
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={profile?.full_name || 'Perfil'}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      initials(profile?.full_name || '')
+                    )}
                   </span>
                   <ChevronDown className="hidden h-4 w-4 text-white/50 sm:block" />
                 </button>

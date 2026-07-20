@@ -1,9 +1,10 @@
 // Lista las publicaciones de Novedades de un usuario (para su propio perfil o el de otros).
 import { useEffect, useState } from 'react';
-import { Link2, Newspaper } from 'lucide-react';
+import { Newspaper } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Post, PostCategory } from '../../lib/database.types';
 import { Card } from '../ui/primitives';
+import { LinkPreview } from '../ui/LinkPreview';
 
 const CATEGORY_LABEL: Record<PostCategory, string> = {
   novedad: 'Novedad',
@@ -85,16 +86,7 @@ export function UserPosts({
                 </div>
                 <h4 className="font-medium text-white">{p.title}</h4>
                 {p.body && <p className="mt-1 line-clamp-3 text-sm text-white/65">{p.body}</p>}
-                {url && (
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-flex items-center gap-1.5 text-sm text-brand-300 hover:underline"
-                  >
-                    <Link2 className="h-3.5 w-3.5" /> Ver link
-                  </a>
-                )}
+                {url && <LinkPreview url={url} className="mt-2" />}
               </div>
             );
           })}

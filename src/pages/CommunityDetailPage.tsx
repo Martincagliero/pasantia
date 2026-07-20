@@ -29,6 +29,7 @@ import { Button } from '../components/ui/Button';
 import { Card, EmptyState, PageHeader, PageLoader } from '../features/ui/primitives';
 import { TextArea } from '../features/ui/Field';
 import { ReportButton } from '../features/ui/ReportButton';
+import { LinkPreview } from '../features/ui/LinkPreview';
 
 const modalityLabel: Record<Modality, string> = {
   presencial: 'Presencial',
@@ -594,17 +595,7 @@ function PostCard({
           <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-white/85">
             {post.content}
           </p>
-          {url && (
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 inline-flex max-w-full items-center gap-2 rounded-xl border border-white/12 bg-white/[0.03] px-3.5 py-2 text-sm text-brand-300 transition hover:bg-white/[0.06]"
-            >
-              <Link2 className="h-4 w-4 shrink-0" />
-              <span className="truncate">{url}</span>
-            </a>
-          )}
+          {url && <LinkPreview url={url} className="mt-3 max-w-full" />}
         </div>
       </div>
     </Card>

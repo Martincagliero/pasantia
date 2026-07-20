@@ -87,11 +87,21 @@ input:-webkit-autofill:active {
   --dash-bg: #0c0e12;
   --dash-ink: #ffffff;
   --dash-panel: #14161d;
+  --accent-text: #3d8fe0;
+  --neu-text: rgb(255 255 255 / 0.72);
+  --neu-bg: rgb(255 255 255 / 0.08);
+  --neu-bg-faint: rgb(255 255 255 / 0.04);
+  --neu-border: rgb(255 255 255 / 0.12);
 }
 .dash-root[data-theme='light'] {
   --dash-bg: #eef1f5;
   --dash-ink: #0f172a;
   --dash-panel: #ffffff;
+  --accent-text: #0a66c2;
+  --neu-text: rgb(15 23 42 / 0.7);
+  --neu-bg: rgb(15 23 42 / 0.06);
+  --neu-bg-faint: rgb(15 23 42 / 0.04);
+  --neu-border: rgb(15 23 42 / 0.12);
 }
 .dash-panel {
   background-color: var(--dash-panel);
@@ -167,10 +177,69 @@ input:-webkit-autofill:active {
    (botones primarios, chips activos, "Enviar mensaje", etc. no quedan blanco sobre blanco) */
 [data-theme='light'] .bg-white.text-brand-600,
 [data-theme='light'] .bg-white.text-brand-700 {
-  background-color: #0148fd;
+  background-color: #0a66c2;
   color: #ffffff;
   border-color: transparent;
 }
+
+/* =============================================================================
+   ESTILO MINIMALISTA DEL PANEL (solo .dash-root)
+   Un único acento: azul LinkedIn #0A66C2. El resto de estados (verde/ámbar/
+   violeta/celeste) se muestran en gris neutro. No afecta login ni landing.
+   ============================================================================= */
+.dash-root .bg-brand-500 { background-color: #0a66c2 !important; }
+.dash-root .bg-brand-400 { background-color: #2178cf !important; }
+.dash-root .hover\:bg-brand-400:hover { background-color: #004182 !important; }
+.dash-root .bg-brand-500\/15,
+.dash-root .bg-brand-400\/15,
+.dash-root .bg-brand-600\/15 { background-color: rgb(10 102 194 / 0.14) !important; }
+.dash-root .bg-brand-500\/20,
+.dash-root .bg-brand-600\/20 { background-color: rgb(10 102 194 / 0.16) !important; }
+.dash-root .border-brand-400,
+.dash-root .border-brand-400\/50,
+.dash-root .border-brand-400\/60,
+.dash-root .border-brand-300\/30,
+.dash-root .border-brand-300\/50 { border-color: #0a66c2 !important; }
+.dash-root .text-brand-500,
+.dash-root .text-brand-400 { color: var(--accent-text) !important; }
+.dash-root .text-brand-300,
+.dash-root .hover\:text-brand-300:hover,
+.dash-root .group-hover\:text-brand-300 { color: #7fb2ec !important; }
+.dash-root .text-brand-200 { color: #a9ccf2 !important; }
+.dash-root .text-brand-600,
+.dash-root .text-brand-700 { color: #0a66c2 !important; }
+
+/* Estados en gris neutro (sin colores) */
+.dash-root .text-emerald-300,
+.dash-root .text-emerald-200,
+.dash-root .text-emerald-300\/70,
+.dash-root .text-amber-300,
+.dash-root .text-amber-200,
+.dash-root .text-amber-100\/90,
+.dash-root .text-amber-300\/70,
+.dash-root .text-amber-600,
+.dash-root .text-violet-300,
+.dash-root .text-violet-200,
+.dash-root .text-sky-300,
+.dash-root .text-sky-200,
+.dash-root .text-sky-400 { color: var(--neu-text) !important; }
+.dash-root .bg-emerald-400\/15,
+.dash-root .bg-amber-400\/15,
+.dash-root .bg-amber-400\/20,
+.dash-root .bg-violet-400\/15,
+.dash-root .bg-violet-500\/20,
+.dash-root .bg-sky-400\/15,
+.dash-root .bg-sky-500\/20 { background-color: var(--neu-bg) !important; }
+.dash-root .bg-emerald-400\/\[0\.07\],
+.dash-root .bg-amber-400\/\[0\.07\],
+.dash-root .bg-amber-300\/\[0\.06\] { background-color: var(--neu-bg-faint) !important; }
+.dash-root .border-emerald-300\/30,
+.dash-root .border-emerald-400\/20,
+.dash-root .border-amber-300\/25,
+.dash-root .border-amber-300\/30,
+.dash-root .border-amber-500\/40,
+.dash-root .border-violet-300\/30,
+.dash-root .border-sky-300\/30 { border-color: var(--neu-border) !important; }
 
 /* Respeto de prefers-reduced-motion: cortar animaciones no esenciales */
 @media (prefers-reduced-motion: reduce) {

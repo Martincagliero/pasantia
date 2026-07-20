@@ -1,13 +1,14 @@
 // Novedades: panel compartido donde estudiantes y empresas publican
 // novedades, proyectos, búsquedas y recursos. Todos los logueados las ven.
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Plus, Trash2, ExternalLink, Building2, GraduationCap, Mail } from 'lucide-react';
+import { Plus, Trash2, Building2, GraduationCap, Mail } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { Post, PostCategory } from '../../lib/database.types';
 import { Button } from '../../components/ui/Button';
 import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
+import { LinkPreview } from '../ui/LinkPreview';
 
 const CATEGORIES: { value: PostCategory; label: string }[] = [
   { value: 'novedad', label: 'Novedad' },
@@ -17,10 +18,10 @@ const CATEGORIES: { value: PostCategory; label: string }[] = [
 ];
 
 const categoryStyle: Record<PostCategory, string> = {
-  novedad: 'border-sky-300/30 bg-sky-400/15 text-sky-200',
-  proyecto: 'border-violet-300/30 bg-violet-400/15 text-violet-200',
-  busqueda: 'border-amber-300/30 bg-amber-400/15 text-amber-200',
-  recurso: 'border-emerald-300/30 bg-emerald-400/15 text-emerald-200',
+  novedad: 'border-white/12 bg-white/5 text-white/70',
+  proyecto: 'border-white/12 bg-white/5 text-white/70',
+  busqueda: 'border-white/12 bg-white/5 text-white/70',
+  recurso: 'border-white/12 bg-white/5 text-white/70',
 };
 
 const categoryLabel: Record<PostCategory, string> = {
@@ -141,16 +142,7 @@ export default function Novedades() {
               <h3 className="text-lg font-semibold leading-snug text-white">{p.title}</h3>
               <p className="mt-2 whitespace-pre-line text-sm text-white/70">{p.body}</p>
 
-              {p.link_url && (
-                <a
-                  href={p.link_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-3 inline-flex items-center gap-2 text-sm text-white/80 hover:text-white"
-                >
-                  <ExternalLink className="h-4 w-4" /> Ver más
-                </a>
-              )}
+              {p.link_url && <LinkPreview url={p.link_url} className="mt-3" />}
 
               <div className="mt-auto">
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-3">

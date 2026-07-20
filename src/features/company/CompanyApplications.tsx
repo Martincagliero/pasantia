@@ -19,7 +19,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { StudentProfile } from '../../lib/database.types';
 import { Card, EmptyState, PageHeader, PageLoader, StatusBadge } from '../ui/primitives';
-import { TextField } from '../ui/Field';
+import { TextField, SelectField } from '../ui/Field';
 import { STATUS_META, STATUS_ORDER, normalizeStatus, type AppStatus } from '../ui/applicationStatus';
 
 interface Row {
@@ -262,25 +262,20 @@ export default function CompanyApplications() {
 
                 <p className="mt-3 text-xs text-white/40">Postuló a: {r.internship?.title || '—'}</p>
 
-                {/* Estados rápidos */}
-                <div className="mt-4 flex flex-wrap gap-1.5">
-                  {STATUS_ORDER.map((s) => {
-                    const activeS = st === s;
-                    return (
-                      <button
-                        key={s}
-                        onClick={() => changeStatus(r.id, s)}
-                        title={STATUS_META[s].label}
-                        className={`rounded-full border px-2 py-1 text-[11px] font-medium transition ${
-                          activeS
-                            ? STATUS_META[s].active
-                            : 'border-white/15 bg-white/5 text-white/60 hover:bg-white/10'
-                        }`}
-                      >
+                {/* Estado (desplegable) */}
+                <div className="mt-4">
+                  <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-white/45">Estado</label>
+                  <SelectField
+                    value={st}
+                    onChange={(e) => changeStatus(r.id, e.target.value as AppStatus)}
+                    className="h-9 py-0 text-sm"
+                  >
+                    {STATUS_ORDER.map((s) => (
+                      <option key={s} value={s}>
                         {STATUS_META[s].emoji} {STATUS_META[s].label}
-                      </button>
-                    );
-                  })}
+                      </option>
+                    ))}
+                  </SelectField>
                 </div>
 
                 <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
@@ -457,22 +452,13 @@ function CandidateModal({
           <p className="mb-2 flex items-center gap-2 text-sm font-medium text-white/80">
             Estado actual: <StatusBadge status={st} />
           </p>
-          <div className="flex flex-wrap gap-1.5">
-            {STATUS_ORDER.map((s) => {
-              const activeS = st === s;
-              return (
-                <button
-                  key={s}
-                  onClick={() => onStatus(s)}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                    activeS ? STATUS_META[s].active : 'border-white/15 bg-white/5 text-white/70 hover:bg-white/10'
-                  }`}
-                >
-                  {STATUS_META[s].emoji} {STATUS_META[s].label}
-                </button>
-              );
-            })}
-          </div>
+          <SelectField value={st} onChange={(e) => onStatus(e.target.value as AppStatus)}>
+            {STATUS_ORDER.map((s) => (
+              <option key={s} value={s}>
+                {STATUS_META[s].emoji} {STATUS_META[s].label}
+              </option>
+            ))}
+          </SelectField>
         </div>
       </div>
     </div>

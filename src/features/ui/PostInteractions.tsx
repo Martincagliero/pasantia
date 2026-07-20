@@ -53,6 +53,7 @@ export function PostInteractions({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [showComments, setShowComments] = useState(false);
+  const [showAllComments, setShowAllComments] = useState(false);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
 
@@ -156,22 +157,34 @@ export function PostInteractions({
 
   return (
     <div className="mt-3 border-t border-white/10 pt-2.5">
-      <div className="flex flex-wrap items-center gap-2">
-        {/* Botón reaccionar */}
+      <div className="flex items-center gap-1">
+        {/* Resumen de reacciones (izquierda) */}
+        {totalReactions > 0 ? (
+          <span className="mr-auto inline-flex items-center gap-1 text-xs text-white/50">
+            <span className="flex">
+              {activeEmojis.slice(0, 3).map((e) => (
+                <span key={e} className="text-sm leading-none">{e}</span>
+              ))}
+            </span>
+            {totalReactions}
+          </span>
+        ) : (
+          <span className="mr-auto" />
+        )}
+
+        {/* Reaccionar */}
         <div className="relative">
           <button
             onClick={() => setPickerOpen((v) => !v)}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition ${
-              myEmoji
-                ? 'border-brand-400/40 bg-brand-500/15 text-brand-200'
-                : 'border-white/12 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition hover:bg-white/10 ${
+              myEmoji ? 'text-brand-500' : 'text-white/60 hover:text-white'
             }`}
           >
             {myEmoji ? <span className="text-base leading-none">{myEmoji}</span> : <SmilePlus className="h-4 w-4" />}
-            {myEmoji ? 'Reaccionaste' : 'Reaccionar'}
+            Reaccionar
           </button>
           {pickerOpen && (
-            <div className="absolute bottom-full left-0 z-20 mb-2 flex gap-1 rounded-full border border-white/12 bg-[#16181D] p-1.5 shadow-xl">
+            <div className="dash-panel absolute bottom-full left-0 z-20 mb-2 flex gap-1 rounded-full border border-white/12 p-1.5 shadow-xl">
               {EMOJIS.map((e) => (
                 <button
                   key={e}
@@ -187,22 +200,10 @@ export function PostInteractions({
           )}
         </div>
 
-        {/* Resumen de reacciones */}
-        {totalReactions > 0 && (
-          <span className="inline-flex items-center gap-1 text-sm text-white/55">
-            <span className="flex -space-x-1">
-              {activeEmojis.slice(0, 3).map((e) => (
-                <span key={e} className="text-base leading-none">{e}</span>
-              ))}
-            </span>
-            {totalReactions}
-          </span>
-        )}
-
         {/* Comentar */}
         <button
           onClick={() => setShowComments((v) => !v)}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/5 px-3 py-1.5 text-sm font-medium text-white/70 transition hover:bg-white/10 hover:text-white"
+          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-white/60 transition hover:bg-white/10 hover:text-white"
         >
           <MessageCircle className="h-4 w-4" />
           {comments.length > 0 ? comments.length : ''} Comentar
@@ -210,16 +211,24 @@ export function PostInteractions({
       </div>
 
       {showComments && (
-        <div className="mt-3 space-y-3">
-          {comments.map((c) => (
-            <div key={c.id} className="flex items-start gap-2.5">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-white">
+        <div className="mt-2.5 space-y-2.5">
+          {comments.length > 2 && !showAllComments && (
+            <button
+              onClick={() => setShowAllComments(true)}
+              className="text-xs font-medium text-white/50 transition hover:text-white"
+            >
+              Ver los {comments.length} comentarios
+            </button>
+          )}
+          {(showAllComments ? comments : comments.slice(-2)).map((c) => (
+            <div key={c.id} className="flex items-start gap-2">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-[11px] font-bold text-white">
                 {initials(c.author_name || 'U')}
               </span>
-              <div className="min-w-0 flex-1 rounded-2xl bg-white/[0.04] px-3.5 py-2">
+              <div className="min-w-0 flex-1 rounded-2xl bg-white/[0.05] px-3 py-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="truncate text-sm font-semibold text-white">{c.author_name || 'Usuario'}</span>
-                  <span className="text-xs text-white/40">{timeAgo(c.created_at)}</span>
+                  <span className="truncate text-[13px] font-semibold text-white">{c.author_name || 'Usuario'}</span>
+                  <span className="text-[11px] text-white/40">{timeAgo(c.created_at)}</span>
                   {c.user_id === uid && (
                     <button
                       onClick={() => removeComment(c.id)}
@@ -230,7 +239,7 @@ export function PostInteractions({
                     </button>
                   )}
                 </div>
-                <p className="mt-0.5 whitespace-pre-wrap break-words text-sm text-white/80">{c.content}</p>
+                <p className="mt-0.5 whitespace-pre-wrap break-words text-[13px] text-white/80">{c.content}</p>
               </div>
             </div>
           ))}
@@ -246,15 +255,15 @@ export function PostInteractions({
                 }
               }}
               placeholder="Escribí un comentario…"
-              className="min-w-0 flex-1 rounded-full border border-white/12 bg-white/5 px-3.5 py-2 text-sm text-white placeholder:text-white/35 outline-none focus:border-brand-400/60"
+              className="min-w-0 flex-1 rounded-full border border-white/12 bg-white/5 px-3.5 py-1.5 text-[13px] text-white placeholder:text-white/35 outline-none focus:border-brand-400/60"
             />
             <button
               onClick={addComment}
               disabled={sending || !text.trim()}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500 !text-white transition hover:bg-brand-400 disabled:opacity-50"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-500 !text-white transition hover:bg-brand-400 disabled:opacity-50"
               aria-label="Comentar"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>

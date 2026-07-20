@@ -125,7 +125,7 @@ export function ReportButton({ targetType, targetId, variant = 'icon', className
           onClick={close}
         >
           <div
-            className="glass w-full max-w-md rounded-4xl border border-white/12 p-6 sm:p-7"
+            className="glass w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-3xl border border-white/12 p-5 sm:p-6"
             onClick={(e) => e.stopPropagation()}
           >
             {done ? (

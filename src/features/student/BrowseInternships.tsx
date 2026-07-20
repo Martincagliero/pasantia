@@ -181,7 +181,7 @@ export default function BrowseInternships() {
               <Card key={i.id} className="flex flex-col">
                 {i.image_url && (
                   <div className="-mx-4 -mt-4 mb-3 h-36 overflow-hidden rounded-t-2xl sm:-mx-5 sm:-mt-5">
-                    <img src={i.image_url} alt={i.title} className="h-full w-full object-cover" />
+                    <img src={i.image_url} alt={i.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                   </div>
                 )}
                 <div className="mb-3 flex items-center justify-between gap-2 text-sm text-white/60">

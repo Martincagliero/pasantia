@@ -1,6 +1,6 @@
 // Reacciones con emojis + comentarios para publicaciones, proyectos y pasantías.
 // Visible para todos los usuarios autenticados. Degrada si faltan las tablas.
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { MessageCircle, Trash2, SmilePlus, Send } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
@@ -56,6 +56,8 @@ export function PostInteractions({
   const [showAllComments, setShowAllComments] = useState(false);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [seen, setSeen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -86,9 +88,26 @@ export function PostInteractions({
     }
   }, [targetType, targetId, uid]);
 
+  // Carga diferida: solo cuando la tarjeta entra en pantalla (menos consultas al inicio).
   useEffect(() => {
-    load();
-  }, [load]);
+    const el = rootRef.current;
+    if (!el || seen) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setSeen(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [seen]);
+
+  useEffect(() => {
+    if (seen) load();
+  }, [seen, load]);
 
   async function react(emoji: string) {
     if (!uid) return;
@@ -156,7 +175,7 @@ export function PostInteractions({
   const activeEmojis = EMOJIS.filter((e) => (counts[e] ?? 0) > 0);
 
   return (
-    <div className="mt-3 border-t border-white/10 pt-2.5">
+    <div ref={rootRef} className="mt-3 border-t border-white/10 pt-2.5">
       <div className="flex items-center gap-1">
         {/* Resumen de reacciones (izquierda) */}
         {totalReactions > 0 ? (

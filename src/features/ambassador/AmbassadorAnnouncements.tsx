@@ -170,7 +170,7 @@ export default function AmbassadorAnnouncements() {
               <Card key={i.id} hover className="flex flex-col">
                 {i.image_url && (
                   <div className="-mx-4 -mt-4 mb-3 h-36 overflow-hidden rounded-t-2xl sm:-mx-5 sm:-mt-5">
-                    <img src={i.image_url} alt={i.title} className="h-full w-full object-cover" />
+                    <img src={i.image_url} alt={i.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                   </div>
                 )}
                 <div className="mb-2 flex items-center justify-between gap-2 text-sm text-white/60">
@@ -205,19 +205,21 @@ export default function AmbassadorAnnouncements() {
                     {copied === i.id ? <Check className="h-4 w-4 text-emerald-300" /> : <Copy className="h-4 w-4" />}
                     {copied === i.id ? 'Copiado' : 'Copiar texto'}
                   </button>
-                  {done ? (
-                    <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-400/15 px-3.5 py-2 text-sm font-medium text-emerald-200">
-                      <Check className="h-4 w-4" /> Difundida
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => markDiffused(i)}
-                      disabled={!verified}
-                      className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white px-3.5 py-2 text-sm font-semibold text-brand-600 transition hover:bg-brand-950 hover:text-white disabled:opacity-40"
-                    >
-                      <Send className="h-4 w-4" /> Marcar difundida
-                    </button>
-                  )}
+                  {/* Difundir: solo en pasantías de OTROS, no en las propias */}
+                  {!ownIds.has(i.id) &&
+                    (done ? (
+                      <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-400/15 px-3.5 py-2 text-sm font-medium text-emerald-200">
+                        <Check className="h-4 w-4" /> Difundida
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => markDiffused(i)}
+                        disabled={!verified}
+                        className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white px-3.5 py-2 text-sm font-semibold text-brand-600 transition hover:bg-brand-950 hover:text-white disabled:opacity-40"
+                      >
+                        <Send className="h-4 w-4" /> Marcar difundida
+                      </button>
+                    ))}
                   {ownIds.has(i.id) && (
                     <button
                       onClick={() => deleteOwnInternship(i.id)}

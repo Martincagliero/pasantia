@@ -84,6 +84,8 @@ function Avatar({
     <img
       src={url}
       alt={name}
+      loading="lazy"
+      decoding="async"
       className={`${className} shrink-0 rounded-full border border-white/12 object-cover`}
     />
   ) : (

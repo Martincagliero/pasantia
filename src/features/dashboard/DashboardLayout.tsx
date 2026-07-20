@@ -16,7 +16,6 @@ import {
   LogOut,
   Megaphone,
   Trophy,
-  Sun,
   Moon,
   Compass,
   Search,
@@ -75,17 +74,16 @@ function initials(name: string): string {
 export function DashboardLayout() {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
-  const [theme, setTheme] = useState<'dark' | 'light'>(
-    () => (typeof localStorage !== 'undefined' && (localStorage.getItem('dash-theme') as 'dark' | 'light')) || 'dark'
-  );
+  // Modo oscuro deshabilitado (próximamente): la app usa siempre modo claro.
+  const theme = 'light' as const;
 
   useEffect(() => {
     try {
-      localStorage.setItem('dash-theme', theme);
+      localStorage.setItem('dash-theme', 'light');
     } catch {
       /* ignore */
     }
-  }, [theme]);
+  }, []);
 
   const role: Role = (profile?.role as Role) ?? 'estudiante';
   const nav =
@@ -166,12 +164,12 @@ export function DashboardLayout() {
               <div className="mx-1.5 hidden h-7 w-px bg-white/10 lg:block" />
 
               <button
-                onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
-                title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-                aria-label="Cambiar tema"
+                disabled
+                className="flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-full text-white/35"
+                title="Modo oscuro · Próximamente"
+                aria-label="Modo oscuro (próximamente)"
               >
-                {theme === 'dark' ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+                <Moon className="h-[18px] w-[18px]" />
               </button>
 
               {/* Cuenta */}
@@ -202,13 +200,16 @@ export function DashboardLayout() {
                     >
                       <UserRound className="h-[18px] w-[18px]" /> Mi perfil
                     </Link>
-                    <button
-                      onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/[0.06] hover:text-white"
+                    <div
+                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-white/40"
+                      title="Próximamente"
                     >
-                      {theme === 'dark' ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
-                      {theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-                    </button>
+                      <Moon className="h-[18px] w-[18px]" />
+                      Modo oscuro
+                      <span className="ml-auto rounded-full border border-white/15 px-2 py-0.5 text-[10px] text-white/50">
+                        Próximamente
+                      </span>
+                    </div>
                     <button
                       onClick={handleSignOut}
                       className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-red-300 transition hover:bg-red-500/10"

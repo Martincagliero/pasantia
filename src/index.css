@@ -11,12 +11,23 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;
+    /* Evita el zoom por doble toque y el retardo de 300ms en mobile. */
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
     @apply bg-brand-500 text-white font-sans antialiased;
     text-rendering: optimizeLegibility;
     overflow-x: hidden;
+  }
+
+  /* Quita el recuadro/flash gris al tocar elementos interactivos en mobile
+     y elimina el delay del "ghost click" que hacía togglear dos veces el menú. */
+  a,
+  button,
+  [role='button'] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   /* Selección coherente con la marca */

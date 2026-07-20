@@ -90,6 +90,7 @@ export function Navbar() {
 
         {/* Botón menú mobile */}
         <button
+          type="button"
           className="relative z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 text-white transition-transform active:scale-90 md:hidden"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
@@ -107,7 +108,7 @@ export function Navbar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-40 flex flex-col bg-brand-600 md:hidden"
+            className="fixed inset-x-0 top-0 z-40 flex h-[100dvh] flex-col bg-brand-600 md:hidden"
           >
             <div className="pointer-events-none absolute left-1/2 top-0 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-white/10 blur-[120px]" />
 

@@ -11,11 +11,12 @@ import {
   type ReactNode,
 } from 'react';
 import { MessageSquare, ChevronDown, ChevronUp, ArrowLeft, Send, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 
 interface MessagesContextValue {
-  openChatWith: (userId: string, name: string) => void;
+  openChatWith: (userId: string, name: string, avatar?: string | null) => void;
 }
 
 const MessagesContext = createContext<MessagesContextValue | null>(null);
@@ -38,6 +39,7 @@ interface Message {
 interface Conversation {
   otherId: string;
   name: string;
+  avatar: string | null;
   last: string;
   lastAt: string;
   unread: number;
@@ -47,6 +49,30 @@ function initials(name: string): string {
   const parts = (name || '').trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return 'U';
   return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase();
+}
+
+function ChatAvatar({
+  url,
+  name,
+  className = 'h-9 w-9',
+}: {
+  url: string | null | undefined;
+  name: string;
+  className?: string;
+}) {
+  return url ? (
+    <img
+      src={url}
+      alt={name}
+      className={`${className} shrink-0 rounded-full border border-white/12 object-cover`}
+    />
+  ) : (
+    <span
+      className={`${className} flex shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-white`}
+    >
+      {initials(name)}
+    </span>
+  );
 }
 
 function timeShort(d: string): string {
@@ -60,9 +86,10 @@ function timeShort(d: string): string {
 export function MessagesProvider({ children }: { children: ReactNode }) {
   const { session } = useAuth();
   const uid = session?.user.id;
+  const navigate = useNavigate();
 
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState<{ id: string; name: string } | null>(null);
+  const [active, setActive] = useState<{ id: string; name: string; avatar: string | null } | null>(null);
   const [convos, setConvos] = useState<Conversation[]>([]);
   const [thread, setThread] = useState<Message[]>([]);
   const [text, setText] = useState('');
@@ -89,6 +116,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
           map.set(otherId, {
             otherId,
             name: otherId,
+            avatar: null,
             last: m.content,
             lastAt: m.created_at,
             unread: isUnread ? 1 : 0,
@@ -100,13 +128,26 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
       const others = Array.from(map.keys());
       if (others.length > 0) {
-        const { data: profs } = await supabase
-          .from('profiles')
-          .select('id, full_name')
-          .in('id', others);
+        const [{ data: profs }, { data: st }, { data: co }, { data: am }] = await Promise.all([
+          supabase.from('profiles').select('id, full_name').in('id', others),
+          supabase.from('student_profiles').select('id, avatar_url').in('id', others),
+          supabase.from('company_profiles').select('id, avatar_url').in('id', others),
+          supabase.from('ambassador_profiles').select('id, logo_url').in('id', others),
+        ]);
         for (const p of (profs as { id: string; full_name: string }[]) ?? []) {
           const c = map.get(p.id);
           if (c) c.name = p.full_name || 'Usuario';
+        }
+        const avatarById = new Map<string, string | null>();
+        for (const r of (st as { id: string; avatar_url: string | null }[]) ?? [])
+          if (r.avatar_url) avatarById.set(r.id, r.avatar_url);
+        for (const r of (co as { id: string; avatar_url: string | null }[]) ?? [])
+          if (r.avatar_url) avatarById.set(r.id, r.avatar_url);
+        for (const r of (am as { id: string; logo_url: string | null }[]) ?? [])
+          if (r.logo_url) avatarById.set(r.id, r.logo_url);
+        for (const [id, url] of avatarById) {
+          const c = map.get(id);
+          if (c) c.avatar = url;
         }
       }
       setConvos(Array.from(map.values()));
@@ -143,14 +184,19 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   );
 
   const openChatWith = useCallback(
-    (userId: string, name: string) => {
+    (userId: string, name: string, avatar: string | null = null) => {
       if (userId === uid) return;
-      setActive({ id: userId, name });
+      setActive({ id: userId, name, avatar });
       setOpen(true);
       loadThread(userId);
     },
     [uid, loadThread]
   );
+
+  function goToProfile(userId: string) {
+    navigate(`/app/explorar?u=${encodeURIComponent(userId)}`);
+    setOpen(false);
+  }
 
   async function handleSend() {
     if (!text.trim() || !active || !uid) return;
@@ -207,7 +253,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       {children}
 
       {uid && (
-        <div className="fixed bottom-0 right-4 z-50 w-[320px] max-w-[calc(100vw-2rem)]">
+        <div className="fixed bottom-16 right-4 z-50 w-[320px] max-w-[calc(100vw-2rem)] lg:bottom-0">
           <div className="dash-panel overflow-hidden rounded-t-2xl border border-b-0 border-white/12 shadow-2xl shadow-black/40">
             {/* Header */}
             <button
@@ -246,10 +292,14 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                       >
                         <ArrowLeft className="h-4 w-4" />
                       </button>
-                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-white">
-                        {initials(active.name)}
-                      </span>
-                      <span className="truncate text-sm font-semibold text-white">{active.name}</span>
+                      <button
+                        onClick={() => goToProfile(active.id)}
+                        className="flex min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 transition hover:bg-white/10"
+                        title={`Ver perfil de ${active.name}`}
+                      >
+                        <ChatAvatar url={active.avatar} name={active.name} className="h-7 w-7" />
+                        <span className="truncate text-sm font-semibold text-white">{active.name}</span>
+                      </button>
                       <button
                         onClick={() => setActive(null)}
                         className="ml-auto rounded-lg p-1 text-white/50 hover:bg-white/10 hover:text-white"
@@ -327,12 +377,10 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                       convos.map((c) => (
                         <button
                           key={c.otherId}
-                          onClick={() => openChatWith(c.otherId, c.name)}
+                          onClick={() => openChatWith(c.otherId, c.name, c.avatar)}
                           className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-white/[0.06]"
                         >
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-white">
-                            {initials(c.name)}
-                          </span>
+                          <ChatAvatar url={c.avatar} name={c.name} />
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <span className="truncate text-sm font-medium text-white">{c.name}</span>

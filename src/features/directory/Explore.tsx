@@ -132,6 +132,30 @@ export default function Explore() {
     };
   }, [viewerRole]);
 
+  // Si llegamos con ?u=<id> (ej. desde el chat), abrimos ese perfil.
+  useEffect(() => {
+    if (loading) return;
+    const u = params.get('u');
+    if (!u) return;
+    const st = students.find((r) => r.id === u);
+    if (st) {
+      setTab('estudiantes');
+      setSelected({ type: 'estudiantes', row: st });
+      return;
+    }
+    const co = companies.find((r) => r.id === u);
+    if (co) {
+      setTab('empresas');
+      setSelected({ type: 'empresas', row: co });
+      return;
+    }
+    const am = ambassadors.find((r) => r.id === u);
+    if (am) {
+      setTab('embajadores');
+      setSelected({ type: 'embajadores', row: am });
+    }
+  }, [loading, params, students, companies, ambassadors]);
+
   const q = query.trim().toLowerCase();
 
   const filteredStudents = useMemo(
@@ -175,8 +199,8 @@ export default function Explore() {
 
   if (loading) return <PageLoader />;
 
-  function handleMessage(id: string, name: string) {
-    openChatWith(id, name);
+  function handleMessage(id: string, name: string, avatar?: string | null) {
+    openChatWith(id, name, avatar ?? null);
     setSelected(null);
   }
 
@@ -328,7 +352,7 @@ function DetailModal({
 }: {
   selected: Selected;
   onClose: () => void;
-  onMessage: (id: string, name: string) => void;
+  onMessage: (id: string, name: string, avatar?: string | null) => void;
 }) {
   return (
     <div
@@ -376,7 +400,7 @@ function LinkChip({ href, label, icon }: { href: string; label: string; icon: Re
   );
 }
 
-function StudentDetail({ row, onMessage }: { row: StudentRow; onMessage: (id: string, name: string) => void }) {
+function StudentDetail({ row, onMessage }: { row: StudentRow; onMessage: (id: string, name: string, avatar?: string | null) => void }) {
   const name = row.profile?.full_name || 'Estudiante';
   return (
     <>
@@ -408,7 +432,7 @@ function StudentDetail({ row, onMessage }: { row: StudentRow; onMessage: (id: st
 
       <div className="mb-5 flex flex-wrap gap-3">
         <button
-          onClick={() => onMessage(row.id, name)}
+          onClick={() => onMessage(row.id, name, row.avatar_url)}
           className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-brand-600 transition hover:bg-brand-950 hover:text-white"
         >
           <MessageSquare size={16} /> Enviar mensaje
@@ -473,7 +497,7 @@ function StudentDetail({ row, onMessage }: { row: StudentRow; onMessage: (id: st
   );
 }
 
-function CompanyDetail({ row, onMessage }: { row: CompanyRow; onMessage: (id: string, name: string) => void }) {
+function CompanyDetail({ row, onMessage }: { row: CompanyRow; onMessage: (id: string, name: string, avatar?: string | null) => void }) {
   const name = row.company_name || 'Empresa';
   return (
     <>
@@ -498,7 +522,7 @@ function CompanyDetail({ row, onMessage }: { row: CompanyRow; onMessage: (id: st
 
       <div className="flex flex-wrap gap-3">
         <button
-          onClick={() => onMessage(row.id, name)}
+          onClick={() => onMessage(row.id, name, row.avatar_url)}
           className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-brand-600 transition hover:bg-brand-950 hover:text-white"
         >
           <MessageSquare size={16} /> Enviar mensaje
@@ -524,7 +548,7 @@ function CompanyDetail({ row, onMessage }: { row: CompanyRow; onMessage: (id: st
   );
 }
 
-function AmbassadorDetail({ row, onMessage }: { row: AmbRow; onMessage: (id: string, name: string) => void }) {
+function AmbassadorDetail({ row, onMessage }: { row: AmbRow; onMessage: (id: string, name: string, avatar?: string | null) => void }) {
   const name = row.org_name || 'Comunidad';
   return (
     <>
@@ -555,7 +579,7 @@ function AmbassadorDetail({ row, onMessage }: { row: AmbRow; onMessage: (id: str
 
       <div className="flex flex-wrap gap-3">
         <button
-          onClick={() => onMessage(row.id, name)}
+          onClick={() => onMessage(row.id, name, row.logo_url)}
           className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-brand-600 transition hover:bg-brand-950 hover:text-white"
         >
           <MessageSquare size={16} /> Enviar mensaje

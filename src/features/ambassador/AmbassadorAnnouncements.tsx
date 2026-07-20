@@ -95,6 +95,12 @@ export default function AmbassadorAnnouncements() {
     setItems((list as InternshipWithCompany[]) ?? []);
     const { data: own } = await supabase.from('internships').select('id').eq('company_id', uid);
     setOwnIds(new Set((own ?? []).map((o) => o.id)));
+    // La pasantía recién publicada ya cuenta como difundida (suma puntos).
+    const { data: diff } = await supabase
+      .from('internship_diffusions')
+      .select('internship_id')
+      .eq('ambassador_id', uid);
+    setDiffusedIds(new Set((diff ?? []).map((d) => d.internship_id)));
   }
 
   if (loading) return <PageLoader />;

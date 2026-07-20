@@ -14,8 +14,6 @@ import {
   Heart,
   Users,
   LogOut,
-  Menu,
-  X,
   Megaphone,
   Trophy,
   Sun,
@@ -77,7 +75,6 @@ function initials(name: string): string {
 export function DashboardLayout() {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>(
     () => (typeof localStorage !== 'undefined' && (localStorage.getItem('dash-theme') as 'dark' | 'light')) || 'dark'
   );
@@ -94,6 +91,8 @@ export function DashboardLayout() {
   const nav =
     role === 'estudiante' ? studentNav : role === 'empresa' ? companyNav : ambassadorNav;
   const perfilTo = role === 'embajador' ? '/app/embajador-perfil' : '/app/perfil';
+  // En mobile el perfil se accede desde el avatar de arriba, no en la barra inferior.
+  const bottomNav = nav.filter((item) => item.to !== perfilTo);
 
   const [accountOpen, setAccountOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -118,7 +117,6 @@ export function DashboardLayout() {
     e.preventDefault();
     const q = searchQuery.trim();
     navigate(`/app/explorar${q ? `?q=${encodeURIComponent(q)}` : ''}`);
-    setMobileOpen(false);
   }
 
   return (
@@ -220,48 +218,35 @@ export function DashboardLayout() {
                   </div>
                 )}
               </div>
-
-              {/* Menú mobile */}
-              <button
-                onClick={() => setMobileOpen((v) => !v)}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 lg:hidden"
-                aria-label="Menú"
-              >
-                {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </button>
             </div>
           </div>
-
-          {/* Nav mobile desplegable */}
-          {mobileOpen && (
-            <div className="border-t border-white/10 lg:hidden">
-              <nav className="mx-auto grid max-w-7xl grid-cols-2 gap-1 p-3 sm:grid-cols-3">
-                {nav.map(({ to, label, icon: Icon, end }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    end={end}
-                    onClick={() => setMobileOpen(false)}
-                    className={({ isActive }) =>
-                      `flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                        isActive
-                          ? 'bg-brand-500 !text-white'
-                          : 'text-white/70 hover:bg-white/[0.07] hover:text-white'
-                      }`
-                    }
-                  >
-                    <Icon className="h-[18px] w-[18px]" strokeWidth={1.9} />
-                    <span className="truncate">{label}</span>
-                  </NavLink>
-                ))}
-              </nav>
-            </div>
-          )}
         </header>
 
-        <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+        <main className="mx-auto max-w-7xl px-4 py-6 pb-24 sm:px-6 lg:pb-6">
           <Outlet />
         </main>
+
+        {/* Barra de navegación inferior (mobile, estilo LinkedIn) */}
+        <nav className="dash-panel fixed inset-x-0 bottom-0 z-40 border-t border-white/10 lg:hidden">
+          <div className="mx-auto flex max-w-7xl items-stretch">
+            {bottomNav.map(({ to, label, icon: Icon, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                title={label}
+                className={({ isActive }) =>
+                  `flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium transition-colors ${
+                    isActive ? 'text-brand-500' : 'text-white/55 hover:text-white'
+                  }`
+                }
+              >
+                <Icon className="h-5 w-5 shrink-0" strokeWidth={1.9} />
+                <span className="w-full truncate text-center leading-tight">{label}</span>
+              </NavLink>
+            ))}
+          </div>
+        </nav>
       </MessagesProvider>
     </div>
   );

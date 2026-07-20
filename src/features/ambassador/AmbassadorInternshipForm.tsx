@@ -84,12 +84,21 @@ export function AmbassadorInternshipForm({ onClose, onCreated }: AmbassadorInter
       .select()
       .single();
 
-    setSaving(false);
     if (result.error) {
+      setSaving(false);
       setError('No se pudo publicar la pasantía. Revisá los datos e intentá de nuevo.');
       return;
     }
 
+    // Publicar la pasantía cuenta como difusión: suma puntos al embajador.
+    const created = result.data as { id: string } | null;
+    if (created?.id) {
+      await supabase
+        .from('internship_diffusions')
+        .insert({ ambassador_id: session!.user.id, internship_id: created.id });
+    }
+
+    setSaving(false);
     onCreated();
     onClose();
   }

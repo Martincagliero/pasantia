@@ -176,7 +176,8 @@ function Onboarding({
         return (
           data.nombre.trim().length > 1 &&
           isEmail(data.email) &&
-          data.password.trim().length >= 6
+          data.password.trim().length >= 6 &&
+          data.instagram_link.trim() !== ''
         );
       case 'eduUni':
         return data.universidad.trim() !== '' && data.carrera.trim() !== '';
@@ -568,6 +569,12 @@ function StepContacto({
           value={data.password}
           onChange={(v) => set({ password: v })}
           placeholder="Al menos 6 caracteres"
+        />
+        <Input
+          label="Instagram u otra red"
+          value={data.instagram_link}
+          onChange={(v) => set({ instagram_link: v })}
+          placeholder="@tuusuario o link (instagram.com/tuusuario)"
         />
         <Input
           label="Teléfono (opcional)"

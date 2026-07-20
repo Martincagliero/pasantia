@@ -179,13 +179,14 @@ export default function InternshipApplicants() {
                             key={s}
                             onClick={() => changeStatus(r.id, s)}
                             disabled={activeS}
-                            className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                               activeS
                                 ? STATUS_META[s].active
                                 : 'border-white/15 bg-white/5 text-white/70 hover:bg-white/10'
                             }`}
                           >
-                            {STATUS_META[s].emoji} {STATUS_META[s].label}
+                            <span className={`h-2 w-2 rounded-full ${STATUS_META[s].dot}`} />
+                            {STATUS_META[s].label}
                           </button>
                         );
                       })}

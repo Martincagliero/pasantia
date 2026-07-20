@@ -334,7 +334,7 @@ export default function AmbassadorProfile() {
                 <Button type="submit" variant="secondary" size="sm" disabled={saving || uploading}>
                   {saving ? 'Guardando…' : 'Guardar cambios'}
                 </Button>
-                {saved && <span className="text-sm text-emerald-300">Guardado ✓</span>}
+                {saved && <span className="text-sm text-emerald-300">Guardado</span>}
               </div>
             </div>
           </Card>

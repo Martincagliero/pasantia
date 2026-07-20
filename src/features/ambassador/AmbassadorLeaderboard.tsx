@@ -1,5 +1,5 @@
 // Embajador: ranking de comunidades por difusiones.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Trophy, Share2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
@@ -54,8 +54,6 @@ export default function AmbassadorLeaderboard() {
     };
   }, [session]);
 
-  const medal = useMemo(() => ['🥇', '🥈', '🥉'], []);
-
   if (loading) return <PageLoader />;
 
   const withActivity = rows.filter((r) => r.diffusions > 0);
@@ -83,9 +81,17 @@ export default function AmbassadorLeaderboard() {
                 key={r.id}
                 className={`!p-4 flex items-center gap-4 ${isMe ? 'border-white/30 bg-white/[0.08]' : ''}`}
               >
-                <div className="w-8 shrink-0 text-center text-lg font-bold text-white">
-                  {idx < 3 ? medal[idx] : `#${idx + 1}`}
-                </div>
+                <span
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                    idx === 0
+                      ? 'bg-brand-500 !text-white'
+                      : idx < 3
+                        ? 'bg-brand-500/15 text-brand-500'
+                        : 'bg-white/10 text-white/60'
+                  }`}
+                >
+                  {idx + 1}
+                </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="truncate font-semibold text-white">{r.name}</p>

@@ -224,7 +224,7 @@ export default function CompanyProfileForm() {
               <Button type="submit" variant="primary" size="sm" disabled={saving}>
                 {saving ? 'Guardando…' : 'Guardar cambios'}
               </Button>
-              {saved && <span className="text-sm text-emerald-300">Guardado ✓</span>}
+              {saved && <span className="text-sm text-emerald-300">Guardado</span>}
             </div>
           </form>
         </Card>

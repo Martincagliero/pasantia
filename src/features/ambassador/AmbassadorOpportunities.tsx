@@ -64,12 +64,12 @@ export default function AmbassadorOpportunities() {
 
   async function copyCaption(i: InternshipWithCompany) {
     const caption =
-      `🚀 Nueva PASANTÍA disponible\n\n` +
-      `📌 ${i.title}\n` +
-      `🏢 ${i.company?.company_name || 'Empresa'}\n` +
-      `📍 ${modalityLabel[i.modality]}${i.location ? ' · ' + i.location : ''}\n` +
-      `💼 Área: ${i.area}\n\n` +
-      `Postulate en PasantIA 👇\n#pasantias #empleojoven #universitarios`;
+      `Nueva PASANTÍA disponible\n\n` +
+      `${i.title}\n` +
+      `${i.company?.company_name || 'Empresa'}\n` +
+      `${modalityLabel[i.modality]}${i.location ? ' · ' + i.location : ''}\n` +
+      `Área: ${i.area}\n\n` +
+      `Postulate en PasantIA\n#pasantias #empleojoven #universitarios`;
     try {
       await navigator.clipboard.writeText(caption);
       setCopied(i.id);

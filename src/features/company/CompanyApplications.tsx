@@ -45,7 +45,7 @@ function details(s: Row['student']): StudentProfile | null {
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '👤';
+  if (parts.length === 0) return 'U';
   return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase();
 }
 
@@ -135,7 +135,7 @@ export default function CompanyApplications() {
 
   const filterChips: { key: Filter; label: string; count: number }[] = [
     { key: 'todas', label: 'Todos', count: counts.todas },
-    { key: 'favoritos', label: '⭐ Favoritos', count: counts.favoritos },
+    { key: 'favoritos', label: 'Favoritos', count: counts.favoritos },
     ...STATUS_ORDER.map((s) => ({ key: s as Filter, label: STATUS_META[s].label, count: counts[s] })),
   ];
 

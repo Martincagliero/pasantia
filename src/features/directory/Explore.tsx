@@ -107,13 +107,13 @@ export default function Explore() {
   useEffect(() => {
     let active = true;
     // Privacidad: qué datos del estudiante se traen según el rol de quien mira.
-    //  - Empresa: todo.  - Embajador: solo nombre + teléfono.
+    //  - Empresa: todo.  - Embajador: nombre + universidad/carrera/año + teléfono.
     //  - Estudiante: datos básicos (sin promedio/CV/analítico ni skills/bio).
     const studentSelect =
       viewerRole === 'empresa'
         ? '*, profile:profiles(full_name, email)'
         : viewerRole === 'embajador'
-          ? 'id, avatar_url, verified, phone, profile:profiles(full_name)'
+          ? 'id, avatar_url, verified, university, career, year, phone, profile:profiles(full_name)'
           : 'id, avatar_url, verified, university, career, year, area, location, phone, profile:profiles(full_name, email)';
     (async () => {
       const [{ data: st }, { data: co }, { data: am }] = await Promise.all([
@@ -237,7 +237,7 @@ export default function Explore() {
                 key={r.id}
                 avatar={<Avatar url={r.avatar_url} name={r.profile?.full_name || 'Estudiante'} />}
                 title={r.profile?.full_name || 'Estudiante'}
-                subtitle={[r.career, r.university].filter(Boolean).join(' · ') || 'Estudiante'}
+                subtitle={[r.career, r.year && `${r.year}° año`, r.university].filter(Boolean).join(' · ') || 'Estudiante'}
                 tags={(r.skills ?? []).slice(0, 3)}
                 onClick={() => setSelected({ type: 'estudiantes', row: r })}
                 badge={r.verified ? <VerifiedBadge verified small /> : undefined}
@@ -293,14 +293,14 @@ function ProfileCard({
   return (
     <button onClick={onClick} className="text-left">
       <Card hover className="h-full cursor-pointer">
-        <div className="flex items-center gap-3">
+        <div className="flex items-start gap-3">
           {avatar}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <h3 className="truncate font-semibold text-white">{title}</h3>
               {badge}
             </div>
-            <p className="truncate text-sm text-white/55">{subtitle}</p>
+            <p className="mt-0.5 text-[13px] leading-snug text-white/55 line-clamp-2">{subtitle}</p>
           </div>
         </div>
         {tags.length > 0 && (
@@ -388,7 +388,7 @@ function StudentDetail({ row, onMessage }: { row: StudentRow; onMessage: (id: st
             {row.verified && <VerifiedBadge verified />}
           </div>
           <p className="mt-0.5 text-sm text-white/60">
-            {[row.career, row.university, row.year].filter(Boolean).join(' · ') || 'Estudiante'}
+            {[row.career, row.year && `${row.year}° año`, row.university].filter(Boolean).join(' · ') || 'Estudiante'}
           </p>
         </div>
       </div>

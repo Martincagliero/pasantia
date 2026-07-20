@@ -93,6 +93,10 @@ export interface Internship {
   requirements: string | null;
   is_active: boolean;
   created_at: string;
+  /** Nombre de la empresa cargado a mano (pasantías publicadas por embajadores). */
+  company_name: string | null;
+  /** Imagen opcional de la pasantía. */
+  image_url: string | null;
 }
 
 /** Pasantía con datos de la empresa que la publicó (join). */

@@ -66,7 +66,7 @@ export default function AmbassadorAnnouncements() {
     const caption =
       `Nueva PASANTÍA disponible\n\n` +
       `${i.title}\n` +
-      `${i.company?.company_name || 'Empresa'}\n` +
+      `${i.company_name || i.company?.company_name || 'Empresa'}\n` +
       `${modalityLabel[i.modality]}${i.location ? ' · ' + i.location : ''}\n` +
       `Área: ${i.area}\n\n` +
       `Postulate en PasantIA\n#pasantias #empleojoven #universitarios`;
@@ -144,10 +144,15 @@ export default function AmbassadorAnnouncements() {
             const forMe = broadcastIds.has(i.id);
             return (
               <Card key={i.id} hover className="flex flex-col">
+                {i.image_url && (
+                  <div className="-mx-4 -mt-4 mb-3 h-36 overflow-hidden rounded-t-2xl sm:-mx-5 sm:-mt-5">
+                    <img src={i.image_url} alt={i.title} className="h-full w-full object-cover" />
+                  </div>
+                )}
                 <div className="mb-2 flex items-center justify-between gap-2 text-sm text-white/60">
                   <div className="flex min-w-0 items-center gap-2">
                     <Building2 className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-                    <span className="truncate">{i.company?.company_name || 'Empresa'}</span>
+                    <span className="truncate">{i.company_name || i.company?.company_name || 'Empresa'}</span>
                   </div>
                   {forMe && (
                     <span className="shrink-0 rounded-full border border-violet-300/30 bg-violet-400/15 px-2 py-0.5 text-[11px] font-medium text-violet-200">

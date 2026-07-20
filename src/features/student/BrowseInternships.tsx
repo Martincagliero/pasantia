@@ -63,6 +63,7 @@ export default function BrowseInternships() {
         i.area.toLowerCase().includes(q) ||
         i.description.toLowerCase().includes(q) ||
         (i.requirements ?? '').toLowerCase().includes(q) ||
+        (i.company_name ?? '').toLowerCase().includes(q) ||
         (i.company?.company_name ?? '').toLowerCase().includes(q);
       const matchesArea = areaFilter === 'todas' || i.area === areaFilter;
       const matchesModality = modalityFilter === 'todas' || i.modality === modalityFilter;
@@ -158,10 +159,15 @@ export default function BrowseInternships() {
             const saved = savedIds.has(i.id);
             return (
               <Card key={i.id} className="flex flex-col">
+                {i.image_url && (
+                  <div className="-mx-4 -mt-4 mb-3 h-36 overflow-hidden rounded-t-2xl sm:-mx-5 sm:-mt-5">
+                    <img src={i.image_url} alt={i.title} className="h-full w-full object-cover" />
+                  </div>
+                )}
                 <div className="mb-3 flex items-center justify-between gap-2 text-sm text-white/60">
                   <div className="flex min-w-0 items-center gap-2">
                     <Building2 className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-                    <span className="truncate">{i.company?.company_name || 'Empresa'}</span>
+                    <span className="truncate">{i.company_name || i.company?.company_name || 'Empresa'}</span>
                   </div>
                   <div className="flex shrink-0 items-center gap-0.5">
                     <button
@@ -273,7 +279,7 @@ export function ApplyModal({
         className="glass w-full max-w-lg rounded-4xl border border-white/12 p-6 sm:p-8"
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="text-sm text-white/60">{internship.company?.company_name || 'Empresa'}</p>
+        <p className="text-sm text-white/60">{internship.company_name || internship.company?.company_name || 'Empresa'}</p>
         <h2 className="mt-1 text-xl font-bold text-white">{internship.title}</h2>
         <p className="mt-3 text-sm text-white/70">{internship.description}</p>
         {internship.requirements && (

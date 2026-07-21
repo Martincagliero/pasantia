@@ -7,6 +7,7 @@ import type { InternshipWithCompany, Modality } from '../../lib/database.types';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
 import { AmbassadorInternshipForm } from './AmbassadorInternshipForm';
 import { PostInteractions } from '../ui/PostInteractions';
+import { InternshipDetailModal } from '../ui/InternshipDetailModal';
 
 const modalityLabel: Record<Modality, string> = {
   presencial: 'Presencial',
@@ -47,6 +48,7 @@ export default function AmbassadorAnnouncements() {
   const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [detail, setDetail] = useState<InternshipWithCompany | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -153,9 +155,13 @@ export default function AmbassadorAnnouncements() {
             return (
               <Card key={i.id} hover className="flex flex-col">
                 {i.image_url && (
-                  <div className="-mx-3 -mt-3 mb-3 h-28 overflow-hidden rounded-t-2xl sm:-mx-5 sm:-mt-5 sm:h-36">
+                  <button
+                    type="button"
+                    onClick={() => setDetail(i)}
+                    className="-mx-3 -mt-3 mb-3 block h-28 overflow-hidden rounded-t-2xl sm:-mx-5 sm:-mt-5 sm:h-36"
+                  >
                     <img src={i.image_url} alt={i.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />
-                  </div>
+                  </button>
                 )}
                 <div className="mb-2 flex items-center justify-between gap-2 text-sm text-white/60">
                   <div className="flex min-w-0 items-center gap-2">
@@ -168,7 +174,12 @@ export default function AmbassadorAnnouncements() {
                     </span>
                   )}
                 </div>
-                <h3 className="text-base font-semibold leading-snug text-white sm:text-lg">{i.title}</h3>
+                <h3
+                  onClick={() => setDetail(i)}
+                  className="cursor-pointer text-base font-semibold leading-snug text-white transition hover:text-white/80 sm:text-lg"
+                >
+                  {i.title}
+                </h3>
                 <div className="mt-2 flex flex-wrap gap-1.5 text-xs sm:mt-3 sm:gap-2">
                   <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-white/70">{i.area}</span>
                   <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-white/70">
@@ -180,7 +191,12 @@ export default function AmbassadorAnnouncements() {
                     </span>
                   )}
                 </div>
-                <p className="mt-2 line-clamp-2 flex-1 text-sm text-white/60 sm:mt-3 sm:line-clamp-3">{i.description}</p>
+                <p
+                  onClick={() => setDetail(i)}
+                  className="mt-2 line-clamp-2 flex-1 cursor-pointer text-sm text-white/60 sm:mt-3 sm:line-clamp-3"
+                >
+                  {i.description}
+                </p>
                 <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-5">
                   {/* Difundir: solo en pasantías de OTROS, no en las propias */}
                   {!ownIds.has(i.id) &&
@@ -197,6 +213,12 @@ export default function AmbassadorAnnouncements() {
                         <Send className="h-4 w-4" /> Marcar difundida
                       </button>
                     ))}
+                  <button
+                    onClick={() => setDetail(i)}
+                    className="rounded-full border border-white/15 bg-white/5 px-3.5 py-2 text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
+                  >
+                    Ver detalle
+                  </button>
                   {ownIds.has(i.id) && (
                     <button
                       onClick={() => deleteOwnInternship(i.id)}
@@ -217,6 +239,10 @@ export default function AmbassadorAnnouncements() {
             );
           })}
         </div>
+      )}
+
+      {detail && (
+        <InternshipDetailModal internship={detail} onClose={() => setDetail(null)} />
       )}
     </div>
   );

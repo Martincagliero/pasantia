@@ -9,6 +9,7 @@ import { Card, EmptyState, PageLoader } from '../ui/primitives';
 import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { ReportButton } from '../ui/ReportButton';
 import { PostInteractions } from '../ui/PostInteractions';
+import { InternshipDetailModal } from '../ui/InternshipDetailModal';
 
 const modalityLabel: Record<Modality, string> = {
   presencial: 'Presencial',
@@ -49,6 +50,7 @@ export default function BrowseInternships() {
   const [areaFilter, setAreaFilter] = useState('todas');
   const [modalityFilter, setModalityFilter] = useState<'todas' | Modality>('todas');
   const [selected, setSelected] = useState<InternshipWithCompany | null>(null);
+  const [detail, setDetail] = useState<InternshipWithCompany | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -180,9 +182,13 @@ export default function BrowseInternships() {
             return (
               <Card key={i.id} className="flex flex-col">
                 {i.image_url && (
-                  <div className="-mx-3 -mt-3 mb-3 h-28 overflow-hidden rounded-t-2xl sm:-mx-5 sm:-mt-5 sm:h-36">
+                  <button
+                    type="button"
+                    onClick={() => setDetail(i)}
+                    className="-mx-3 -mt-3 mb-3 block h-28 overflow-hidden rounded-t-2xl sm:-mx-5 sm:-mt-5 sm:h-36"
+                  >
                     <img src={i.image_url} alt={i.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />
-                  </div>
+                  </button>
                 )}
                 <div className="mb-3 flex items-center justify-between gap-2 text-sm text-white/60">
                   <div className="flex min-w-0 items-center gap-2">
@@ -203,7 +209,12 @@ export default function BrowseInternships() {
                     <ReportButton targetType="internship" targetId={i.id} />
                   </div>
                 </div>
-                <h3 className="text-base font-semibold leading-snug text-white sm:text-lg">{i.title}</h3>
+                <h3
+                  onClick={() => setDetail(i)}
+                  className="cursor-pointer text-base font-semibold leading-snug text-white transition hover:text-white/80 sm:text-lg"
+                >
+                  {i.title}
+                </h3>
                 <div className="mt-2 flex flex-wrap gap-1.5 text-xs sm:mt-3 sm:gap-2">
                   <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-white/70">
                     {i.area}
@@ -217,7 +228,12 @@ export default function BrowseInternships() {
                     </span>
                   )}
                 </div>
-                <p className="mt-2 line-clamp-2 text-sm text-white/60 sm:mt-3 sm:line-clamp-3">{i.description}</p>
+                <p
+                  onClick={() => setDetail(i)}
+                  className="mt-2 line-clamp-2 cursor-pointer text-sm text-white/60 sm:mt-3 sm:line-clamp-3"
+                >
+                  {i.description}
+                </p>
                 <div className="mt-4 flex items-center gap-2 sm:mt-5">
                   {applied ? (
                     <span className="rounded-full border border-emerald-300/30 bg-emerald-400/15 px-4 py-2 text-sm font-medium text-emerald-200">
@@ -233,6 +249,12 @@ export default function BrowseInternships() {
                       Postularme
                     </Button>
                   )}
+                  <button
+                    onClick={() => setDetail(i)}
+                    className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
+                  >
+                    Ver detalle
+                  </button>
                 </div>
                 <PostInteractions targetType="internship" targetId={i.id} />
               </Card>
@@ -250,6 +272,32 @@ export default function BrowseInternships() {
             markApplied(selected.id);
             setSelected(null);
           }}
+        />
+      )}
+
+      {detail && (
+        <InternshipDetailModal
+          internship={detail}
+          onClose={() => setDetail(null)}
+          actions={
+            appliedIds.has(detail.id) ? (
+              <span className="rounded-full border border-emerald-300/30 bg-emerald-400/15 px-4 py-2 text-sm font-medium text-emerald-200">
+                Ya postulaste
+              </span>
+            ) : (
+              <Button
+                as="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  setSelected(detail);
+                  setDetail(null);
+                }}
+              >
+                Postularme
+              </Button>
+            )
+          }
         />
       )}
     </div>

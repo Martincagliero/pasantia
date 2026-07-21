@@ -7,6 +7,7 @@ import type { InternshipWithCompany, Modality } from '../../lib/database.types';
 import { Button } from '../../components/ui/Button';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
 import { ApplyModal } from './BrowseInternships';
+import { InternshipDetailModal } from '../ui/InternshipDetailModal';
 
 const modalityLabel: Record<Modality, string> = {
   presencial: 'Presencial',
@@ -20,6 +21,7 @@ export default function SavedInternships() {
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<InternshipWithCompany | null>(null);
+  const [detail, setDetail] = useState<InternshipWithCompany | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -115,7 +117,12 @@ export default function SavedInternships() {
                     <Heart className="h-4 w-4" fill="currentColor" />
                   </button>
                 </div>
-                <h3 className="text-base font-semibold leading-snug text-white sm:text-lg">{i.title}</h3>
+                <h3
+                  onClick={() => setDetail(i)}
+                  className="cursor-pointer text-base font-semibold leading-snug text-white transition hover:text-white/80 sm:text-lg"
+                >
+                  {i.title}
+                </h3>
                 <div className="mt-2 flex flex-wrap gap-1.5 text-xs sm:mt-3 sm:gap-2">
                   <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-white/70">
                     {i.area}
@@ -129,8 +136,13 @@ export default function SavedInternships() {
                     </span>
                   )}
                 </div>
-                <p className="mt-3 line-clamp-3 text-sm text-white/60">{i.description}</p>
-                <div className="mt-5">
+                <p
+                  onClick={() => setDetail(i)}
+                  className="mt-3 line-clamp-3 cursor-pointer text-sm text-white/60"
+                >
+                  {i.description}
+                </p>
+                <div className="mt-5 flex items-center gap-2">
                   {applied ? (
                     <span className="rounded-full border border-emerald-300/30 bg-emerald-400/15 px-4 py-2 text-sm font-medium text-emerald-200">
                       Ya postulaste
@@ -140,6 +152,12 @@ export default function SavedInternships() {
                       Postularme
                     </Button>
                   )}
+                  <button
+                    onClick={() => setDetail(i)}
+                    className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
+                  >
+                    Ver detalle
+                  </button>
                 </div>
               </Card>
             );
@@ -156,6 +174,32 @@ export default function SavedInternships() {
             setAppliedIds((prev) => new Set(prev).add(selected.id));
             setSelected(null);
           }}
+        />
+      )}
+
+      {detail && (
+        <InternshipDetailModal
+          internship={detail}
+          onClose={() => setDetail(null)}
+          actions={
+            appliedIds.has(detail.id) ? (
+              <span className="rounded-full border border-emerald-300/30 bg-emerald-400/15 px-4 py-2 text-sm font-medium text-emerald-200">
+                Ya postulaste
+              </span>
+            ) : (
+              <Button
+                as="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  setSelected(detail);
+                  setDetail(null);
+                }}
+              >
+                Postularme
+              </Button>
+            )
+          }
         />
       )}
     </div>

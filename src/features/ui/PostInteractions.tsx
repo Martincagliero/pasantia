@@ -228,7 +228,8 @@ export function PostInteractions({
                   >
                     <span className="text-base leading-none">{r.emoji}</span>
                     <span className="truncate text-[13px] text-white/80">
-                      {r.user_id === uid ? 'Vos' : reactorNames[r.user_id] || 'Usuario'}
+                      {reactorNames[r.user_id] ||
+                        (r.user_id === uid ? profile?.full_name || 'Vos' : 'Usuario')}
                     </span>
                   </div>
                 ))}

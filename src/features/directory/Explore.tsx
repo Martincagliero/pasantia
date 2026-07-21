@@ -25,6 +25,7 @@ import type {
 } from '../../lib/database.types';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
 import { TextField } from '../ui/Field';
+import { useModalGuard } from '../ui/modalGuard';
 import { VerifiedBadge } from '../ambassador/VerifiedBadge';
 import { orgTypeLabel } from '../ambassador/ambassadorConfig';
 import { useMessages } from '../messages/MessagesProvider';
@@ -365,6 +366,7 @@ function DetailModal({
   onClose: () => void;
   onMessage: (id: string, name: string, avatar?: string | null) => void;
 }) {
+  useModalGuard();
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"

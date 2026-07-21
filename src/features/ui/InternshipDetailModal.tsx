@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { X, Building2, MapPin } from 'lucide-react';
 import type { InternshipWithCompany, Modality } from '../../lib/database.types';
 import { PostInteractions } from './PostInteractions';
+import { useModalGuard } from './modalGuard';
 
 const modalityLabel: Record<Modality, string> = {
   presencial: 'Presencial',
@@ -20,6 +21,7 @@ export function InternshipDetailModal({
   /** Acciones opcionales (postularme, difundir, etc.) */
   actions?: ReactNode;
 }) {
+  useModalGuard();
   const company = i.company_name || i.company?.company_name || 'Empresa';
   return (
     <div

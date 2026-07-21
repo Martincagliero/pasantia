@@ -20,6 +20,7 @@ import { useAuth } from '../auth/AuthProvider';
 import type { StudentProfile } from '../../lib/database.types';
 import { Card, EmptyState, PageHeader, PageLoader, StatusBadge } from '../ui/primitives';
 import { TextField, SelectField } from '../ui/Field';
+import { useModalGuard } from '../ui/modalGuard';
 import { STATUS_META, STATUS_ORDER, normalizeStatus, type AppStatus } from '../ui/applicationStatus';
 
 interface Row {
@@ -351,6 +352,7 @@ function CandidateModal({
 }) {
   const d = details(row.student);
   const st = normalizeStatus(row.status);
+  useModalGuard();
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-8"

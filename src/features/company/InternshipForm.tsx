@@ -7,6 +7,7 @@ import type { Internship, Modality, AmbassadorProfile } from '../../lib/database
 import { Button } from '../../components/ui/Button';
 import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { Card, PageHeader, PageLoader } from '../ui/primitives';
+import { useModalGuard } from '../ui/modalGuard';
 import { BadgeCheck, ChevronDown, X, ImagePlus, Trash2 } from 'lucide-react';
 
 const emptyForm = {
@@ -35,6 +36,7 @@ export default function InternshipForm({
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const editId = editIdProp !== undefined ? editIdProp : params.get('id');
+  useModalGuard(!!asModal);
 
   function handleCancel() {
     if (onCancel) onCancel();

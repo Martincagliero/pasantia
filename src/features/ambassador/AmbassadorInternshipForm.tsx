@@ -6,6 +6,7 @@ import { useAuth } from '../auth/AuthProvider';
 import type { Modality } from '../../lib/database.types';
 import { Button } from '../../components/ui/Button';
 import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
+import { useModalGuard } from '../ui/modalGuard';
 
 const emptyForm = {
   title: '',
@@ -25,6 +26,7 @@ interface AmbassadorInternshipFormProps {
 
 export function AmbassadorInternshipForm({ onClose, onCreated }: AmbassadorInternshipFormProps) {
   const { session } = useAuth();
+  useModalGuard();
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);

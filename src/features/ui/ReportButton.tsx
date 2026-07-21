@@ -9,6 +9,7 @@ import { useAuth } from '../auth/AuthProvider';
 import type { ReportTargetType } from '../../lib/database.types';
 import { Button } from '../../components/ui/Button';
 import { SelectField, TextArea } from './Field';
+import { useModalGuard } from './modalGuard';
 
 const REASONS: Record<ReportTargetType, { value: string; label: string }[]> = {
   internship: [
@@ -58,6 +59,7 @@ export function ReportButton({ targetType, targetId, variant = 'icon', className
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useModalGuard(open);
 
   function close() {
     setOpen(false);

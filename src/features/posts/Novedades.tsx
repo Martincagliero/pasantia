@@ -10,6 +10,7 @@ import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
 import { LinkPreview } from '../ui/LinkPreview';
 import { PostInteractions } from '../ui/PostInteractions';
+import { useModalGuard } from '../ui/modalGuard';
 
 const CATEGORIES: { value: PostCategory; label: string }[] = [
   { value: 'novedad', label: 'Novedad' },
@@ -213,6 +214,7 @@ function PostForm({
   onClose: () => void;
   onCreated: (post: PostWithAuthor) => void;
 }) {
+  useModalGuard();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [category, setCategory] = useState<PostCategory>('novedad');

@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import type { StudentProfile } from '../../lib/database.types';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
 import { SelectField, TextField } from '../ui/Field';
+import { useModalGuard } from '../ui/modalGuard';
 
 interface TalentRow extends StudentProfile {
   profile: { full_name: string; email: string } | null;
@@ -33,6 +34,7 @@ export default function TalentSearch() {
   const [query, setQuery] = useState('');
   const [areaFilter, setAreaFilter] = useState('todas');
   const [selected, setSelected] = useState<TalentRow | null>(null);
+  useModalGuard(!!selected);
 
   useEffect(() => {
     let active = true;

@@ -10,6 +10,7 @@ import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { ReportButton } from '../ui/ReportButton';
 import { PostInteractions } from '../ui/PostInteractions';
 import { InternshipDetailModal } from '../ui/InternshipDetailModal';
+import { useModalGuard } from '../ui/modalGuard';
 
 const modalityLabel: Record<Modality, string> = {
   presencial: 'Presencial',
@@ -315,6 +316,7 @@ export function ApplyModal({
   onClose: () => void;
   onApplied: () => void;
 }) {
+  useModalGuard();
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

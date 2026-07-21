@@ -14,6 +14,7 @@ import { MessageSquare, ChevronDown, ChevronUp, ArrowLeft, Send, X } from 'lucid
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
+import { useAnyModalOpen } from '../ui/modalGuard';
 
 interface MessagesContextValue {
   openChatWith: (userId: string, name: string, avatar?: string | null) => void;
@@ -247,12 +248,13 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
   const unreadTotal = useMemo(() => convos.reduce((s, c) => s + c.unread, 0), [convos]);
   const value = useMemo(() => ({ openChatWith }), [openChatWith]);
+  const modalOpen = useAnyModalOpen();
 
   return (
     <MessagesContext.Provider value={value}>
       {children}
 
-      {uid && (
+      {uid && !modalOpen && (
         <div
           className={`fixed bottom-16 right-3 z-50 max-w-[calc(100vw-1.5rem)] sm:right-4 sm:w-[320px] lg:bottom-0 ${
             open ? 'w-[290px]' : 'w-auto'

@@ -137,9 +137,9 @@ export default function Novedades() {
         <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
           {filtered.map((p) => (
             <Card key={p.id} className="flex flex-col">
-              <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="mb-1.5 flex items-center justify-between gap-2 sm:mb-2">
                 <span
-                  className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${categoryStyle[p.category]}`}
+                  className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium sm:px-3 sm:py-1 ${categoryStyle[p.category]}`}
                 >
                   {categoryLabel[p.category]}
                 </span>
@@ -155,12 +155,12 @@ export default function Novedades() {
               </div>
 
               <h3 className="text-base font-semibold leading-snug text-white sm:text-lg">{p.title}</h3>
-              <p className="mt-2 whitespace-pre-line text-sm text-white/70">{p.body}</p>
+              <p className="mt-1.5 line-clamp-4 whitespace-pre-line text-sm text-white/70 sm:mt-2 sm:line-clamp-none">{p.body}</p>
 
-              {p.link_url && <LinkPreview url={p.link_url} className="mt-3" />}
+              {p.link_url && <LinkPreview url={p.link_url} className="mt-2.5 sm:mt-3" />}
 
               <div className="mt-auto">
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-3">
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-2.5 sm:mt-4 sm:gap-3 sm:pt-3">
                   <div className="flex items-center gap-2 text-xs text-white/50">
                     {p.author_role === 'empresa' ? (
                       <Building2 className="h-4 w-4" />

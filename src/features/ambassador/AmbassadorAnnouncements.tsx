@@ -1,6 +1,6 @@
 ﻿// Embajador: pasantías para difundir con tu comunidad
 import { useEffect, useState } from 'react';
-import { Building2, MapPin, Megaphone, Check, Copy, Send, Plus, Trash2 } from 'lucide-react';
+import { Building2, MapPin, Megaphone, Check, Send, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { InternshipWithCompany, Modality } from '../../lib/database.types';
@@ -46,7 +46,6 @@ export default function AmbassadorAnnouncements() {
   const [ownIds, setOwnIds] = useState<Set<string>>(new Set());
   const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
@@ -80,21 +79,6 @@ export default function AmbassadorAnnouncements() {
     await supabase
       .from('internship_diffusions')
       .insert({ ambassador_id: session!.user.id, internship_id: i.id });
-  }
-
-  async function copyCaption(i: InternshipWithCompany) {
-    const caption =
-      `Nueva PASANTÍA disponible\n\n` +
-      `${i.title}\n` +
-      `${i.company_name || i.company?.company_name || 'Empresa'}\n` +
-      `${modalityLabel[i.modality]}${i.location ? ' · ' + i.location : ''}\n` +
-      `Área: ${i.area}\n\n` +
-      `Postulate en PasantIA\n#pasantias #empleojoven #universitarios`;
-    try {
-      await navigator.clipboard.writeText(caption);
-      setCopied(i.id);
-      setTimeout(() => setCopied((c) => (c === i.id ? null : c)), 2000);
-    } catch { /* ignore */ }
   }
 
   async function deleteOwnInternship(id: string) {
@@ -198,13 +182,6 @@ export default function AmbassadorAnnouncements() {
                 </div>
                 <p className="mt-2 line-clamp-2 flex-1 text-sm text-white/60 sm:mt-3 sm:line-clamp-3">{i.description}</p>
                 <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-5">
-                  <button
-                    onClick={() => copyCaption(i)}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-white/10"
-                  >
-                    {copied === i.id ? <Check className="h-4 w-4 text-emerald-300" /> : <Copy className="h-4 w-4" />}
-                    {copied === i.id ? 'Copiado' : 'Copiar texto'}
-                  </button>
                   {/* Difundir: solo en pasantías de OTROS, no en las propias */}
                   {!ownIds.has(i.id) &&
                     (done ? (

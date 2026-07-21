@@ -535,7 +535,7 @@ export default function CommunityDetailPage() {
           description="Publicá un anuncio o compartí una pasantía disponible para arrancar el feed."
         />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {feed.map((item) =>
             item.kind === 'post' ? (
               <PostCard
@@ -629,7 +629,7 @@ function InternshipCard({
                 {i.company?.company_name || 'Empresa'}
               </span>
             </div>
-            <h3 className="mb-2 text-lg font-semibold text-white">{i.title}</h3>
+            <h3 className="mb-2 text-base font-semibold text-white sm:text-lg">{i.title}</h3>
             <p className="mb-3 line-clamp-2 text-white/70">{i.description}</p>
             <div className="flex flex-wrap gap-2">
               <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/70">

@@ -227,7 +227,7 @@ export default function CompanyApplications() {
           }
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((r) => {
             const d = details(r.student);
             const st = normalizeStatus(r.status);

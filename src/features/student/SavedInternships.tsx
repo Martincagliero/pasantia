@@ -97,7 +97,7 @@ export default function SavedInternships() {
           }
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {items.map((i) => {
             const applied = appliedIds.has(i.id);
             return (
@@ -115,8 +115,8 @@ export default function SavedInternships() {
                     <Heart className="h-4 w-4" fill="currentColor" />
                   </button>
                 </div>
-                <h3 className="text-lg font-semibold leading-snug text-white">{i.title}</h3>
-                <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                <h3 className="text-base font-semibold leading-snug text-white sm:text-lg">{i.title}</h3>
+                <div className="mt-2 flex flex-wrap gap-1.5 text-xs sm:mt-3 sm:gap-2">
                   <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-white/70">
                     {i.area}
                   </span>

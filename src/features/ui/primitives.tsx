@@ -15,7 +15,7 @@ export function Card({
 }) {
   return (
     <div
-      className={`glass rounded-2xl border border-white/12 p-4 sm:p-5 ${
+      className={`glass rounded-2xl border border-white/12 p-3 sm:p-5 ${
         hover
           ? 'transition duration-200 hover:-translate-y-0.5 hover:border-white/25 hover:shadow-xl hover:shadow-brand-950/30'
           : ''
@@ -54,7 +54,7 @@ export function EmptyState({
   icon?: ReactNode;
 }) {
   return (
-    <div className="glass rounded-2xl border border-dashed border-white/15 px-6 py-10 text-center">
+    <div className="glass rounded-2xl border border-dashed border-white/15 px-4 py-8 text-center sm:px-6 sm:py-10">
       {icon && (
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/70">
           {icon}

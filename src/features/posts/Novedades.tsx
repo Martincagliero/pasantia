@@ -134,7 +134,7 @@ export default function Novedades() {
           }
         />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
           {filtered.map((p) => (
             <Card key={p.id} className="flex flex-col">
               <div className="mb-2 flex items-center justify-between gap-2">
@@ -154,7 +154,7 @@ export default function Novedades() {
                 )}
               </div>
 
-              <h3 className="text-lg font-semibold leading-snug text-white">{p.title}</h3>
+              <h3 className="text-base font-semibold leading-snug text-white sm:text-lg">{p.title}</h3>
               <p className="mt-2 whitespace-pre-line text-sm text-white/70">{p.body}</p>
 
               {p.link_url && <LinkPreview url={p.link_url} className="mt-3" />}

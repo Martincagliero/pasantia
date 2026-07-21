@@ -113,7 +113,7 @@ export default function AmbassadorOpportunities() {
           description="Cuando las empresas publiquen nuevas oportunidades vas a poder compartirlas acá."
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {list.map((i) => {
             const done = diffusedIds.has(i.id);
             const forMe = broadcastIds.has(i.id);

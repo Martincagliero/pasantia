@@ -173,14 +173,14 @@ export default function BrowseInternships() {
           description="Volvé pronto: las empresas publican nuevas oportunidades seguido."
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((i) => {
             const applied = appliedIds.has(i.id);
             const saved = savedIds.has(i.id);
             return (
               <Card key={i.id} className="flex flex-col">
                 {i.image_url && (
-                  <div className="-mx-4 -mt-4 mb-3 h-36 overflow-hidden rounded-t-2xl sm:-mx-5 sm:-mt-5">
+                  <div className="-mx-3 -mt-3 mb-3 h-28 overflow-hidden rounded-t-2xl sm:-mx-5 sm:-mt-5 sm:h-36">
                     <img src={i.image_url} alt={i.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                   </div>
                 )}
@@ -203,8 +203,8 @@ export default function BrowseInternships() {
                     <ReportButton targetType="internship" targetId={i.id} />
                   </div>
                 </div>
-                <h3 className="text-lg font-semibold leading-snug text-white">{i.title}</h3>
-                <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                <h3 className="text-base font-semibold leading-snug text-white sm:text-lg">{i.title}</h3>
+                <div className="mt-2 flex flex-wrap gap-1.5 text-xs sm:mt-3 sm:gap-2">
                   <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-white/70">
                     {i.area}
                   </span>
@@ -217,8 +217,8 @@ export default function BrowseInternships() {
                     </span>
                   )}
                 </div>
-                <p className="mt-3 line-clamp-3 text-sm text-white/60">{i.description}</p>
-                <div className="mt-5 flex items-center gap-2">
+                <p className="mt-2 line-clamp-2 text-sm text-white/60 sm:mt-3 sm:line-clamp-3">{i.description}</p>
+                <div className="mt-4 flex items-center gap-2 sm:mt-5">
                   {applied ? (
                     <span className="rounded-full border border-emerald-300/30 bg-emerald-400/15 px-4 py-2 text-sm font-medium text-emerald-200">
                       Ya postulaste

@@ -12,6 +12,8 @@ import { Link } from 'react-router-dom';
 export default function StudentCommunities() {
   const { session } = useAuth();
   const [communities, setCommunities] = useState<Community[]>([]);
+  const [discover, setDiscover] = useState<Community[]>([]);
+  const [joiningId, setJoiningId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', description: '', is_public: true });
@@ -23,9 +25,14 @@ export default function StudentCommunities() {
     (async () => {
       try {
         const uid = session!.user.id;
-        const [{ data: created }, { data: memberships }] = await Promise.all([
+        const [{ data: created }, { data: memberships }, { data: publicList }] = await Promise.all([
           supabase.from('communities').select('*').eq('creator_id', uid),
           supabase.from('community_members').select('community_id').eq('student_id', uid),
+          supabase
+            .from('communities')
+            .select('*')
+            .eq('is_public', true)
+            .order('created_at', { ascending: false }),
         ]);
 
         let joined: Community[] = [];
@@ -42,6 +49,13 @@ export default function StudentCommunities() {
           (b.created_at ?? '').localeCompare(a.created_at ?? '')
         );
         if (active) setCommunities(all);
+
+        // Descubrir: TODAS las públicas que no creaste ni te uniste.
+        const mineIds = new Set(all.map((c) => c.id));
+        const disc = ((publicList as Community[]) ?? []).filter(
+          (c) => c.creator_id !== uid && !mineIds.has(c.id)
+        );
+        if (active) setDiscover(disc);
       } catch { /* ignore */ } finally {
         if (active) setLoading(false);
       }
@@ -87,6 +101,27 @@ export default function StudentCommunities() {
       setCopied(id);
       setTimeout(() => setCopied((c) => (c === id ? null : c)), 2000);
     } catch { /* ignore */ }
+  }
+
+  async function handleJoin(c: Community) {
+    setJoiningId(c.id);
+    try {
+      const { error } = await supabase
+        .from('community_members')
+        .insert({ community_id: c.id, student_id: session!.user.id });
+      if (error) throw error;
+      setDiscover((prev) => prev.filter((x) => x.id !== c.id));
+      setCommunities((prev) => [{ ...c, members_count: (c.members_count ?? 0) + 1 }, ...prev]);
+    } catch (e) {
+      const msg = (e as { message?: string })?.message ?? '';
+      if (/row-level security|policy/i.test(msg)) {
+        alert('No podés unirte (puede que te hayan echado de esta comunidad).');
+      } else {
+        alert('No se pudo unir a la comunidad: ' + msg);
+      }
+    } finally {
+      setJoiningId(null);
+    }
   }
 
   if (loading) return <PageLoader />;
@@ -226,6 +261,53 @@ export default function StudentCommunities() {
               </Card>
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* Descubrir: todas las comunidades públicas, cualquiera se puede unir */}
+      {discover.length > 0 && (
+        <div className="mt-10">
+          <h2 className="mb-1 text-lg font-semibold text-white">Descubrir comunidades</h2>
+          <p className="mb-4 text-sm text-white/55">
+            Comunidades públicas de la plataforma. Unite a la que quieras.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {discover.map((c) => (
+              <Card key={c.id} className="flex h-full flex-col">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-white">{c.name}</h3>
+                  {c.description && (
+                    <p className="mt-1.5 line-clamp-3 text-sm text-white/65">{c.description}</p>
+                  )}
+                </div>
+                <div className="mt-3 flex items-center gap-1.5 border-t border-white/10 pt-3 text-xs text-white/50">
+                  <Users className="h-3 w-3" />
+                  <span>{c.members_count} {c.members_count === 1 ? 'miembro' : 'miembros'}</span>
+                  <span className="ml-auto text-emerald-300/70">Pública</span>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => handleJoin(c)}
+                    disabled={joiningId === c.id}
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-brand-500 px-3 py-2 text-xs font-semibold !text-white transition hover:bg-brand-400 disabled:opacity-60"
+                  >
+                    {joiningId === c.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Users className="h-3.5 w-3.5" />
+                    )}
+                    Unirme
+                  </button>
+                  <Link
+                    to={`/app/comunidad/${c.id}`}
+                    className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-3 py-2 text-xs font-medium text-white transition hover:bg-white/10"
+                  >
+                    Ver
+                  </Link>
+                </div>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
     </div>

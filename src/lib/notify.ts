@@ -9,7 +9,7 @@ export async function sendPush(params: {
   url?: string;
 }): Promise<void> {
   try {
-    await supabase.functions.invoke('send-push', {
+    const { data, error } = await supabase.functions.invoke('send-push', {
       body: {
         user_id: params.userId,
         title: params.title,
@@ -17,7 +17,9 @@ export async function sendPush(params: {
         url: params.url ?? '/app',
       },
     });
-  } catch {
-    /* si la función no está desplegada todavía, ignoramos el error */
+    if (error) console.warn('[push] send-push error:', error);
+    else console.log('[push] send-push OK:', data);
+  } catch (e) {
+    console.warn('[push] send-push excepción:', e);
   }
 }

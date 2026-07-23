@@ -15,6 +15,8 @@ import {
   Link2,
   Trash2,
   Search,
+  ChevronDown,
+  UserMinus,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../features/auth/AuthProvider';
@@ -91,6 +93,9 @@ export default function CommunityDetailPage() {
   const [isCreator, setIsCreator] = useState(false);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
+  const [members, setMembers] = useState<{ student_id: string; name: string }[]>([]);
+  const [showMembers, setShowMembers] = useState(false);
+  const [kicking, setKicking] = useState<string | null>(null);
 
   // Composer
   const [tab, setTab] = useState<'anuncio' | 'pasantia' | null>(null);
@@ -157,6 +162,7 @@ export default function CommunityDetailPage() {
         const uid = session?.user.id;
         const creator = !!(uid && comm?.creator_id === uid);
         if (active) setIsCreator(creator);
+        if (active && creator) loadMembers();
 
         let member = creator;
         if (uid && !creator) {
@@ -193,7 +199,6 @@ export default function CommunityDetailPage() {
       alert('Solo estudiantes pueden unirse a comunidades');
       return;
     }
-    setJoining(true);
     try {
       const { error } = await supabase.from('community_members').insert({
         community_id: id,
@@ -209,6 +214,52 @@ export default function CommunityDetailPage() {
       alert('Error al unirse a la comunidad: ' + (err?.message ?? ''));
     } finally {
       setJoining(false);
+    }
+  }
+
+  async function loadMembers() {
+    const { data: rows } = await supabase
+      .from('community_members')
+      .select('student_id')
+      .eq('community_id', id);
+    const ids = (rows ?? []).map((r) => (r as { student_id: string }).student_id);
+    if (ids.length === 0) {
+      setMembers([]);
+      return;
+    }
+    const { data: profs } = await supabase.from('profiles').select('id, full_name').in('id', ids);
+    const nameById = new Map(
+      (profs as { id: string; full_name: string }[] | null ?? []).map((p) => [p.id, p.full_name])
+    );
+    setMembers(ids.map((sid) => ({ student_id: sid, name: nameById.get(sid) || 'Estudiante' })));
+  }
+
+  async function handleKick(studentId: string, name: string) {
+    if (!confirm(`¿Echar a ${name}? No va a poder volver a unirse a esta comunidad.`)) return;
+    setKicking(studentId);
+    try {
+      // Banear (para que no pueda volver) y quitar de miembros.
+      const { error: banErr } = await supabase
+        .from('community_bans')
+        .insert({ community_id: id, user_id: studentId });
+      if (banErr && !/duplicate|unique/i.test(banErr.message)) throw banErr;
+      const { error } = await supabase
+        .from('community_members')
+        .delete()
+        .eq('community_id', id)
+        .eq('student_id', studentId);
+      if (error) throw error;
+      setMembers((prev) => prev.filter((m) => m.student_id !== studentId));
+      setCommunity((c) => (c ? { ...c, members_count: Math.max(0, (c.members_count ?? 1) - 1) } : c));
+    } catch (e) {
+      const msg = (e as { message?: string })?.message ?? '';
+      if (/does not exist|schema cache|relation/i.test(msg)) {
+        alert('Falta correr la migración "migracion-comunidades-moderacion.sql" en Supabase.');
+      } else {
+        alert('No se pudo echar al miembro: ' + msg);
+      }
+    } finally {
+      setKicking(null);
     }
   }
 
@@ -403,6 +454,54 @@ export default function CommunityDetailPage() {
           Normas de la comunidad
         </a>
       </div>
+
+      {/* Gestión de miembros (solo el creador puede echar) */}
+      {isCreator && (
+        <Card className="mb-6">
+          <button
+            onClick={() => {
+              if (!showMembers) loadMembers();
+              setShowMembers((v) => !v);
+            }}
+            className="flex w-full items-center justify-between gap-2"
+          >
+            <h3 className="text-base font-semibold text-white">
+              Miembros <span className="text-white/45">({community.members_count})</span>
+            </h3>
+            <ChevronDown
+              className={`h-4 w-4 shrink-0 text-white/40 transition-transform ${showMembers ? 'rotate-180' : ''}`}
+            />
+          </button>
+          {showMembers && (
+            <div className="mt-3 space-y-2">
+              {members.length === 0 ? (
+                <p className="text-sm text-white/50">Todavía no hay miembros para mostrar.</p>
+              ) : (
+                members.map((m) => (
+                  <div
+                    key={m.student_id}
+                    className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                  >
+                    <span className="truncate text-sm text-white/80">{m.name}</span>
+                    <button
+                      onClick={() => handleKick(m.student_id, m.name)}
+                      disabled={kicking === m.student_id}
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-red-400/30 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-300 transition hover:bg-red-500/20 disabled:opacity-60"
+                    >
+                      {kicking === m.student_id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <UserMinus className="h-3.5 w-3.5" />
+                      )}
+                      Echar
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Composer */}
       <Card className="mb-6">

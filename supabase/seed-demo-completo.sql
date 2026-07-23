@@ -90,6 +90,9 @@ declare
   s_val  uuid;
   s_mat  uuid;
   a_utn  uuid;
+  a_uba  uuid;
+  a_uca  uuid;
+  a_dev  uuid;
 begin
   -- ===== EMPRESAS =====
   c_tech := public.demo_create_user('pasantia.demo.technova@gmail.com',    'TechNova (DEMO)',       'empresa');
@@ -102,6 +105,9 @@ begin
 
   -- ===== EMBAJADOR =====
   a_utn := public.demo_create_user('pasantia.demo.embajador@gmail.com', 'Comunidad Ing. UTN (DEMO)', 'embajador');
+  a_uba := public.demo_create_user('pasantia.demo.emb.uba@gmail.com',   'Centro de Estudiantes UBA (DEMO)', 'embajador');
+  a_uca := public.demo_create_user('pasantia.demo.emb.uca@gmail.com',   'Bolsa de Trabajo UCA (DEMO)', 'embajador');
+  a_dev := public.demo_create_user('pasantia.demo.emb.dev@gmail.com',   'DevRosario Comunidad (DEMO)', 'embajador');
 
   -- ---- profiles (por si el trigger no corrió) ----
   insert into public.profiles (id, role, full_name, email) values
@@ -110,7 +116,10 @@ begin
     (c_shop, 'empresa',    'Mercado Andes (DEMO)',     'pasantia.demo.mercadoandes@gmail.com'),
     (s_val,  'estudiante', 'Valentina Gómez (DEMO)',   'pasantia.demo.valentina@gmail.com'),
     (s_mat,  'estudiante', 'Mateo Fernández (DEMO)',   'pasantia.demo.mateo@gmail.com'),
-    (a_utn,  'embajador',  'Comunidad Ing. UTN (DEMO)','pasantia.demo.embajador@gmail.com')
+    (a_utn,  'embajador',  'Comunidad Ing. UTN (DEMO)','pasantia.demo.embajador@gmail.com'),
+    (a_uba,  'embajador',  'Centro de Estudiantes UBA (DEMO)','pasantia.demo.emb.uba@gmail.com'),
+    (a_uca,  'embajador',  'Bolsa de Trabajo UCA (DEMO)','pasantia.demo.emb.uca@gmail.com'),
+    (a_dev,  'embajador',  'DevRosario Comunidad (DEMO)','pasantia.demo.emb.dev@gmail.com')
   on conflict (id) do update
     set role = excluded.role, full_name = excluded.full_name, email = excluded.email;
 
@@ -163,7 +172,19 @@ begin
     (a_utn, 'Comunidad Ing. UTN (DEMO)', 'comunidad', 'Universidad Tecnológica Nacional (UTN)',
      '@comunidad.utn.demo', '5000+',
      '⚠️ Comunidad DEMO de ejemplo. Difundimos oportunidades de pasantías entre estudiantes de ingeniería.',
-     'https://ui-avatars.com/api/?name=UTN&background=DC2626&color=fff&size=256&bold=true', true)
+     'https://ui-avatars.com/api/?name=UTN&background=DC2626&color=fff&size=256&bold=true', true),
+    (a_uba, 'Centro de Estudiantes UBA (DEMO)', 'centro_estudiantes', 'Universidad de Buenos Aires (UBA)',
+     '@ce.uba.demo', '8000+',
+     '⚠️ Comunidad DEMO de ejemplo. Centro de estudiantes que comparte oportunidades laborales.',
+     'https://ui-avatars.com/api/?name=UBA&background=0A66C2&color=fff&size=256&bold=true', true),
+    (a_uca, 'Bolsa de Trabajo UCA (DEMO)', 'secretaria_empleo', 'Pontificia Universidad Católica Argentina (UCA)',
+     '@bolsatrabajo.uca.demo', '3000+',
+     '⚠️ Comunidad DEMO de ejemplo. Bolsa de trabajo universitaria que difunde pasantías.',
+     'https://ui-avatars.com/api/?name=UCA&background=059669&color=fff&size=256&bold=true', true),
+    (a_dev, 'DevRosario Comunidad (DEMO)', 'comunidad', 'Universidad Nacional de Rosario (UNR)',
+     '@devrosario.demo', '12000+',
+     '⚠️ Comunidad DEMO de ejemplo. Comunidad de desarrolladores que comparte pasantías tech.',
+     'https://ui-avatars.com/api/?name=Dev&background=7C3AED&color=fff&size=256&bold=true', true)
   on conflict (id) do update set
     org_name = excluded.org_name, org_type = excluded.org_type, university = excluded.university,
     instagram_url = excluded.instagram_url, reach = excluded.reach, description = excluded.description,

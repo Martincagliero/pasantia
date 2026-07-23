@@ -45,6 +45,7 @@ interface FormData {
   nombre: string;
   email: string;
   password: string;
+  fecha_nacimiento: string;
   telefono: string;
   universidad: string;
   carrera: string;
@@ -61,6 +62,7 @@ interface FormData {
   instagram_link: string;
   followers_range: string;
   mensaje: string;
+  recordar: boolean;
 }
 
 const EMPTY: FormData = {
@@ -68,6 +70,7 @@ const EMPTY: FormData = {
   nombre: '',
   email: '',
   password: '',
+  fecha_nacimiento: '',
   telefono: '',
   universidad: '',
   carrera: '',
@@ -84,9 +87,29 @@ const EMPTY: FormData = {
   instagram_link: '',
   followers_range: '',
   mensaje: '',
+  recordar: true,
 };
 
 const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
+// Edad cumplida a partir de una fecha (YYYY-MM-DD). Devuelve null si es inválida.
+const ageFromDate = (v: string): number | null => {
+  const s = v.trim();
+  if (!s) return null;
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+  return age;
+};
+
+// Los estudiantes deben ser mayores de 18 (fecha válida y no futura).
+const isAdultStudent = (v: string): boolean => {
+  const age = ageFromDate(v);
+  return age !== null && age >= 18 && age < 120;
+};
 
 type Screen =
   | 'role'
@@ -177,7 +200,9 @@ function Onboarding({
           data.nombre.trim().length > 1 &&
           isEmail(data.email) &&
           data.password.trim().length >= 6 &&
-          data.instagram_link.trim() !== ''
+          data.instagram_link.trim() !== '' &&
+          // La fecha de nacimiento y ser mayor de 18 sólo se exige a estudiantes.
+          (data.role !== 'estudiante' || isAdultStudent(data.fecha_nacimiento))
         );
       case 'eduUni':
         return data.universidad.trim() !== '' && data.carrera.trim() !== '';
@@ -227,6 +252,7 @@ function Onboarding({
       rol: data.role,
       nombre: data.nombre,
       email: data.email,
+      fecha_nacimiento: data.role === 'estudiante' ? data.fecha_nacimiento : '',
       telefono: data.telefono,
       universidad: data.universidad,
       carrera: data.carrera,
@@ -331,6 +357,15 @@ function Onboarding({
         window.location.href = `mailto:${CONTACT.email}?subject=${encodeURIComponent(
           subject
         )}&body=${encodeURIComponent(lines.join('\n'))}`;
+      }
+      // Recordar la cuenta para el próximo ingreso (solo el email; la contraseña
+      // la guarda el gestor del navegador). Misma clave que usa el login.
+      try {
+        if (data.recordar && data.email.trim()) {
+          localStorage.setItem('pasantia_remember_email', data.email.trim());
+        }
+      } catch {
+        /* ignore */
       }
       setSubmitted(true);
     } catch {
@@ -570,6 +605,21 @@ function StepContacto({
           onChange={(v) => set({ password: v })}
           placeholder="Al menos 6 caracteres"
         />
+        {data.role === 'estudiante' && (
+          <div>
+            <Input
+              label="Fecha de nacimiento"
+              type="date"
+              value={data.fecha_nacimiento}
+              onChange={(v) => set({ fecha_nacimiento: v })}
+            />
+            {data.fecha_nacimiento.trim() !== '' && !isAdultStudent(data.fecha_nacimiento) && (
+              <p className="mt-1.5 text-left text-sm text-red-200">
+                Tenés que ser mayor de 18 años para registrarte.
+              </p>
+            )}
+          </div>
+        )}
         <Input
           label="Instagram u otra red"
           value={data.instagram_link}
@@ -582,6 +632,15 @@ function StepContacto({
           onChange={(v) => set({ telefono: v })}
           placeholder="+54 9 ..."
         />
+        <label className="flex cursor-pointer items-center gap-2.5 text-left text-sm text-white/75 select-none">
+          <input
+            type="checkbox"
+            checked={data.recordar}
+            onChange={(e) => set({ recordar: e.target.checked })}
+            className="h-4 w-4 shrink-0 rounded border-white/30 bg-white/10 accent-white"
+          />
+          Recordar mi cuenta para el próximo ingreso
+        </label>
       </div>
     </div>
   );

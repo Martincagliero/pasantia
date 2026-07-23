@@ -16,8 +16,15 @@ export default function Login() {
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from ?? '/app';
 
-  const [email, setEmail] = useState('');
+  // Recordar la cuenta: guardamos el email en este dispositivo (la contraseña
+  // la recuerda el gestor de contraseñas del navegador de forma segura).
+  const REMEMBER_KEY = 'pasantia_remember_email';
+  const rememberedEmail =
+    typeof localStorage !== 'undefined' ? localStorage.getItem(REMEMBER_KEY) : null;
+
+  const [email, setEmail] = useState(rememberedEmail ?? '');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(!!rememberedEmail);
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -48,13 +55,20 @@ export default function Login() {
       setError(error);
       return;
     }
+    // Recordar (o olvidar) la cuenta en este dispositivo.
+    try {
+      if (remember) localStorage.setItem(REMEMBER_KEY, email.trim());
+      else localStorage.removeItem(REMEMBER_KEY);
+    } catch {
+      /* ignore */
+    }
     navigate(from, { replace: true });
   }
 
   return (
     <div
       onMouseMove={handleMove}
-      className="relative min-h-screen overflow-hidden bg-[#05070E]"
+      className="app-shrink relative min-h-screen overflow-hidden bg-[#05070E]"
       style={{ perspective: 1200 }}
     >
       {/* Fondo decorativo con parallax */}
@@ -177,6 +191,17 @@ export default function Login() {
                     {error}
                   </p>
                 )}
+
+                {/* Recordar cuenta */}
+                <label className="flex cursor-pointer items-center gap-2.5 text-sm text-white/60 select-none">
+                  <input
+                    type="checkbox"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                    className="h-4 w-4 shrink-0 rounded border-white/20 bg-white/5 accent-brand-500"
+                  />
+                  Recordar mi cuenta en este dispositivo
+                </label>
 
                 <motion.button
                   type="submit"

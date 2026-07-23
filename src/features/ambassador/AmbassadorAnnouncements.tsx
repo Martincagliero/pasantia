@@ -201,16 +201,17 @@ export default function AmbassadorAnnouncements() {
                   {/* Difundir: solo en pasantías de OTROS, no en las propias */}
                   {!ownIds.has(i.id) &&
                     (done ? (
-                      <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-400/15 px-3.5 py-2 text-sm font-medium text-emerald-200">
-                        <Check className="h-4 w-4" /> Difundida
+                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/30 bg-emerald-400/15 px-2.5 py-1 text-xs font-medium text-emerald-200">
+                        <Check className="h-3.5 w-3.5" /> Difundida
                       </span>
                     ) : (
                       <button
                         onClick={() => markDiffused(i)}
                         disabled={!verified}
-                        className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white px-3.5 py-2 text-sm font-semibold text-brand-600 transition hover:bg-brand-950 hover:text-white disabled:opacity-40"
+                        title="Marcar como difundida"
+                        className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white px-2.5 py-1 text-xs font-semibold text-brand-600 transition hover:bg-brand-950 hover:text-white disabled:opacity-40"
                       >
-                        <Send className="h-4 w-4" /> Marcar difundida
+                        <Send className="h-3.5 w-3.5" /> Difundida
                       </button>
                     ))}
                   <button

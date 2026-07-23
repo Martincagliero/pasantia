@@ -11,6 +11,7 @@ import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { Card, EmptyState, PageLoader } from '../ui/primitives';
 import { AvatarUpload } from '../ui/AvatarUpload';
 import { ProfileHeader } from '../ui/ProfileHeader';
+import { ProfileCompletion } from '../ui/ProfileCompletion';
 import { UserPosts } from '../posts/UserPosts';
 
 interface InternshipLite {
@@ -246,6 +247,18 @@ export default function CompanyProfileForm() {
         requested={requested}
         onEdit={() => setEditing(true)}
         onRequestVerification={requestVerification}
+      />
+
+      <ProfileCompletion
+        fields={[
+          { label: 'Logo', done: !!(form.avatar_url ?? '').trim() },
+          { label: 'Nombre de la empresa', done: !!(form.company_name ?? '').trim() },
+          { label: 'Contacto', done: !!fullName.trim() },
+          { label: 'Rubro', done: !!(form.industry ?? '').trim() },
+          { label: 'Tamaño', done: !!(form.size ?? '').trim() },
+          { label: 'Sitio web', done: !!(form.website ?? '').trim() },
+          { label: 'Descripción', done: !!(form.description ?? '').trim() },
+        ]}
       />
 
       <div className="grid gap-6">

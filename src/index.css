@@ -73,6 +73,16 @@
   }
 }
 
+/* Plataforma (login + panel): achicar todo un poco en mobile para que entre
+   más contenido en pantalla. La landing NO se ve afectada (no lleva .app-shrink).
+   El min-height compensa el zoom para que el fondo cubra toda la altura. */
+@media (max-width: 640px) {
+  .app-shrink {
+    zoom: 0.92;
+    min-height: calc(100vh / 0.92);
+  }
+}
+
 /* Neutralizar el fondo del autocompletado del navegador (evita el tinte azulado
    y el efecto "dos colores" en los inputs precargados). */
 input:-webkit-autofill,

@@ -201,6 +201,14 @@ export interface Report {
   created_at: string;
 }
 
+/** Relación "seguir" (unidireccional): follower_id sigue a following_id. */
+export interface Follow {
+  id: string;
+  follower_id: string;
+  following_id: string;
+  created_at: string;
+}
+
 // --- Tipado genérico para el cliente de Supabase ---
 // Mantenido intencionalmente simple; el SDK igual funciona sin tipos exhaustivos.
 export interface Database {
@@ -237,6 +245,11 @@ export interface Database {
         Insert: Partial<Report> &
           Pick<Report, 'reporter_id' | 'target_type' | 'target_id' | 'reason'>;
         Update: Partial<Report>;
+      };
+      follows: {
+        Row: Follow;
+        Insert: Partial<Follow> & Pick<Follow, 'follower_id' | 'following_id'>;
+        Update: Partial<Follow>;
       };
     };
     Views: Record<string, never>;

@@ -15,6 +15,9 @@ import {
   Briefcase,
   MessageSquare,
   Phone,
+  UserPlus,
+  UserCheck,
+  Network,
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
@@ -22,6 +25,7 @@ import type {
   StudentProfile,
   CompanyProfile,
   AmbassadorProfile,
+  Post,
 } from '../../lib/database.types';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
 import { TextField } from '../ui/Field';
@@ -31,9 +35,11 @@ import { orgTypeLabel } from '../ambassador/ambassadorConfig';
 import { useMessages } from '../messages/MessagesProvider';
 import { useAuth } from '../auth/AuthProvider';
 import { UserPosts } from '../posts/UserPosts';
+import { LinkPreview } from '../ui/LinkPreview';
+import { PostInteractions } from '../ui/PostInteractions';
 import { ReportButton } from '../ui/ReportButton';
 
-type Tab = 'estudiantes' | 'empresas' | 'embajadores';
+type Tab = 'estudiantes' | 'empresas' | 'embajadores' | 'red';
 
 interface StudentRow extends StudentProfile {
   profile: { full_name: string; email: string } | null;
@@ -102,6 +108,7 @@ const TABS: { key: Tab; label: string; icon: typeof Users }[] = [
   { key: 'estudiantes', label: 'Estudiantes', icon: GraduationCap },
   { key: 'empresas', label: 'Empresas', icon: Building2 },
   { key: 'embajadores', label: 'Embajadores', icon: Megaphone },
+  { key: 'red', label: 'Red', icon: Network },
 ];
 
 export default function Explore() {
@@ -109,13 +116,61 @@ export default function Explore() {
   const { openChatWith } = useMessages();
   const { profile: viewer } = useAuth();
   const viewerRole = viewer?.role;
+  const uid = viewer?.id ?? null;
   const [tab, setTab] = useState<Tab>('estudiantes');
   const [query, setQuery] = useState(params.get('q') ?? '');
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [companies, setCompanies] = useState<CompanyRow[]>([]);
   const [ambassadors, setAmbassadors] = useState<AmbRow[]>([]);
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Selected | null>(null);
+
+  // Cargar a quién sigue el usuario actual.
+  useEffect(() => {
+    if (!uid) return;
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', uid);
+      if (!active) return;
+      setFollowingIds(new Set((data ?? []).map((f) => (f as { following_id: string }).following_id)));
+    })();
+    return () => {
+      active = false;
+    };
+  }, [uid]);
+
+  // Seguir / dejar de seguir (optimista).
+  async function toggleFollow(targetId: string) {
+    if (!uid || targetId === uid) return;
+    const isFollowing = followingIds.has(targetId);
+    setFollowingIds((prev) => {
+      const n = new Set(prev);
+      if (isFollowing) n.delete(targetId);
+      else n.add(targetId);
+      return n;
+    });
+    if (isFollowing) {
+      await supabase.from('follows').delete().eq('follower_id', uid).eq('following_id', targetId);
+    } else {
+      const { error } = await supabase.from('follows').insert({ follower_id: uid, following_id: targetId });
+      if (error) {
+        // revertir
+        setFollowingIds((prev) => {
+          const n = new Set(prev);
+          n.delete(targetId);
+          return n;
+        });
+        if (/does not exist|schema cache|relation/i.test(error.message)) {
+          alert('Falta correr la migración "migracion-red-seguir.sql" en Supabase para activar la Red.');
+        }
+      }
+    }
+  }
+
 
   useEffect(() => {
     let active = true;
@@ -249,17 +304,26 @@ export default function Explore() {
       </div>
 
       {/* Buscador */}
-      <div className="relative mb-5 sm:mb-6">
-        <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/40" />
-        <TextField
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por nombre, área, rubro o universidad"
-          className="pl-12"
-        />
-      </div>
+      {tab !== 'red' && (
+        <div className="relative mb-5 sm:mb-6">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/40" />
+          <TextField
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por nombre, área, rubro o universidad"
+            className="pl-12"
+          />
+        </div>
+      )}
 
-      {count === 0 ? (
+      {tab === 'red' ? (
+        <NetworkTab
+          companies={companies.filter((c) => followingIds.has(c.id))}
+          students={students.filter((s) => followingIds.has(s.id))}
+          ambassadors={ambassadors.filter((a) => followingIds.has(a.id))}
+          onOpen={setSelected}
+        />
+      ) : count === 0 ? (
         <EmptyState
           icon={<Users className="h-6 w-6" />}
           title="Sin resultados"
@@ -306,7 +370,15 @@ export default function Explore() {
         </div>
       )}
 
-      {selected && <DetailModal selected={selected} onClose={() => setSelected(null)} onMessage={handleMessage} />}
+      {selected && (
+        <DetailModal
+          selected={selected}
+          onClose={() => setSelected(null)}
+          onMessage={handleMessage}
+          isFollowing={followingIds.has(selected.row.id)}
+          onToggleFollow={() => toggleFollow(selected.row.id)}
+        />
+      )}
     </div>
   );
 }
@@ -361,10 +433,14 @@ function DetailModal({
   selected,
   onClose,
   onMessage,
+  isFollowing,
+  onToggleFollow,
 }: {
   selected: Selected;
   onClose: () => void;
   onMessage: (id: string, name: string, avatar?: string | null) => void;
+  isFollowing: boolean;
+  onToggleFollow: () => void;
 }) {
   useModalGuard();
   return (
@@ -383,11 +459,44 @@ function DetailModal({
           <X size={20} />
         </button>
 
-        {selected.type === 'estudiantes' && <StudentDetail row={selected.row} onMessage={onMessage} />}
-        {selected.type === 'empresas' && <CompanyDetail row={selected.row} onMessage={onMessage} />}
-        {selected.type === 'embajadores' && <AmbassadorDetail row={selected.row} onMessage={onMessage} />}
+        {selected.type === 'estudiantes' && (
+          <StudentDetail row={selected.row} onMessage={onMessage} isFollowing={isFollowing} onToggleFollow={onToggleFollow} />
+        )}
+        {selected.type === 'empresas' && (
+          <CompanyDetail row={selected.row} onMessage={onMessage} isFollowing={isFollowing} onToggleFollow={onToggleFollow} />
+        )}
+        {selected.type === 'embajadores' && (
+          <AmbassadorDetail row={selected.row} onMessage={onMessage} isFollowing={isFollowing} onToggleFollow={onToggleFollow} />
+        )}
       </div>
     </div>
+  );
+}
+
+/** Botón Seguir / Conectar reutilizable. */
+function FollowButton({
+  isFollowing,
+  onClick,
+  followLabel,
+  followingLabel,
+}: {
+  isFollowing: boolean;
+  onClick: () => void;
+  followLabel: string;
+  followingLabel: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={
+        isFollowing
+          ? 'inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10'
+          : 'inline-flex items-center gap-2 rounded-full bg-brand-500 px-5 py-2.5 text-sm font-semibold !text-white transition hover:bg-brand-400'
+      }
+    >
+      {isFollowing ? <UserCheck size={16} /> : <UserPlus size={16} />}
+      {isFollowing ? followingLabel : followLabel}
+    </button>
   );
 }
 
@@ -413,7 +522,7 @@ function LinkChip({ href, label, icon }: { href: string; label: string; icon: Re
   );
 }
 
-function StudentDetail({ row, onMessage }: { row: StudentRow; onMessage: (id: string, name: string, avatar?: string | null) => void }) {
+function StudentDetail({ row, onMessage, isFollowing, onToggleFollow }: { row: StudentRow; onMessage: (id: string, name: string, avatar?: string | null) => void; isFollowing: boolean; onToggleFollow: () => void }) {
   const name = row.profile?.full_name || 'Estudiante';
   return (
     <>
@@ -444,6 +553,12 @@ function StudentDetail({ row, onMessage }: { row: StudentRow; onMessage: (id: st
       </div>
 
       <div className="mb-5 flex flex-wrap gap-3">
+        <FollowButton
+          isFollowing={isFollowing}
+          onClick={onToggleFollow}
+          followLabel="Conectar"
+          followingLabel="Conectado"
+        />
         <button
           onClick={() => onMessage(row.id, name, row.avatar_url)}
           className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-brand-600 transition hover:bg-brand-950 hover:text-white"
@@ -523,7 +638,7 @@ function StudentDetail({ row, onMessage }: { row: StudentRow; onMessage: (id: st
   );
 }
 
-function CompanyDetail({ row, onMessage }: { row: CompanyRow; onMessage: (id: string, name: string, avatar?: string | null) => void }) {
+function CompanyDetail({ row, onMessage, isFollowing, onToggleFollow }: { row: CompanyRow; onMessage: (id: string, name: string, avatar?: string | null) => void; isFollowing: boolean; onToggleFollow: () => void }) {
   const name = row.company_name || 'Empresa';
   return (
     <>
@@ -547,6 +662,12 @@ function CompanyDetail({ row, onMessage }: { row: CompanyRow; onMessage: (id: st
       )}
 
       <div className="flex flex-wrap gap-3">
+        <FollowButton
+          isFollowing={isFollowing}
+          onClick={onToggleFollow}
+          followLabel="Seguir"
+          followingLabel="Siguiendo"
+        />
         <button
           onClick={() => onMessage(row.id, name, row.avatar_url)}
           className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-brand-600 transition hover:bg-brand-950 hover:text-white"
@@ -574,7 +695,7 @@ function CompanyDetail({ row, onMessage }: { row: CompanyRow; onMessage: (id: st
   );
 }
 
-function AmbassadorDetail({ row, onMessage }: { row: AmbRow; onMessage: (id: string, name: string, avatar?: string | null) => void }) {
+function AmbassadorDetail({ row, onMessage, isFollowing, onToggleFollow }: { row: AmbRow; onMessage: (id: string, name: string, avatar?: string | null) => void; isFollowing: boolean; onToggleFollow: () => void }) {
   const name = row.org_name || 'Comunidad';
   return (
     <>
@@ -604,6 +725,12 @@ function AmbassadorDetail({ row, onMessage }: { row: AmbRow; onMessage: (id: str
       )}
 
       <div className="flex flex-wrap gap-3">
+        <FollowButton
+          isFollowing={isFollowing}
+          onClick={onToggleFollow}
+          followLabel="Seguir"
+          followingLabel="Siguiendo"
+        />
         <button
           onClick={() => onMessage(row.id, name, row.logo_url)}
           className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-brand-600 transition hover:bg-brand-950 hover:text-white"
@@ -620,5 +747,187 @@ function AmbassadorDetail({ row, onMessage }: { row: AmbRow; onMessage: (id: str
         <UserPosts authorId={row.id} />
       </div>
     </>
+  );
+}
+
+/* ─────────────────────────── Pestaña "Red" ─────────────────────────── */
+
+function NetworkTab({
+  companies,
+  students,
+  ambassadors,
+  onOpen,
+}: {
+  companies: CompanyRow[];
+  students: StudentRow[];
+  ambassadors: AmbRow[];
+  onOpen: (s: Selected) => void;
+}) {
+  const followedIds = useMemo(
+    () => [
+      ...companies.map((c) => c.id),
+      ...students.map((s) => s.id),
+      ...ambassadors.map((a) => a.id),
+    ],
+    [companies, students, ambassadors]
+  );
+
+  // Mapa id -> {nombre, avatar} para mostrar autor en el feed.
+  const people = useMemo(() => {
+    const m = new Map<string, { name: string; avatar: string | null }>();
+    companies.forEach((c) => m.set(c.id, { name: c.company_name || 'Empresa', avatar: c.avatar_url ?? null }));
+    students.forEach((s) => m.set(s.id, { name: s.profile?.full_name || 'Estudiante', avatar: s.avatar_url ?? null }));
+    ambassadors.forEach((a) => m.set(a.id, { name: a.org_name || 'Comunidad', avatar: a.logo_url ?? null }));
+    return m;
+  }, [companies, students, ambassadors]);
+
+  const [feed, setFeed] = useState<Post[]>([]);
+  const [feedLoading, setFeedLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      if (followedIds.length === 0) {
+        setFeed([]);
+        setFeedLoading(false);
+        return;
+      }
+      setFeedLoading(true);
+      const { data } = await supabase
+        .from('posts')
+        .select('*')
+        .in('author_id', followedIds)
+        .order('created_at', { ascending: false })
+        .limit(40);
+      if (!active) return;
+      setFeed((data as Post[]) ?? []);
+      setFeedLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [followedIds]);
+
+  const nothing = companies.length === 0 && students.length === 0 && ambassadors.length === 0;
+
+  if (nothing) {
+    return (
+      <EmptyState
+        icon={<Network className="h-6 w-6" />}
+        title="Todavía no seguís a nadie"
+        description="Seguí empresas o conectá con estudiantes desde las otras pestañas para armar tu red y ver sus novedades acá."
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-7">
+      {companies.length > 0 && (
+        <NetSection title={`Empresas que seguís (${companies.length})`}>
+          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+            {companies.map((r) => (
+              <ProfileCard
+                key={r.id}
+                avatar={<Avatar url={r.avatar_url} name={r.company_name || 'Empresa'} />}
+                title={r.company_name || 'Empresa'}
+                subtitle={[r.industry, r.size && `${r.size} empleados`].filter(Boolean).join(' · ') || 'Empresa'}
+                tags={[]}
+                onClick={() => onOpen({ type: 'empresas', row: r })}
+                badge={r.verified ? <VerifiedBadge verified small /> : undefined}
+              />
+            ))}
+          </div>
+        </NetSection>
+      )}
+
+      {students.length > 0 && (
+        <NetSection title={`Amigos (${students.length})`}>
+          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+            {students.map((r) => (
+              <ProfileCard
+                key={r.id}
+                avatar={<Avatar url={r.avatar_url} name={r.profile?.full_name || 'Estudiante'} />}
+                title={r.profile?.full_name || 'Estudiante'}
+                subtitle={[r.career, r.year && `${r.year}° año`, r.university].filter(Boolean).join(' · ') || 'Estudiante'}
+                tags={(r.skills ?? []).slice(0, 3)}
+                onClick={() => onOpen({ type: 'estudiantes', row: r })}
+                badge={r.verified ? <VerifiedBadge verified small /> : undefined}
+              />
+            ))}
+          </div>
+        </NetSection>
+      )}
+
+      {ambassadors.length > 0 && (
+        <NetSection title={`Embajadores que seguís (${ambassadors.length})`}>
+          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+            {ambassadors.map((r) => (
+              <ProfileCard
+                key={r.id}
+                avatar={<Avatar url={r.logo_url} name={r.org_name || 'Comunidad'} />}
+                title={r.org_name || 'Comunidad'}
+                subtitle={[orgTypeLabel(r.org_type), r.university].filter(Boolean).join(' · ')}
+                tags={[]}
+                onClick={() => onOpen({ type: 'embajadores', row: r })}
+                badge={<VerifiedBadge verified />}
+              />
+            ))}
+          </div>
+        </NetSection>
+      )}
+
+      <NetSection title="Novedades de tu red">
+        {feedLoading ? (
+          <Card>
+            <p className="text-sm text-white/50">Cargando novedades…</p>
+          </Card>
+        ) : feed.length === 0 ? (
+          <Card>
+            <p className="text-sm text-white/55">
+              Todavía no hay novedades de las personas y empresas que seguís.
+            </p>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {feed.map((p) => (
+              <FeedCard key={p.id} post={p} person={people.get(p.author_id)} />
+            ))}
+          </div>
+        )}
+      </NetSection>
+    </div>
+  );
+}
+
+function NetSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-white/45">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function FeedCard({ post, person }: { post: Post; person?: { name: string; avatar: string | null } }) {
+  const name = person?.name || post.author_name || 'Usuario';
+  const date = new Date(post.created_at).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
+  return (
+    <Card className="flex flex-col">
+      <div className="mb-2 flex items-center gap-2.5">
+        <Avatar url={person?.avatar} name={name} className="h-9 w-9" />
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-white">{name}</p>
+          <p className="text-xs text-white/45">{date}</p>
+        </div>
+      </div>
+      <h3 className="text-base font-semibold text-white">{post.title}</h3>
+      <p className="mt-1 line-clamp-4 whitespace-pre-line text-sm text-white/70">{post.body}</p>
+      {post.link_url && (
+        <div className="mt-2">
+          <LinkPreview url={post.link_url} />
+        </div>
+      )}
+      <PostInteractions targetType="post" targetId={post.id} />
+    </Card>
   );
 }

@@ -9,6 +9,7 @@ import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { Card, PageLoader } from '../ui/primitives';
 import { AvatarUpload } from '../ui/AvatarUpload';
 import { ProfileHeader } from '../ui/ProfileHeader';
+import { ProfileCompletion } from '../ui/ProfileCompletion';
 import { UserPosts } from '../posts/UserPosts';
 import { whatsappLink } from '../../lib/constants';
 import { UniversityAutocomplete } from '../ui/UniversityAutocomplete';
@@ -563,6 +564,22 @@ export default function StudentProfileForm() {
         requested={requested}
         onEdit={() => setEditing(true)}
         onRequestVerification={requestVerification}
+      />
+
+      <ProfileCompletion
+        fields={[
+          { label: 'Foto de perfil', done: !!(form.avatar_url ?? '').trim() },
+          { label: 'Descripción', done: !!(form.bio ?? '').trim() },
+          { label: 'Universidad', done: !!(form.university ?? '').trim() },
+          { label: 'Carrera', done: !!(form.career ?? '').trim() },
+          { label: 'Año', done: !!(form.year ?? '').trim() },
+          { label: 'Área de interés', done: !!(form.area ?? '').trim() },
+          { label: 'Habilidades', done: form.skills.trim() !== '' },
+          { label: 'Disponibilidad', done: !!(form.availability ?? '').trim() },
+          { label: 'Ubicación', done: !!(form.location ?? '').trim() },
+          { label: 'Teléfono', done: !!(form.phone ?? '').trim() },
+          { label: 'CV', done: !!(form.cv_url ?? '').trim() },
+        ]}
       />
 
       <div className="grid gap-6">

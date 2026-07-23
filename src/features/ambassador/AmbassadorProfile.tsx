@@ -10,6 +10,7 @@ import { VerifiedBadge } from './VerifiedBadge';
 import { ORG_TYPES, orgTypeLabel } from './ambassadorConfig';
 import { UniversityAutocomplete } from '../ui/UniversityAutocomplete';
 import { ProfileHeader } from '../ui/ProfileHeader';
+import { ProfileCompletion } from '../ui/ProfileCompletion';
 import { UserPosts } from '../posts/UserPosts';
 import { whatsappLink } from '../../lib/constants';
 import { Upload } from 'lucide-react';
@@ -173,6 +174,17 @@ export default function AmbassadorProfile() {
           requested={requested}
           onEdit={() => setEditing(true)}
           onRequestVerification={requestVerification}
+        />
+
+        <ProfileCompletion
+          fields={[
+            { label: 'Logo', done: !!form.logo_url.trim() },
+            { label: 'Nombre de la comunidad', done: !!form.org_name.trim() },
+            { label: 'Universidad / Institución', done: !!form.university.trim() },
+            { label: 'Instagram', done: !!form.instagram_url.trim() },
+            { label: 'Alcance', done: !!form.reach.trim() },
+            { label: 'Descripción', done: !!form.description.trim() },
+          ]}
         />
 
         <Card>

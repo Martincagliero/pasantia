@@ -145,7 +145,7 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className="dash-root min-h-screen" data-theme={theme}>
+    <div className="dash-root app-shrink min-h-screen" data-theme={theme}>
       <MessagesProvider>
         <header className="dash-panel sticky top-0 z-40 border-b border-white/10">
           <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-4">

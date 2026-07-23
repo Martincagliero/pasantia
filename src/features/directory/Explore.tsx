@@ -288,12 +288,12 @@ export default function Explore() {
 
       {/* Tabs: categorías (segmentado) + "Red" como acceso aparte, minimalista */}
       <div className="mb-4 flex items-center gap-2 sm:mb-5">
-        <div className="flex flex-1 gap-1.5 sm:flex-none sm:gap-2">
+        <div className="flex min-w-0 flex-1 gap-1.5 sm:flex-none sm:gap-2">
           {TABS.filter((t) => t.key !== 'red').map(({ key, label, icon: Icon }) => (
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border px-2 py-1.5 text-[12.5px] font-medium transition sm:flex-none sm:px-4 sm:py-2 sm:text-sm ${
+              className={`inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full border px-2 py-1.5 text-[12.5px] font-medium transition sm:flex-none sm:px-4 sm:py-2 sm:text-sm ${
                 tab === key
                   ? 'border-brand-400/50 bg-brand-500/15 text-white'
                   : 'border-white/10 bg-white/[0.03] text-white/65 hover:bg-white/[0.06] hover:text-white'

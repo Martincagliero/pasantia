@@ -48,7 +48,6 @@ export default function BrowseInternships() {
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
-  const [areaFilter, setAreaFilter] = useState('todas');
   const [modalityFilter, setModalityFilter] = useState<'todas' | Modality>('todas');
   const [selected, setSelected] = useState<InternshipWithCompany | null>(null);
   const [detail, setDetail] = useState<InternshipWithCompany | null>(null);
@@ -72,11 +71,6 @@ export default function BrowseInternships() {
     };
   }, [session]);
 
-  const areas = useMemo(() => {
-    const set = new Set(internships.map((i) => i.area).filter(Boolean));
-    return Array.from(set).sort();
-  }, [internships]);
-
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return internships.filter((i) => {
@@ -88,11 +82,10 @@ export default function BrowseInternships() {
         (i.requirements ?? '').toLowerCase().includes(q) ||
         (i.company_name ?? '').toLowerCase().includes(q) ||
         (i.company?.company_name ?? '').toLowerCase().includes(q);
-      const matchesArea = areaFilter === 'todas' || i.area === areaFilter;
       const matchesModality = modalityFilter === 'todas' || i.modality === modalityFilter;
-      return matchesQuery && matchesArea && matchesModality;
+      return matchesQuery && matchesModality;
     });
-  }, [internships, query, areaFilter, modalityFilter]);
+  }, [internships, query, modalityFilter]);
 
   function markApplied(id: string) {
     setAppliedIds((prev) => new Set(prev).add(id));
@@ -136,7 +129,7 @@ export default function BrowseInternships() {
         </p>
       </div>
 
-      <div className="mb-6 grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-center">
+      <div className="mb-6 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
         <div className="relative">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/40" />
           <TextField
@@ -146,18 +139,6 @@ export default function BrowseInternships() {
             className="pl-12"
           />
         </div>
-        <SelectField
-          value={areaFilter}
-          onChange={(e) => setAreaFilter(e.target.value)}
-          className="sm:w-48"
-        >
-          <option value="todas">Todas las áreas</option>
-          {areas.map((a) => (
-            <option key={a} value={a}>
-              {a}
-            </option>
-          ))}
-        </SelectField>
         <SelectField
           value={modalityFilter}
           onChange={(e) => setModalityFilter(e.target.value as 'todas' | Modality)}

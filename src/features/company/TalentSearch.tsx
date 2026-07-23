@@ -5,7 +5,7 @@ import { Search, Mail, GraduationCap, MapPin, FileText, Link2, Globe, Code2, X, 
 import { supabase } from '../../lib/supabase';
 import type { StudentProfile } from '../../lib/database.types';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
-import { SelectField, TextField } from '../ui/Field';
+import { TextField } from '../ui/Field';
 import { useModalGuard } from '../ui/modalGuard';
 
 interface TalentRow extends StudentProfile {
@@ -32,7 +32,6 @@ export default function TalentSearch() {
   const [rows, setRows] = useState<TalentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
-  const [areaFilter, setAreaFilter] = useState('todas');
   const [selected, setSelected] = useState<TalentRow | null>(null);
   useModalGuard(!!selected);
 
@@ -52,16 +51,10 @@ export default function TalentSearch() {
     };
   }, []);
 
-  const areas = useMemo(() => {
-    const set = new Set(rows.map((r) => r.area).filter(Boolean) as string[]);
-    return Array.from(set).sort();
-  }, [rows]);
-
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return rows.filter((r) => {
-      const matchesArea = areaFilter === 'todas' || r.area === areaFilter;
-      if (!q) return matchesArea;
+      if (!q) return true;
       const haystack = [
         r.profile?.full_name,
         r.career,
@@ -72,9 +65,9 @@ export default function TalentSearch() {
         .filter(Boolean)
         .join(' ')
         .toLowerCase();
-      return matchesArea && haystack.includes(q);
+      return haystack.includes(q);
     });
-  }, [rows, query, areaFilter]);
+  }, [rows, query]);
 
   if (loading) return <PageLoader />;
 
@@ -85,7 +78,7 @@ export default function TalentSearch() {
         description="Estudiantes con perfil público. Filtrá por habilidad, área o nombre."
       />
 
-      <div className="mb-6 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+      <div className="mb-6 grid gap-3 sm:grid-cols-[1fr] sm:items-center">
         <div className="relative">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/40" />
           <TextField
@@ -95,12 +88,6 @@ export default function TalentSearch() {
             className="pl-12"
           />
         </div>
-        <SelectField value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)} className="sm:w-52">
-          <option value="todas">Todas las áreas</option>
-          {areas.map((a) => (
-            <option key={a} value={a}>{a}</option>
-          ))}
-        </SelectField>
       </div>
 
       {filtered.length === 0 ? (

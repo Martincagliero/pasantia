@@ -34,11 +34,11 @@ interface NavItem {
 }
 
 const studentNav: NavItem[] = [
-  { to: '/app/pasantias', label: 'Buscar pasantías', icon: LayoutGrid },
-  { to: '/app/postulaciones', label: 'Mis postulaciones', icon: Send },
-  { to: '/app/comunidades', label: 'Mis comunidades', icon: Users },
-  { to: '/app/explorar', label: 'Explorar perfiles', icon: Compass },
   { to: '/app/novedades', label: 'Novedades', icon: Newspaper },
+  { to: '/app/pasantias', label: 'Buscar pasantías', icon: LayoutGrid },
+  { to: '/app/explorar', label: 'Explorar perfiles', icon: Compass },
+  { to: '/app/comunidades', label: 'Mis comunidades', icon: Users },
+  { to: '/app/postulaciones', label: 'Mis postulaciones', icon: Send },
   { to: '/app/perfil', label: 'Mi perfil', icon: UserRound },
 ];
 

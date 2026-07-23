@@ -273,14 +273,25 @@ export function DashboardLayout() {
                 to={to}
                 end={end}
                 title={label}
-                className={({ isActive }) =>
-                  `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-2.5 text-[11px] font-medium transition-colors ${
-                    isActive ? 'text-brand-500' : 'text-white/55 hover:text-white'
-                  }`
-                }
+                className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 pb-1.5 pt-2"
               >
-                <Icon className="h-6 w-6 shrink-0" strokeWidth={1.9} />
-                <span className="w-full truncate text-center leading-tight">{label}</span>
+                {({ isActive }) => (
+                  <>
+                    <Icon
+                      className={`h-[26px] w-[26px] shrink-0 transition-colors ${
+                        isActive ? 'text-brand-500' : 'text-white/55'
+                      }`}
+                      strokeWidth={isActive ? 2.5 : 1.9}
+                    />
+                    <span
+                      className={`w-full truncate text-center text-[11px] leading-tight transition-colors ${
+                        isActive ? 'font-semibold text-brand-500' : 'font-medium text-white/60'
+                      }`}
+                    >
+                      {label}
+                    </span>
+                  </>
+                )}
               </NavLink>
             ))}
           </div>

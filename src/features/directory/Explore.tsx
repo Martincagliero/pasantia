@@ -837,13 +837,13 @@ function NetworkTab({
 
   return (
     <div className="space-y-5">
-      {/* Empresas y Estudiantes lado a lado, ambos desplegables */}
-      <div className="grid grid-cols-2 items-start gap-3 sm:gap-4">
+      {/* Empresas y Estudiantes: apilados en mobile (evita cortes), lado a lado en sm+ */}
+      <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
         <NetSection title={`Empresas (${companies.length})`}>
           {companies.length === 0 ? (
             <p className="text-xs text-white/40">No seguís empresas todavía.</p>
           ) : (
-            <div className="grid max-h-[300px] gap-2 overflow-y-auto pr-1">
+            <div className="grid max-h-[240px] gap-2 overflow-y-auto pr-1 sm:max-h-[300px]">
               {companies.map((r) => (
                 <NetItem
                   key={r.id}
@@ -862,7 +862,7 @@ function NetworkTab({
           {students.length === 0 ? (
             <p className="text-xs text-white/40">Todavía no conectaste con estudiantes.</p>
           ) : (
-            <div className="grid max-h-[300px] gap-2 overflow-y-auto pr-1">
+            <div className="grid max-h-[240px] gap-2 overflow-y-auto pr-1 sm:max-h-[300px]">
               {students.map((r) => (
                 <NetItem
                   key={r.id}

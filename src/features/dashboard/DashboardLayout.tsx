@@ -262,7 +262,7 @@ export function DashboardLayout() {
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl px-4 py-6 pb-24 sm:px-6 lg:pb-6">
+        <main className="mx-auto max-w-7xl overflow-x-hidden px-4 py-6 pb-24 sm:px-6 lg:pb-6">
           <Outlet />
         </main>
 

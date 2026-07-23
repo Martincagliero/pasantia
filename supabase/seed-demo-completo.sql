@@ -239,6 +239,21 @@ begin
      '[DEMO] Busco pasantía en operaciones o logística',
      '⚠️ Publicación DEMO de ejemplo. Estudiante de Ing. Industrial (3° año) disponible full-time. ¡Cualquier recomendación es bienvenida!',
      'busqueda', null);
+
+  -- ---- COMUNIDADES DEMO ----
+  -- Si la tabla communities no existe (no corriste communities.sql), se saltea.
+  begin
+    delete from public.communities where name like '%(DEMO)%';
+    insert into public.communities (creator_id, name, description, is_public, members_count) values
+      (s_val, 'Comunidad Sistemas UBA (DEMO)',
+       '⚠️ Comunidad DEMO de ejemplo. Estudiantes de sistemas compartiendo pasantías, recursos y experiencias.', true, 24),
+      (s_mat, 'Ingeniería Industrial UTN (DEMO)',
+       '⚠️ Comunidad DEMO de ejemplo. Difundimos oportunidades y consejos para estudiantes de ingeniería.', true, 15),
+      (s_val, 'Diseño & UX Argentina (DEMO)',
+       '⚠️ Comunidad DEMO de ejemplo. Comunidad de diseñadores junior buscando su primera experiencia laboral.', true, 31);
+  exception when undefined_table then
+    raise notice 'Tabla communities no existe; salteo comunidades demo (corré communities.sql).';
+  end;
 end $$;
 
 -- ---------------------------------------------------------------------------

@@ -18,6 +18,7 @@ import {
   UserPlus,
   UserCheck,
   Network,
+  ChevronDown,
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
@@ -285,22 +286,36 @@ export default function Explore() {
         description="Buscá y conocé a estudiantes, empresas y embajadores de la comunidad."
       />
 
-      {/* Tabs */}
-      <div className="mb-4 flex gap-1.5 sm:mb-5 sm:gap-2">
-        {TABS.map(({ key, label, icon: Icon }) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[13px] font-medium transition sm:flex-none sm:px-4 sm:py-2 sm:text-sm ${
-              tab === key
-                ? 'border-brand-400/50 bg-brand-500/15 text-white'
-                : 'border-white/10 bg-white/[0.03] text-white/65 hover:bg-white/[0.06] hover:text-white'
-            }`}
-          >
-            <Icon className="h-4 w-4 shrink-0" />
-            <span className="truncate">{label}</span>
-          </button>
-        ))}
+      {/* Tabs: categorías (segmentado) + "Red" como acceso aparte, minimalista */}
+      <div className="mb-4 flex items-center gap-2 sm:mb-5">
+        <div className="flex flex-1 gap-1.5 sm:flex-none sm:gap-2">
+          {TABS.filter((t) => t.key !== 'red').map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border px-2 py-1.5 text-[12.5px] font-medium transition sm:flex-none sm:px-4 sm:py-2 sm:text-sm ${
+                tab === key
+                  ? 'border-brand-400/50 bg-brand-500/15 text-white'
+                  : 'border-white/10 bg-white/[0.03] text-white/65 hover:bg-white/[0.06] hover:text-white'
+              }`}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="truncate">{label}</span>
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => setTab('red')}
+          aria-label="Mi red"
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12.5px] font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${
+            tab === 'red'
+              ? 'border-brand-400/60 bg-brand-500 !text-white'
+              : 'border-white/10 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white'
+          }`}
+        >
+          <Network className="h-4 w-4 shrink-0" />
+          <span>Red</span>
+        </button>
       </div>
 
       {/* Buscador */}
@@ -821,46 +836,54 @@ function NetworkTab({
   }
 
   return (
-    <div className="space-y-7">
-      {companies.length > 0 && (
-        <NetSection title={`Empresas que seguís (${companies.length})`}>
-          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-            {companies.map((r) => (
-              <ProfileCard
-                key={r.id}
-                avatar={<Avatar url={r.avatar_url} name={r.company_name || 'Empresa'} />}
-                title={r.company_name || 'Empresa'}
-                subtitle={[r.industry, r.size && `${r.size} empleados`].filter(Boolean).join(' · ') || 'Empresa'}
-                tags={[]}
-                onClick={() => onOpen({ type: 'empresas', row: r })}
-                badge={r.verified ? <VerifiedBadge verified small /> : undefined}
-              />
-            ))}
-          </div>
+    <div className="space-y-5">
+      {/* Empresas y Estudiantes lado a lado, ambos desplegables */}
+      <div className="grid grid-cols-2 items-start gap-3 sm:gap-4">
+        <NetSection title={`Empresas (${companies.length})`}>
+          {companies.length === 0 ? (
+            <p className="text-xs text-white/40">No seguís empresas todavía.</p>
+          ) : (
+            <div className="grid max-h-[440px] gap-3 overflow-y-auto pr-1">
+              {companies.map((r) => (
+                <ProfileCard
+                  key={r.id}
+                  avatar={<Avatar url={r.avatar_url} name={r.company_name || 'Empresa'} />}
+                  title={r.company_name || 'Empresa'}
+                  subtitle={[r.industry, r.size && `${r.size} empleados`].filter(Boolean).join(' · ') || 'Empresa'}
+                  tags={[]}
+                  onClick={() => onOpen({ type: 'empresas', row: r })}
+                  badge={r.verified ? <VerifiedBadge verified small /> : undefined}
+                />
+              ))}
+            </div>
+          )}
         </NetSection>
-      )}
 
-      {students.length > 0 && (
         <NetSection title={`Amigos (${students.length})`}>
-          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-            {students.map((r) => (
-              <ProfileCard
-                key={r.id}
-                avatar={<Avatar url={r.avatar_url} name={r.profile?.full_name || 'Estudiante'} />}
-                title={r.profile?.full_name || 'Estudiante'}
-                subtitle={[r.career, r.year && `${r.year}° año`, r.university].filter(Boolean).join(' · ') || 'Estudiante'}
-                tags={(r.skills ?? []).slice(0, 3)}
-                onClick={() => onOpen({ type: 'estudiantes', row: r })}
-                badge={r.verified ? <VerifiedBadge verified small /> : undefined}
-              />
-            ))}
-          </div>
+          {students.length === 0 ? (
+            <p className="text-xs text-white/40">Todavía no conectaste con estudiantes.</p>
+          ) : (
+            <div className="grid max-h-[440px] gap-3 overflow-y-auto pr-1">
+              {students.map((r) => (
+                <ProfileCard
+                  key={r.id}
+                  avatar={<Avatar url={r.avatar_url} name={r.profile?.full_name || 'Estudiante'} />}
+                  title={r.profile?.full_name || 'Estudiante'}
+                  subtitle={[r.career, r.year && `${r.year}° año`, r.university].filter(Boolean).join(' · ') || 'Estudiante'}
+                  tags={(r.skills ?? []).slice(0, 3)}
+                  onClick={() => onOpen({ type: 'estudiantes', row: r })}
+                  badge={r.verified ? <VerifiedBadge verified small /> : undefined}
+                />
+              ))}
+            </div>
+          )}
         </NetSection>
-      )}
+      </div>
 
+      {/* Embajadores (si seguís alguno) */}
       {ambassadors.length > 0 && (
         <NetSection title={`Embajadores que seguís (${ambassadors.length})`}>
-          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+          <div className="grid max-h-[440px] gap-3 overflow-y-auto pr-1 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
             {ambassadors.map((r) => (
               <ProfileCard
                 key={r.id}
@@ -899,11 +922,28 @@ function NetworkTab({
   );
 }
 
-function NetSection({ title, children }: { title: string; children: React.ReactNode }) {
+function NetSection({
+  title,
+  children,
+  defaultOpen = true,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <section>
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-white/45">{title}</h2>
-      {children}
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="mb-3 flex w-full items-center justify-between gap-2 text-left"
+      >
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-white/45">{title}</h2>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-white/40 transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {open && children}
     </section>
   );
 }

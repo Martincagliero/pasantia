@@ -262,12 +262,12 @@ export function DashboardLayout() {
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl overflow-x-hidden px-4 py-6 pb-24 sm:px-6 lg:pb-6">
+        <main className="mx-auto max-w-7xl overflow-x-hidden px-4 py-6 pb-28 sm:px-6 lg:pb-6">
           <Outlet />
         </main>
 
         {/* Barra de navegación inferior (mobile, estilo LinkedIn) */}
-        <nav className="dash-panel fixed inset-x-0 bottom-0 z-40 border-t border-white/10 lg:hidden">
+        <nav className="dash-panel fixed inset-x-0 bottom-0 z-40 border-t border-white/10 pb-[env(safe-area-inset-bottom)] lg:hidden">
           <div className="mx-auto flex max-w-7xl items-stretch">
             {bottomNav.map(({ to, label, icon: Icon, end }) => (
               <NavLink
@@ -276,12 +276,12 @@ export function DashboardLayout() {
                 end={end}
                 title={label}
                 className={({ isActive }) =>
-                  `flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium transition-colors ${
+                  `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-2.5 text-[11px] font-medium transition-colors ${
                     isActive ? 'text-brand-500' : 'text-white/55 hover:text-white'
                   }`
                 }
               >
-                <Icon className="h-5 w-5 shrink-0" strokeWidth={1.9} />
+                <Icon className="h-6 w-6 shrink-0" strokeWidth={1.9} />
                 <span className="w-full truncate text-center leading-tight">{label}</span>
               </NavLink>
             ))}

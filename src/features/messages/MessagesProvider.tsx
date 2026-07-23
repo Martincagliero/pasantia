@@ -264,7 +264,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
       {uid && !modalOpen && (
         <div
-          className={`fixed bottom-16 right-3 z-50 max-w-[calc(100vw-1.5rem)] sm:right-4 sm:w-[320px] lg:bottom-0 ${
+          className={`fixed bottom-20 right-3 z-50 max-w-[calc(100vw-1.5rem)] sm:right-4 sm:w-[320px] lg:bottom-0 ${
             open ? 'w-[290px]' : 'w-auto'
           }`}
         >

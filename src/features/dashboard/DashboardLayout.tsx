@@ -22,7 +22,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import logo from '../../assets/logo.png';
 import { useAuth } from '../auth/AuthProvider';
-import { MessagesProvider } from '../messages/MessagesProvider';
+import { MessagesProvider, MessagesButton } from '../messages/MessagesProvider';
 import { NotificationsButton } from '../notifications/NotificationsButton';
 import { supabase } from '../../lib/supabase';
 
@@ -189,14 +189,8 @@ export function DashboardLayout() {
 
               <div className="mx-1.5 hidden h-7 w-px bg-white/10 lg:block" />
 
-              <button
-                disabled
-                className="flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-full text-white/35"
-                title="Modo oscuro · Próximamente"
-                aria-label="Modo oscuro (próximamente)"
-              >
-                <Moon className="h-[18px] w-[18px]" />
-              </button>
+              {/* Mensajes (mobile: acceso desde la barra superior) */}
+              <MessagesButton className="lg:hidden" />
 
               {/* Cuenta */}
               <div ref={accountRef} className="relative">

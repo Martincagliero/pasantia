@@ -19,6 +19,8 @@ import { useAnyModalOpen } from '../ui/modalGuard';
 
 interface MessagesContextValue {
   openChatWith: (userId: string, name: string, avatar?: string | null) => void;
+  openMessages: () => void;
+  unreadTotal: number;
 }
 
 const MessagesContext = createContext<MessagesContextValue | null>(null);
@@ -27,6 +29,26 @@ export function useMessages(): MessagesContextValue {
   const ctx = useContext(MessagesContext);
   if (!ctx) throw new Error('useMessages debe usarse dentro de <MessagesProvider>');
   return ctx;
+}
+
+/** Botón para abrir el panel de mensajes (ej: en la barra superior en mobile). */
+export function MessagesButton({ className = '' }: { className?: string }) {
+  const { openMessages, unreadTotal } = useMessages();
+  return (
+    <button
+      onClick={openMessages}
+      className={`relative flex h-9 w-9 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white ${className}`}
+      title="Mensajes"
+      aria-label="Mensajes"
+    >
+      <MessageSquare className="h-[19px] w-[19px]" />
+      {unreadTotal > 0 && (
+        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-bold !text-white">
+          {unreadTotal}
+        </span>
+      )}
+    </button>
+  );
 }
 
 interface Message {
@@ -195,6 +217,11 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     [uid, loadThread]
   );
 
+  const openMessages = useCallback(() => {
+    setOpen(true);
+    loadConversations();
+  }, [loadConversations]);
+
   function goToProfile(userId: string) {
     navigate(`/app/explorar?u=${encodeURIComponent(userId)}`);
     setOpen(false);
@@ -255,7 +282,10 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   }, [thread, active, open]);
 
   const unreadTotal = useMemo(() => convos.reduce((s, c) => s + c.unread, 0), [convos]);
-  const value = useMemo(() => ({ openChatWith }), [openChatWith]);
+  const value = useMemo(
+    () => ({ openChatWith, openMessages, unreadTotal }),
+    [openChatWith, openMessages, unreadTotal]
+  );
   const modalOpen = useAnyModalOpen();
 
   return (
@@ -265,7 +295,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       {uid && !modalOpen && (
         <div
           className={`fixed bottom-20 right-3 z-50 max-w-[calc(100vw-1.5rem)] sm:right-4 sm:w-[320px] lg:bottom-0 ${
-            open ? 'w-[290px]' : 'w-auto'
+            open ? 'block w-[290px]' : 'hidden w-auto lg:block'
           }`}
         >
           <div className="dash-panel overflow-hidden rounded-t-2xl border border-b-0 border-white/12 shadow-2xl shadow-black/40">

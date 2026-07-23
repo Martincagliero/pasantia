@@ -10,7 +10,6 @@ import {
   Inbox,
   LayoutDashboard,
   Newspaper,
-  Heart,
   Users,
   LogOut,
   Megaphone,
@@ -36,7 +35,6 @@ interface NavItem {
 
 const studentNav: NavItem[] = [
   { to: '/app/pasantias', label: 'Buscar pasantías', icon: LayoutGrid },
-  { to: '/app/guardadas', label: 'Guardadas', icon: Heart },
   { to: '/app/postulaciones', label: 'Mis postulaciones', icon: Send },
   { to: '/app/comunidades', label: 'Mis comunidades', icon: Users },
   { to: '/app/explorar', label: 'Explorar perfiles', icon: Compass },

@@ -1,5 +1,6 @@
 // Estudiante: explora las pasantías activas y se postula.
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { MapPin, Building2, Search, Heart } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
@@ -119,14 +120,24 @@ export default function BrowseInternships() {
 
   return (
     <div>
-      <div className="mb-7">
-        <p className="text-sm text-white/55">Hola, {firstName}</p>
-        <h1 className="mt-0.5 text-xl font-bold tracking-tight text-white sm:text-2xl">
-          Buscar pasantías
-        </h1>
-        <p className="mt-1.5 text-[15px] text-white/60">
-          Explorá las oportunidades activas y postulate en un clic.
-        </p>
+      <div className="mb-7 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm text-white/55">Hola, {firstName}</p>
+          <h1 className="mt-0.5 text-xl font-bold tracking-tight text-white sm:text-2xl">
+            Buscar pasantías
+          </h1>
+          <p className="mt-1.5 text-[15px] text-white/60">
+            Explorá las oportunidades activas y postulate en un clic.
+          </p>
+        </div>
+        <Link
+          to="/app/guardadas"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[13px] font-medium text-white/75 transition hover:bg-white/[0.08] hover:text-white"
+          title="Ver pasantías guardadas"
+        >
+          <Heart className="h-4 w-4" />
+          <span className="hidden xs:inline">Guardadas</span>
+        </Link>
       </div>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">

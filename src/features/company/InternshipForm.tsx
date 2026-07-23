@@ -17,6 +17,7 @@ const emptyForm = {
   location: '',
   description: '',
   requirements: '',
+  experience_years: '',
   image_url: '',
   is_active: true,
 };
@@ -51,6 +52,7 @@ export default function InternshipForm({
   const [ambassadors, setAmbassadors] = useState<AmbassadorProfile[]>([]);
   const [selectedAmbassadors, setSelectedAmbassadors] = useState<string[]>([]);
   const [commOpen, setCommOpen] = useState(false);
+  const [reqOpen, setReqOpen] = useState(false);
 
   useEffect(() => {
     if (!editId) return;
@@ -71,9 +73,11 @@ export default function InternshipForm({
           location: i.location ?? '',
           description: i.description,
           requirements: i.requirements ?? '',
+          experience_years: i.experience_years != null ? String(i.experience_years) : '',
           image_url: i.image_url ?? '',
           is_active: i.is_active,
         });
+        if ((i.requirements ?? '') !== '' || i.experience_years != null) setReqOpen(true);
       }
       setLoading(false);
     })();
@@ -142,11 +146,12 @@ export default function InternshipForm({
       location: form.location.trim() || null,
       description: form.description.trim(),
       requirements: form.requirements.trim() || null,
+      experience_years: form.experience_years ? Number(form.experience_years) : null,
       image_url: form.image_url.trim() || null,
       is_active: form.is_active,
     };
 
-    async function save(pl: typeof payload | Omit<typeof payload, 'image_url'>) {
+    async function save(pl: typeof payload | Omit<typeof payload, 'image_url' | 'experience_years'>) {
       return editId
         ? await supabase.from('internships').update(pl).eq('id', editId)
         : await supabase
@@ -157,10 +162,11 @@ export default function InternshipForm({
     }
 
     let result = await save(payload);
-    // Si falta la columna image_url (migración no corrida), guardar sin ella.
-    if (result.error && /image_url|column|schema cache|does not exist/i.test(result.error.message)) {
-      const { image_url, ...rest } = payload;
+    // Si falta alguna columna nueva (migración no corrida), guardar sin ella.
+    if (result.error && /experience_years|image_url|column|schema cache|does not exist/i.test(result.error.message)) {
+      const { image_url, experience_years, ...rest } = payload;
       void image_url;
+      void experience_years;
       result = await save(rest);
     }
 
@@ -288,16 +294,53 @@ export default function InternshipForm({
             />
           </FormRow>
 
-          <FormRow label="Requisitos (opcional)" htmlFor="requirements">
-            <TextArea
-              id="requirements"
-              rows={2}
-              value={form.requirements}
-              onChange={(e) => set('requirements', e.target.value)}
-              placeholder="Conocimientos, año de cursada, habilidades deseadas."
-              className="min-h-[56px]"
-            />
-          </FormRow>
+          {/* Requisitos (módulo opcional) */}
+          <div className="rounded-xl border border-white/10 bg-white/5">
+            <button
+              type="button"
+              onClick={() => setReqOpen((v) => !v)}
+              className="flex w-full items-center justify-between gap-2 px-3.5 py-3 text-left"
+            >
+              <div>
+                <h3 className="text-sm font-semibold text-white">Requisitos (opcional)</h3>
+                <p className="mt-0.5 text-xs text-white/60">
+                  Sumá años de experiencia y otros requisitos para esta pasantía.
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-5 w-5 shrink-0 text-white/50 transition-transform ${reqOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+            {reqOpen && (
+              <div className="space-y-3 border-t border-white/10 px-3.5 pb-3.5 pt-3">
+                <FormRow label="Años de experiencia" htmlFor="experience_years">
+                  <SelectField
+                    id="experience_years"
+                    value={form.experience_years}
+                    onChange={(e) => set('experience_years', e.target.value)}
+                  >
+                    <option value="">Sin especificar</option>
+                    <option value="0">Sin experiencia</option>
+                    <option value="1">1 año</option>
+                    <option value="2">2 años</option>
+                    <option value="3">3 años</option>
+                    <option value="4">4 años</option>
+                    <option value="5">5 años o más</option>
+                  </SelectField>
+                </FormRow>
+                <FormRow label="Otros requisitos" htmlFor="requirements">
+                  <TextArea
+                    id="requirements"
+                    rows={2}
+                    value={form.requirements}
+                    onChange={(e) => set('requirements', e.target.value)}
+                    placeholder="Conocimientos, año de cursada, habilidades deseadas."
+                    className="min-h-[56px]"
+                  />
+                </FormRow>
+              </div>
+            )}
+          </div>
 
           <div>
             <label className="mb-2 block text-sm font-medium text-white/80">Imagen (opcional)</label>

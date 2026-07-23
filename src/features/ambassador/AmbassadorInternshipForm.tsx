@@ -1,6 +1,6 @@
 // Embajador: publicar una pasantía para su comunidad
 import { useState, type ChangeEvent, type FormEvent } from 'react';
-import { X, Loader2, ImagePlus, Trash2 } from 'lucide-react';
+import { X, Loader2, ImagePlus, Trash2, ChevronDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { Modality } from '../../lib/database.types';
@@ -16,6 +16,7 @@ const emptyForm = {
   location: '',
   description: '',
   requirements: '',
+  experience_years: '',
   image_url: '',
 };
 
@@ -30,6 +31,7 @@ export function AmbassadorInternshipForm({ onClose, onCreated }: AmbassadorInter
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [reqOpen, setReqOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
@@ -77,6 +79,7 @@ export function AmbassadorInternshipForm({ onClose, onCreated }: AmbassadorInter
       location: form.location.trim() || null,
       description: form.description.trim(),
       requirements: form.requirements.trim() || null,
+      experience_years: form.experience_years ? Number(form.experience_years) : null,
       image_url: form.image_url.trim() || null,
       is_active: true,
     };
@@ -87,7 +90,7 @@ export function AmbassadorInternshipForm({ onClose, onCreated }: AmbassadorInter
     // para que la pasantía SE PUBLIQUE igual (la empresa queda en la descripción).
     if (
       result.error &&
-      /company_name|image_url|column|schema cache|does not exist/i.test(result.error.message)
+      /company_name|image_url|experience_years|column|schema cache|does not exist/i.test(result.error.message)
     ) {
       const fallback = {
         company_id: session!.user.id,
@@ -206,14 +209,51 @@ export function AmbassadorInternshipForm({ onClose, onCreated }: AmbassadorInter
             />
           </FormRow>
 
-          <FormRow label="Requisitos (opcional)" htmlFor="requirements">
-            <TextArea
-              id="requirements"
-              value={form.requirements}
-              onChange={(e) => set('requirements', e.target.value)}
-              placeholder="Conocimientos, año de cursada, habilidades deseadas."
-            />
-          </FormRow>
+          {/* Requisitos (módulo opcional) */}
+          <div className="rounded-xl border border-white/10 bg-white/5">
+            <button
+              type="button"
+              onClick={() => setReqOpen((v) => !v)}
+              className="flex w-full items-center justify-between gap-2 px-3.5 py-3 text-left"
+            >
+              <div>
+                <h3 className="text-sm font-semibold text-white">Requisitos (opcional)</h3>
+                <p className="mt-0.5 text-xs text-white/60">
+                  Sumá años de experiencia y otros requisitos para esta pasantía.
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-5 w-5 shrink-0 text-white/50 transition-transform ${reqOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+            {reqOpen && (
+              <div className="space-y-4 border-t border-white/10 px-3.5 pb-3.5 pt-3">
+                <FormRow label="Años de experiencia" htmlFor="experience_years">
+                  <SelectField
+                    id="experience_years"
+                    value={form.experience_years}
+                    onChange={(e) => set('experience_years', e.target.value)}
+                  >
+                    <option value="">Sin especificar</option>
+                    <option value="0">Sin experiencia</option>
+                    <option value="1">1 año</option>
+                    <option value="2">2 años</option>
+                    <option value="3">3 años</option>
+                    <option value="4">4 años</option>
+                    <option value="5">5 años o más</option>
+                  </SelectField>
+                </FormRow>
+                <FormRow label="Otros requisitos" htmlFor="requirements">
+                  <TextArea
+                    id="requirements"
+                    value={form.requirements}
+                    onChange={(e) => set('requirements', e.target.value)}
+                    placeholder="Conocimientos, año de cursada, habilidades deseadas."
+                  />
+                </FormRow>
+              </div>
+            )}
+          </div>
 
           <div>
             <label className="mb-2 block text-sm font-medium text-white/80">Imagen (opcional)</label>

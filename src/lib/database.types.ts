@@ -92,6 +92,8 @@ export interface Internship {
   modality: Modality;
   location: string | null;
   requirements: string | null;
+  /** Años de experiencia requeridos (opcional). */
+  experience_years: number | null;
   is_active: boolean;
   created_at: string;
   /** Nombre de la empresa cargado a mano (pasantías publicadas por embajadores). */

@@ -78,12 +78,21 @@ export function InternshipDetailModal({
             </p>
           </div>
 
-          {i.requirements && (
+          {(i.requirements || i.experience_years != null) && (
             <div className="mt-4">
               <p className="text-sm font-semibold text-white/80">Requisitos</p>
-              <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-white/70">
-                {i.requirements}
-              </p>
+              {i.experience_years != null && (
+                <p className="mt-1.5 text-sm leading-relaxed text-white/70">
+                  Experiencia: {i.experience_years === 0
+                    ? 'Sin experiencia previa'
+                    : `${i.experience_years}${i.experience_years >= 5 ? '+' : ''} año${i.experience_years === 1 ? '' : 's'}`}
+                </p>
+              )}
+              {i.requirements && (
+                <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-white/70">
+                  {i.requirements}
+                </p>
+              )}
             </div>
           )}
 

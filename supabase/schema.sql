@@ -100,6 +100,7 @@ create table if not exists public.internships (
   modality     internship_modality not null default 'presencial',
   location     text,
   requirements text,
+  experience_years integer,
   company_name text,
   image_url    text,
   is_active    boolean not null default true,

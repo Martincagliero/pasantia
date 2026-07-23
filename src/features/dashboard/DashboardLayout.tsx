@@ -190,7 +190,7 @@ export function DashboardLayout() {
               <div className="mx-1.5 hidden h-7 w-px bg-white/10 lg:block" />
 
               {/* Mensajes (mobile: acceso desde la barra superior) */}
-              <MessagesButton className="lg:hidden" />
+              <MessagesButton className="mr-1.5 lg:hidden" />
 
               {/* Cuenta */}
               <div ref={accountRef} className="relative">

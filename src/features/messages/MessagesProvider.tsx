@@ -294,11 +294,13 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
       {uid && !modalOpen && (
         <div
-          className={`fixed bottom-20 right-3 z-50 max-w-[calc(100vw-1.5rem)] sm:right-4 sm:w-[320px] lg:bottom-0 ${
-            open ? 'block w-[290px]' : 'hidden w-auto lg:block'
-          }`}
+          className={
+            open
+              ? 'fixed inset-0 z-50 flex flex-col lg:inset-auto lg:bottom-0 lg:right-4 lg:block lg:w-[320px]'
+              : 'hidden lg:fixed lg:bottom-0 lg:right-4 lg:z-50 lg:block lg:w-[320px]'
+          }
         >
-          <div className="dash-panel overflow-hidden rounded-t-2xl border border-b-0 border-white/12 shadow-2xl shadow-black/40">
+          <div className="dash-panel flex h-full min-h-0 flex-col overflow-hidden rounded-none border-x-0 border-t border-white/12 pt-[env(safe-area-inset-top)] shadow-2xl shadow-black/40 lg:h-auto lg:rounded-t-2xl lg:border-x lg:border-b-0 lg:pt-0">
             {/* Header */}
             <button
               onClick={() => {
@@ -324,10 +326,10 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
             </button>
 
             {open && (
-              <div className="border-t border-white/10">
+              <div className="flex min-h-0 flex-1 flex-col border-t border-white/10 lg:block lg:flex-none">
                 {active ? (
                   /* ── Hilo ── */
-                  <div className="flex h-[340px] flex-col sm:h-[380px]">
+                  <div className="flex h-full min-h-0 flex-col lg:h-[380px]">
                     <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
                       <button
                         onClick={() => setActive(null)}
@@ -411,7 +413,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                   </div>
                 ) : (
                   /* ── Lista de conversaciones ── */
-                  <div className="max-h-[340px] overflow-y-auto sm:max-h-[380px]">
+                  <div className="h-full overflow-y-auto lg:h-auto lg:max-h-[380px]">
                     {convos.length === 0 ? (
                       <p className="px-4 py-8 text-center text-xs text-white/45">
                         Todavía no tenés conversaciones.<br />

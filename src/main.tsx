@@ -14,3 +14,12 @@ createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </StrictMode>,
 )
+
+// Registrar el service worker (para PWA + notificaciones push).
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      /* ignore: sin SW la app funciona igual, solo sin push */
+    });
+  });
+}

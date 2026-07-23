@@ -27,6 +27,20 @@
 create extension if not exists pgcrypto with schema extensions;
 
 -- ---------------------------------------------------------------------------
+-- 0) Asegurar columnas que usan los datos demo (por si faltan migraciones).
+--    Sin esto, el seed falla con "column ... does not exist".
+-- ---------------------------------------------------------------------------
+alter table public.company_profiles    add column if not exists avatar_url text;
+alter table public.company_profiles    add column if not exists verified boolean not null default false;
+alter table public.student_profiles     add column if not exists avatar_url text;
+alter table public.student_profiles     add column if not exists verified boolean not null default false;
+alter table public.student_profiles     add column if not exists instagram_url text;
+alter table public.student_profiles     add column if not exists is_public boolean not null default false;
+alter table public.ambassador_profiles  add column if not exists logo_url text;
+alter table public.ambassador_profiles  add column if not exists verified boolean not null default false;
+alter table public.internships           add column if not exists image_url text;
+
+-- ---------------------------------------------------------------------------
 -- Helper temporal: crea un usuario confirmado en auth.users (si no existe) y
 -- devuelve su UUID. La contraseña es siempre PasantIA2025!.
 -- ---------------------------------------------------------------------------

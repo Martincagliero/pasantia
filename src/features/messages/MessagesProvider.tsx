@@ -13,6 +13,7 @@ import {
 import { MessageSquare, ChevronDown, ChevronUp, ArrowLeft, Send, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { sendPush } from '../../lib/notify';
 import { useAuth } from '../auth/AuthProvider';
 import { useAnyModalOpen } from '../ui/modalGuard';
 
@@ -85,7 +86,7 @@ function timeShort(d: string): string {
 }
 
 export function MessagesProvider({ children }: { children: ReactNode }) {
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const uid = session?.user.id;
   const navigate = useNavigate();
 
@@ -209,6 +210,13 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
         content: text.trim(),
       });
       if (error) throw error;
+      // Notificación push al destinatario (best-effort, no bloquea el envío).
+      sendPush({
+        userId: active.id,
+        title: profile?.full_name ? `Mensaje de ${profile.full_name}` : 'Nuevo mensaje',
+        body: text.trim().slice(0, 140),
+        url: '/app',
+      });
       setText('');
       await loadThread(active.id);
       loadConversations();

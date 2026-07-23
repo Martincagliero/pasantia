@@ -1,0 +1,14 @@
+{
+  "name": "PasantIA",
+  "short_name": "PasantIA",
+  "description": "Conectamos estudiantes con empresas para gestionar pasantías.",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#05070E",
+  "theme_color": "#0148FD",
+  "icons": [
+    { "src": "/favicon.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

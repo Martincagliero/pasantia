@@ -24,6 +24,7 @@ import type { LucideIcon } from 'lucide-react';
 import logo from '../../assets/logo.png';
 import { useAuth } from '../auth/AuthProvider';
 import { MessagesProvider } from '../messages/MessagesProvider';
+import { NotificationsButton } from '../notifications/NotificationsButton';
 import { supabase } from '../../lib/supabase';
 
 interface NavItem {
@@ -237,6 +238,7 @@ export function DashboardLayout() {
                     >
                       <UserRound className="h-[18px] w-[18px]" /> Mi perfil
                     </Link>
+                    <NotificationsButton />
                     <div
                       className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-white/40"
                       title="Próximamente"

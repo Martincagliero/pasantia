@@ -211,11 +211,11 @@ export default function StudentCommunities() {
               <Card className="flex flex-col h-full transition group-hover:border-brand-300/50">
                 <div className="flex-1">
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="text-lg font-semibold text-white flex-1">{c.name}</h3>
+                    <h3 className="text-base font-semibold text-white flex-1 sm:text-lg">{c.name}</h3>
                     <ExternalLink className="h-4 w-4 text-white/40 group-hover:text-brand-300 transition shrink-0" />
                   </div>
                   {c.description && (
-                    <p className="mt-1.5 text-sm text-white/65 line-clamp-3">{c.description}</p>
+                    <p className="mt-1.5 text-sm text-white/65 line-clamp-2">{c.description}</p>
                   )}
                 </div>
 
@@ -267,7 +267,7 @@ export default function StudentCommunities() {
       {/* Descubrir: todas las comunidades públicas, cualquiera se puede unir */}
       {discover.length > 0 && (
         <div className="mt-10">
-          <h2 className="mb-1 text-lg font-semibold text-white">Descubrir comunidades</h2>
+          <h2 className="mb-1 text-base font-semibold text-white sm:text-lg">Descubrir comunidades</h2>
           <p className="mb-4 text-sm text-white/55">
             Comunidades públicas de la plataforma. Unite a la que quieras.
           </p>
@@ -275,9 +275,9 @@ export default function StudentCommunities() {
             {discover.map((c) => (
               <Card key={c.id} className="flex h-full flex-col">
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-white">{c.name}</h3>
+                  <h3 className="text-base font-semibold text-white sm:text-lg">{c.name}</h3>
                   {c.description && (
-                    <p className="mt-1.5 line-clamp-3 text-sm text-white/65">{c.description}</p>
+                    <p className="mt-1.5 line-clamp-2 text-sm text-white/65">{c.description}</p>
                   )}
                 </div>
                 <div className="mt-3 flex items-center gap-1.5 border-t border-white/10 pt-3 text-xs text-white/50">

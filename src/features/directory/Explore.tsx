@@ -843,14 +843,13 @@ function NetworkTab({
           {companies.length === 0 ? (
             <p className="text-xs text-white/40">No seguís empresas todavía.</p>
           ) : (
-            <div className="grid max-h-[440px] gap-3 overflow-y-auto pr-1">
+            <div className="grid max-h-[300px] gap-2 overflow-y-auto pr-1">
               {companies.map((r) => (
-                <ProfileCard
+                <NetItem
                   key={r.id}
-                  avatar={<Avatar url={r.avatar_url} name={r.company_name || 'Empresa'} />}
+                  avatar={<Avatar url={r.avatar_url} name={r.company_name || 'Empresa'} className="h-8 w-8" />}
                   title={r.company_name || 'Empresa'}
-                  subtitle={[r.industry, r.size && `${r.size} empleados`].filter(Boolean).join(' · ') || 'Empresa'}
-                  tags={[]}
+                  subtitle={[r.industry, r.size && `${r.size} empl.`].filter(Boolean).join(' · ')}
                   onClick={() => onOpen({ type: 'empresas', row: r })}
                   badge={r.verified ? <VerifiedBadge verified small /> : undefined}
                 />
@@ -863,14 +862,13 @@ function NetworkTab({
           {students.length === 0 ? (
             <p className="text-xs text-white/40">Todavía no conectaste con estudiantes.</p>
           ) : (
-            <div className="grid max-h-[440px] gap-3 overflow-y-auto pr-1">
+            <div className="grid max-h-[300px] gap-2 overflow-y-auto pr-1">
               {students.map((r) => (
-                <ProfileCard
+                <NetItem
                   key={r.id}
-                  avatar={<Avatar url={r.avatar_url} name={r.profile?.full_name || 'Estudiante'} />}
+                  avatar={<Avatar url={r.avatar_url} name={r.profile?.full_name || 'Estudiante'} className="h-8 w-8" />}
                   title={r.profile?.full_name || 'Estudiante'}
-                  subtitle={[r.career, r.year && `${r.year}° año`, r.university].filter(Boolean).join(' · ') || 'Estudiante'}
-                  tags={(r.skills ?? []).slice(0, 3)}
+                  subtitle={[r.career, r.year && `${r.year}°`].filter(Boolean).join(' · ')}
                   onClick={() => onOpen({ type: 'estudiantes', row: r })}
                   badge={r.verified ? <VerifiedBadge verified small /> : undefined}
                 />
@@ -883,16 +881,15 @@ function NetworkTab({
       {/* Embajadores (si seguís alguno) */}
       {ambassadors.length > 0 && (
         <NetSection title={`Embajadores que seguís (${ambassadors.length})`}>
-          <div className="grid max-h-[440px] gap-3 overflow-y-auto pr-1 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+          <div className="grid max-h-[300px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
             {ambassadors.map((r) => (
-              <ProfileCard
+              <NetItem
                 key={r.id}
-                avatar={<Avatar url={r.logo_url} name={r.org_name || 'Comunidad'} />}
+                avatar={<Avatar url={r.logo_url} name={r.org_name || 'Comunidad'} className="h-8 w-8" />}
                 title={r.org_name || 'Comunidad'}
-                subtitle={[orgTypeLabel(r.org_type), r.university].filter(Boolean).join(' · ')}
-                tags={[]}
+                subtitle={orgTypeLabel(r.org_type)}
                 onClick={() => onOpen({ type: 'embajadores', row: r })}
-                badge={<VerifiedBadge verified />}
+                badge={<VerifiedBadge verified small />}
               />
             ))}
           </div>
@@ -945,6 +942,37 @@ function NetSection({
       </button>
       {open && children}
     </section>
+  );
+}
+
+/** Fila compacta de persona/empresa para la pestaña Red (mobile-friendly). */
+function NetItem({
+  avatar,
+  title,
+  subtitle,
+  onClick,
+  badge,
+}: {
+  avatar: React.ReactNode;
+  title: string;
+  subtitle?: string;
+  onClick: () => void;
+  badge?: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-2 text-left transition hover:bg-white/[0.06]"
+    >
+      {avatar}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1">
+          <p className="truncate text-[13px] font-semibold leading-tight text-white">{title}</p>
+          {badge}
+        </div>
+        {subtitle && <p className="truncate text-[11px] leading-tight text-white/50">{subtitle}</p>}
+      </div>
+    </button>
   );
 }
 

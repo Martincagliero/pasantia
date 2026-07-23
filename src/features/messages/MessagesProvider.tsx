@@ -345,7 +345,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                               >
                                 <p className="whitespace-pre-wrap break-words">{m.content}</p>
                                 <p
-                                  className={`mt-0.5 text-[10px] ${mine ? 'text-white/70' : 'text-white/45'}`}
+                                  className={`mt-0.5 text-[10px] ${mine ? '!text-white/70' : 'text-white/45'}`}
                                 >
                                   {timeShort(m.created_at)}
                                 </p>

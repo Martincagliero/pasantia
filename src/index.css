@@ -78,8 +78,16 @@
    El min-height compensa el zoom para que el fondo cubra toda la altura. */
 @media (max-width: 640px) {
   .app-shrink {
-    zoom: 0.92;
-    min-height: calc(100vh / 0.92);
+    zoom: 0.85;
+    min-height: calc(100vh / 0.85);
+  }
+}
+
+/* Teléfonos chicos: achicar todavía un poco más. */
+@media (max-width: 400px) {
+  .app-shrink {
+    zoom: 0.8;
+    min-height: calc(100vh / 0.8);
   }
 }
 

@@ -139,3 +139,48 @@ GRANT EXECUTE ON FUNCTION public.public_promoter_ranking()           TO authenti
 GRANT EXECUTE ON FUNCTION public.admin_assign_promoter(uuid, text)   TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_remove_promoter(text)         TO authenticated;
 -- =============================================================================
+
+-- 8) Admin: listar TODOS los promotores (incluye los que tienen 0 registros).
+--    Reemplaza la versión que dependía de la vista promoter_stats (que solo
+--    mostraba promotores con al menos un referido).
+DROP FUNCTION IF EXISTS public.admin_promoter_stats();
+CREATE OR REPLACE FUNCTION public.admin_promoter_stats()
+RETURNS TABLE (
+  code            text,
+  nombre          text,
+  total           bigint,
+  estudiantes     bigint,
+  empresas        bigint,
+  embajadores     bigint,
+  activados       bigint,
+  ultimo_registro timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'no autorizado';
+  END IF;
+
+  RETURN QUERY
+    SELECT
+      pr.code,
+      COALESCE(NULLIF(pr.nombre, ''), pf.full_name, pr.code),
+      COUNT(ea.id)::bigint,
+      COUNT(ea.id) FILTER (WHERE ea.rol = 'estudiante')::bigint,
+      COUNT(ea.id) FILTER (WHERE ea.rol = 'empresa')::bigint,
+      COUNT(ea.id) FILTER (WHERE ea.rol = 'embajador')::bigint,
+      COUNT(ea.id) FILTER (WHERE ea.status = 'activado')::bigint,
+      MAX(ea.created_at)
+    FROM promoters pr
+    LEFT JOIN profiles pf ON pf.id = pr.profile_id
+    LEFT JOIN early_access_requests ea ON lower(ea.referred_by) = lower(pr.code)
+    GROUP BY pr.code, pr.nombre, pf.full_name
+    ORDER BY COUNT(ea.id) DESC, pr.code ASC;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.admin_promoter_stats() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.admin_promoter_stats() TO authenticated;
+-- =============================================================================

@@ -22,6 +22,7 @@ import {
 import { IMAGES } from '../../lib/images';
 import { supabase } from '../../lib/supabase';
 import { isSupabaseConfigured } from '../../lib/supabase';
+import { getReferral } from '../../lib/referral';
 import { useAuth } from '../../features/auth/AuthProvider';
 import estudianteImg from '../../assets/images/estudiante.jpg';
 import logo from '../../assets/logo.png';
@@ -269,6 +270,7 @@ function Onboarding({
       followers_range: data.followers_range,
       mensaje: data.mensaje,
       origen: typeof window !== 'undefined' ? window.location.pathname : '',
+      referred_by: getReferral(),
     };
 
     try {

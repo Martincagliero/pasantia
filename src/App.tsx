@@ -25,6 +25,7 @@ const BrowseInternships = lazy(() => import('./features/student/BrowseInternship
 const MyApplications = lazy(() => import('./features/student/MyApplications'));
 const SavedInternships = lazy(() => import('./features/student/SavedInternships'));
 const StudentProfileForm = lazy(() => import('./features/student/StudentProfileForm'));
+const Promoters = lazy(() => import('./features/student/Promoters'));
 const MyInternships = lazy(() => import('./features/company/MyInternships'));
 const InternshipForm = lazy(() => import('./features/company/InternshipForm'));
 const InternshipApplicants = lazy(() => import('./features/company/InternshipApplicants'));
@@ -42,6 +43,7 @@ const Explore = lazy(() => import('./features/directory/Explore'));
 const StudentCommunities = lazy(() => import('./features/student/StudentCommunities'));
 const CommunityDetailPage = lazy(() => import('./pages/CommunityDetailPage'));
 const PublicCommunityPage = lazy(() => import('./pages/PublicCommunityPage'));
+const AdminPanel = lazy(() => import('./features/admin/AdminPanel'));
 
 const fallback = <div className="min-h-screen" aria-hidden />;
 
@@ -98,6 +100,14 @@ export default function App() {
               element={
                 <ProtectedRoute role="estudiante">
                   <StudentCommunities />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="promotores"
+              element={
+                <ProtectedRoute role="estudiante">
+                  <Promoters />
                 </ProtectedRoute>
               }
             />
@@ -208,6 +218,14 @@ export default function App() {
               }
             />
             <Route path="perfil" element={<ProfileByRole />} />
+            <Route
+              path="admin"
+              element={
+                <ProtectedRoute>
+                  <AdminPanel />
+                </ProtectedRoute>
+              }
+            />
           </Route>
         </Routes>
         </Suspense>

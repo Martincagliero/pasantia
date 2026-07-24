@@ -18,6 +18,8 @@ import {
   Compass,
   Search,
   ChevronDown,
+  Rocket,
+  Shield,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import logo from '../../assets/logo.png';
@@ -38,6 +40,7 @@ const studentNav: NavItem[] = [
   { to: '/app/pasantias', label: 'Buscar pasantías', icon: LayoutGrid },
   { to: '/app/explorar', label: 'Explorar perfiles', icon: Compass },
   { to: '/app/comunidades', label: 'Mis comunidades', icon: Users },
+  { to: '/app/promotores', label: 'Promotores', icon: Rocket },
   { to: '/app/postulaciones', label: 'Mis postulaciones', icon: Send },
   { to: '/app/perfil', label: 'Mi perfil', icon: UserRound },
 ];
@@ -230,6 +233,15 @@ export function DashboardLayout() {
                     >
                       <UserRound className="h-[18px] w-[18px]" /> Mi perfil
                     </Link>
+                    {profile?.is_admin && (
+                      <Link
+                        to="/app/admin"
+                        onClick={() => setAccountOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/[0.06] hover:text-white"
+                      >
+                        <Shield className="h-[18px] w-[18px]" /> Administración
+                      </Link>
+                    )}
                     <NotificationsButton />
                     <div
                       className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-white/40"

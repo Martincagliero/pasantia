@@ -4,6 +4,10 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
 import { AuthProvider } from './features/auth/AuthProvider'
+import { captureReferral } from './lib/referral'
+
+// Guardar el código de promotor (?ref=) apenas carga, antes de renderizar.
+captureReferral()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -1,14 +1,18 @@
 // Estudiante: sección "Promotores".
-// Cada estudiante tiene su enlace personal (?ref=CODIGO). Acá ve su enlace,
-// lo puede copiar/compartir y ve cuánta gente trajo (solo sus totales).
+// - Todos ven el RANKING de promotores (nombre + cuánta gente sumó).
+// - Si el usuario ES promotor (lo asignó el admin), ve su enlace y sus totales.
+// - Si no lo es, ve un botón para solicitar ser promotor por Instagram.
+// Los códigos NO se autogeneran: los asigna el admin.
 import { useEffect, useState } from 'react';
-import { Copy, Check, Share2, Users, Building2, Megaphone, UserCheck, Sparkles } from 'lucide-react';
+import { Copy, Check, Share2, Trophy, Sparkles, Send } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
+import { CONTACT } from '../../lib/constants';
 import { Button } from '../../components/ui/Button';
 import { Card, PageHeader, PageLoader } from '../ui/primitives';
 
-interface Stats {
+interface MyPromoter {
+  code: string;
   total: number;
   estudiantes: number;
   empresas: number;
@@ -16,45 +20,55 @@ interface Stats {
   activados: number;
 }
 
-const EMPTY_STATS: Stats = {
-  total: 0,
-  estudiantes: 0,
-  empresas: 0,
-  embajadores: 0,
-  activados: 0,
-};
+interface RankRow {
+  nombre: string;
+  total: number;
+  activados: number;
+}
+
+// Mensaje sugerido para pedir ser promotor (se copia al portapapeles).
+const REQUEST_MESSAGE =
+  '¡Hola! Quiero ser promotor/a de Pasantía y ayudar a sumar estudiantes, empresas y comunidades. ¿Cómo hago?';
 
 export default function Promoters() {
   const { session } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [code, setCode] = useState<string>('');
-  const [stats, setStats] = useState<Stats>(EMPTY_STATS);
+  const [me, setMe] = useState<MyPromoter | null>(null);
+  const [ranking, setRanking] = useState<RankRow[]>([]);
   const [copied, setCopied] = useState(false);
+  const [msgCopied, setMsgCopied] = useState(false);
 
-  const link = code ? `${window.location.origin}/?ref=${code}` : '';
+  const link = me ? `${window.location.origin}/?ref=${me.code}` : '';
 
   useEffect(() => {
     let active = true;
     (async () => {
-      // Genera (o recupera) el código del estudiante y trae sus totales.
-      const [{ data: codeData }, { data: statsData }] = await Promise.all([
-        supabase.rpc('ensure_my_referral_code'),
-        supabase.rpc('my_referral_stats'),
+      const [mine, rank] = await Promise.all([
+        supabase.rpc('my_promoter'),
+        supabase.rpc('public_promoter_ranking'),
       ]);
       if (!active) return;
 
-      if (typeof codeData === 'string') setCode(codeData);
-
-      const row = Array.isArray(statsData) ? statsData[0] : statsData;
-      if (row) {
-        setStats({
-          total: Number(row.total ?? 0),
-          estudiantes: Number(row.estudiantes ?? 0),
-          empresas: Number(row.empresas ?? 0),
-          embajadores: Number(row.embajadores ?? 0),
-          activados: Number(row.activados ?? 0),
-        });
-      }
+      const row = (Array.isArray(mine.data) ? mine.data[0] : mine.data) as MyPromoter | undefined;
+      setMe(
+        row
+          ? {
+              code: row.code,
+              total: Number(row.total ?? 0),
+              estudiantes: Number(row.estudiantes ?? 0),
+              empresas: Number(row.empresas ?? 0),
+              embajadores: Number(row.embajadores ?? 0),
+              activados: Number(row.activados ?? 0),
+            }
+          : null
+      );
+      setRanking(
+        ((rank.data ?? []) as RankRow[]).map((r) => ({
+          nombre: r.nombre,
+          total: Number(r.total),
+          activados: Number(r.activados),
+        }))
+      );
       setLoading(false);
     })();
     return () => {
@@ -69,91 +83,151 @@ export default function Promoters() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      /* ignore: si el navegador no permite copiar, el usuario puede seleccionarlo */
+      /* ignore */
     }
   }
 
   async function share() {
     if (!link) return;
-    const shareData = {
-      title: 'Sumate a Pasantía',
-      text: 'Estamos construyendo Pasantía para acercar las primeras experiencias laborales a estudiantes. ¡Sumate con mi enlace!',
-      url: link,
-    };
     try {
       if (navigator.share) {
-        await navigator.share(shareData);
+        await navigator.share({
+          title: 'Sumate a Pasantía',
+          text: 'Estamos construyendo Pasantía. ¡Sumate con mi enlace!',
+          url: link,
+        });
       } else {
         await copyLink();
       }
     } catch {
-      /* el usuario canceló el compartir */
+      /* cancelado */
     }
   }
 
-  if (loading) return <PageLoader />;
+  async function requestPromoter() {
+    // Copiamos el mensaje sugerido y abrimos el DM de Instagram de Pasant.ia.
+    try {
+      await navigator.clipboard.writeText(REQUEST_MESSAGE);
+      setMsgCopied(true);
+      setTimeout(() => setMsgCopied(false), 3000);
+    } catch {
+      /* ignore */
+    }
+    window.open(`https://ig.me/m/${CONTACT.instagram}`, '_blank', 'noopener,noreferrer');
+  }
 
-  const metrics = [
-    { label: 'Total', value: stats.total, icon: Users },
-    { label: 'Estudiantes', value: stats.estudiantes, icon: Users },
-    { label: 'Empresas', value: stats.empresas, icon: Building2 },
-    { label: 'Comunidades', value: stats.embajadores, icon: Megaphone },
-    { label: 'Ya activados', value: stats.activados, icon: UserCheck },
-  ];
+  if (loading) return <PageLoader />;
 
   return (
     <div>
       <PageHeader
         title="Promotores"
-        description="Ayudanos a construir Pasantía. Compartí tu enlace y seguí cuánta gente sumás."
+        description="Ayudanos a construir Pasantía. Mirá quiénes están sumando gente y sumate vos también."
       />
 
-      {/* Enlace personal */}
-      <Card className="mb-5">
-        <div className="flex items-center gap-2 text-brand-300">
-          <Sparkles className="h-4 w-4" />
-          <span className="text-xs font-semibold uppercase tracking-wide">Tu enlace de promotor</span>
-        </div>
-        <p className="mt-2 text-sm text-white/60">
-          Todo el que se registre con este enlace queda contabilizado a tu nombre automáticamente.
-        </p>
+      {/* Bloque personal: enlace propio (si sos promotor) o CTA para solicitarlo */}
+      {me ? (
+        <Card className="mb-6">
+          <div className="flex items-center gap-2 text-brand-300">
+            <Sparkles className="h-4 w-4" />
+            <span className="text-xs font-semibold uppercase tracking-wide">Tu enlace de promotor</span>
+          </div>
+          <p className="mt-2 text-sm text-white/60">
+            Todo el que se registre con este enlace queda contabilizado a tu nombre automáticamente.
+          </p>
 
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-          <input
-            readOnly
-            value={link}
-            onFocus={(e) => e.currentTarget.select()}
-            className="min-w-0 flex-1 rounded-full border border-white/12 bg-white/5 px-4 py-2.5 text-sm text-white/90 outline-none focus:border-brand-400/60"
-          />
-          <div className="flex gap-2">
-            <Button variant="secondary" size="sm" onClick={copyLink} className="flex-1 sm:flex-none">
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              {copied ? 'Copiado' : 'Copiar'}
-            </Button>
-            <Button variant="primary" size="sm" onClick={share} className="flex-1 sm:flex-none">
-              <Share2 className="h-4 w-4" />
-              Compartir
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <input
+              readOnly
+              value={link}
+              onFocus={(e) => e.currentTarget.select()}
+              className="min-w-0 flex-1 rounded-full border border-white/12 bg-white/5 px-4 py-2.5 text-sm text-white/90 outline-none focus:border-brand-400/60"
+            />
+            <div className="flex gap-2">
+              <Button variant="secondary" size="sm" onClick={copyLink} className="flex-1 sm:flex-none">
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied ? 'Copiado' : 'Copiar'}
+              </Button>
+              <Button variant="primary" size="sm" onClick={share} className="flex-1 sm:flex-none">
+                <Share2 className="h-4 w-4" />
+                Compartir
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { label: 'Total', value: me.total },
+              { label: 'Estudiantes', value: me.estudiantes },
+              { label: 'Empresas', value: me.empresas },
+              { label: 'Ya activados', value: me.activados },
+            ].map((m) => (
+              <div key={m.label} className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center">
+                <p className="text-2xl font-bold text-white">{m.value}</p>
+                <p className="mt-0.5 text-xs text-white/55">{m.label}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : (
+        <Card className="mb-6 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-brand-300">
+            <Send className="h-6 w-6" />
+          </div>
+          <h3 className="text-base font-semibold text-white">¿Querés ser promotor/a?</h3>
+          <p className="mx-auto mt-2 max-w-md text-sm text-white/60">
+            Sumate a construir Pasantía. Escribinos por Instagram y, si te sumás, te asignamos tu
+            enlace personal para invitar estudiantes, empresas y comunidades.
+          </p>
+          <div className="mt-5 flex justify-center">
+            <Button variant="primary" size="sm" onClick={requestPromoter}>
+              <Send className="h-4 w-4" />
+              Solicitar ser promotor
             </Button>
           </div>
-        </div>
-      </Card>
+          {msgCopied && (
+            <p className="mt-3 text-xs text-brand-300">
+              Copiamos un mensaje sugerido: pegalo en el chat de Instagram.
+            </p>
+          )}
+        </Card>
+      )}
 
-      {/* Métricas */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        {metrics.map(({ label, value, icon: Icon }) => (
-          <Card key={label} className="text-center">
-            <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-brand-300">
-              <Icon className="h-5 w-5" />
-            </div>
-            <p className="text-2xl font-bold text-white">{value}</p>
-            <p className="mt-0.5 text-xs text-white/55">{label}</p>
-          </Card>
-        ))}
+      {/* Ranking de promotores (visible para todos) */}
+      <div className="mb-3 flex items-center gap-2">
+        <Trophy className="h-4 w-4 text-amber-300" />
+        <h2 className="text-sm font-semibold text-white">Ranking de promotores</h2>
       </div>
 
-      <p className="mt-5 text-center text-xs text-white/45">
-        Los datos personales de quienes se suman son privados. Acá solo ves tus totales.
-      </p>
+      <Card className="overflow-x-auto p-0">
+        <table className="w-full min-w-[360px] text-left text-sm">
+          <thead className="border-b border-white/10 text-xs uppercase tracking-wide text-white/45">
+            <tr>
+              <th className="px-4 py-3 font-medium">#</th>
+              <th className="px-4 py-3 font-medium">Promotor</th>
+              <th className="px-4 py-3 font-medium text-right">Sumados</th>
+              <th className="px-4 py-3 font-medium text-right">Activados</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ranking.map((r, i) => (
+              <tr key={`${r.nombre}-${i}`} className="border-b border-white/5 last:border-0">
+                <td className="px-4 py-3 text-white/50">{i + 1}</td>
+                <td className="px-4 py-3 font-medium text-white">{r.nombre}</td>
+                <td className="px-4 py-3 text-right font-semibold text-white">{r.total}</td>
+                <td className="px-4 py-3 text-right text-white/70">{r.activados}</td>
+              </tr>
+            ))}
+            {ranking.length === 0 && (
+              <tr>
+                <td colSpan={4} className="px-4 py-8 text-center text-white/45">
+                  Todavía no hay promotores. ¡Podés ser el primero!
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </Card>
     </div>
   );
 }

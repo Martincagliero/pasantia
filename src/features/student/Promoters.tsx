@@ -152,21 +152,21 @@ export default function Promoters() {
 
       {/* Bloque personal: enlace propio (si sos promotor) o CTA para solicitarlo */}
       {me ? (
-        <Card className="mb-6">
+        <Card className="mb-4 !p-3 sm:mb-6 sm:!p-5">
           <div className="flex items-center gap-2 text-white/70">
-            <Link2 className="h-4 w-4" />
-            <span className="text-xs font-semibold uppercase tracking-wide">Tu enlace de promotor</span>
+            <Link2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="text-[11px] font-semibold uppercase tracking-wide sm:text-xs">Tu enlace de promotor</span>
           </div>
-          <p className="mt-2 text-sm text-white/60">
-            Todo el que se registre con este enlace queda contabilizado a tu nombre automáticamente.
+          <p className="mt-1 text-[11px] text-white/60 sm:mt-2 sm:text-sm">
+            Todo el que se registre con este enlace queda contabilizado a tu nombre.
           </p>
 
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <div className="mt-2.5 flex flex-col gap-2 sm:mt-4 sm:flex-row">
             <input
               readOnly
               value={link}
               onFocus={(e) => e.currentTarget.select()}
-              className="min-w-0 flex-1 rounded-full border border-white/12 bg-white/5 px-4 py-2.5 text-sm text-white/90 outline-none focus:border-brand-400/60"
+              className="min-w-0 flex-1 rounded-full border border-white/12 bg-white/5 px-3 py-2 text-xs text-white/90 outline-none focus:border-brand-400/60 sm:px-4 sm:py-2.5 sm:text-sm"
             />
             <div className="flex gap-2">
               <Button variant="secondary" size="sm" onClick={copyLink} className="flex-1 sm:flex-none">
@@ -180,16 +180,19 @@ export default function Promoters() {
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-3 grid grid-cols-4 gap-2 sm:mt-5 sm:gap-3">
             {[
               { label: 'Total', value: me.total },
               { label: 'Estudiantes', value: me.estudiantes },
               { label: 'Empresas', value: me.empresas },
-              { label: 'Ya activados', value: me.activados },
+              { label: 'Activados', value: me.activados },
             ].map((m) => (
-              <div key={m.label} className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center">
-                <p className="text-2xl font-bold text-white">{m.value}</p>
-                <p className="mt-0.5 text-xs text-white/55">{m.label}</p>
+              <div
+                key={m.label}
+                className="rounded-xl border border-white/10 bg-white/5 p-1.5 text-center sm:rounded-2xl sm:p-3"
+              >
+                <p className="text-base font-bold text-white sm:text-2xl">{m.value}</p>
+                <p className="mt-0.5 text-[9px] leading-tight text-white/55 sm:text-xs">{m.label}</p>
               </div>
             ))}
           </div>

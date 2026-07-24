@@ -56,25 +56,33 @@ END;
 $$;
 
 -- 4) Ranking público de promotores (lo ven todos los usuarios logueados).
---    Solo nombre + totales: NO expone datos personales de los referidos.
+--    Muestra el desglose de gente sumada (estudiantes / empresas / comunidades).
+--    NO expone datos personales de los referidos.
+DROP FUNCTION IF EXISTS public.public_promoter_ranking();
 CREATE OR REPLACE FUNCTION public.public_promoter_ranking()
 RETURNS TABLE (
-  nombre    text,
-  total     bigint,
-  activados bigint
+  code        text,
+  nombre      text,
+  total       bigint,
+  estudiantes bigint,
+  empresas    bigint,
+  comunidades bigint
 )
 LANGUAGE sql
 STABLE SECURITY DEFINER SET search_path = public
 AS $$
   SELECT
-    COALESCE(NULLIF(pr.nombre, ''), pf.full_name, pr.code)          AS nombre,
-    COUNT(ea.id)::bigint                                            AS total,
-    COUNT(ea.id) FILTER (WHERE ea.status = 'activado')::bigint      AS activados
+    pr.code,
+    COALESCE(NULLIF(pr.nombre, ''), pf.full_name, pr.code),
+    COUNT(ea.id)::bigint,
+    COUNT(ea.id) FILTER (WHERE ea.rol = 'estudiante')::bigint,
+    COUNT(ea.id) FILTER (WHERE ea.rol = 'empresa')::bigint,
+    COUNT(ea.id) FILTER (WHERE ea.rol = 'embajador')::bigint
   FROM promoters pr
   LEFT JOIN profiles pf ON pf.id = pr.profile_id
   LEFT JOIN early_access_requests ea ON lower(ea.referred_by) = lower(pr.code)
   GROUP BY pr.code, pr.nombre, pf.full_name
-  ORDER BY total DESC, nombre ASC;
+  ORDER BY COUNT(ea.id) DESC, pr.code ASC;
 $$;
 
 -- 5) Admin: asignar (o reasignar) un código de promotor a un perfil

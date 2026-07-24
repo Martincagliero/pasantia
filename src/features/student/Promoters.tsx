@@ -4,7 +4,7 @@
 // - Si no lo es, ve un botón para solicitar ser promotor por Instagram.
 // Los códigos NO se autogeneran: los asigna el admin.
 import { useEffect, useState } from 'react';
-import { Copy, Check, Share2, Trophy, Sparkles, Send } from 'lucide-react';
+import { Copy, Check, Share2, Trophy, Sparkles, Send, Trash2, GraduationCap, Building2, Users } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { CONTACT } from '../../lib/constants';
@@ -21,9 +21,12 @@ interface MyPromoter {
 }
 
 interface RankRow {
+  code: string;
   nombre: string;
   total: number;
-  activados: number;
+  estudiantes: number;
+  empresas: number;
+  comunidades: number;
 }
 
 // Mensaje sugerido para pedir ser promotor (se copia al portapapeles).
@@ -31,7 +34,7 @@ const REQUEST_MESSAGE =
   '¡Hola! Quiero ser promotor/a de Pasantía y ayudar a sumar estudiantes, empresas y comunidades. ¿Cómo hago?';
 
 export default function Promoters() {
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [me, setMe] = useState<MyPromoter | null>(null);
   const [ranking, setRanking] = useState<RankRow[]>([]);
@@ -39,6 +42,20 @@ export default function Promoters() {
   const [msgCopied, setMsgCopied] = useState(false);
 
   const link = me ? `${window.location.origin}/?ref=${me.code}` : '';
+
+  async function loadRanking() {
+    const { data } = await supabase.rpc('public_promoter_ranking');
+    setRanking(
+      ((data ?? []) as RankRow[]).map((r) => ({
+        code: r.code,
+        nombre: r.nombre,
+        total: Number(r.total),
+        estudiantes: Number(r.estudiantes),
+        empresas: Number(r.empresas),
+        comunidades: Number(r.comunidades),
+      }))
+    );
+  }
 
   useEffect(() => {
     let active = true;
@@ -64,9 +81,12 @@ export default function Promoters() {
       );
       setRanking(
         ((rank.data ?? []) as RankRow[]).map((r) => ({
+          code: r.code,
           nombre: r.nombre,
           total: Number(r.total),
-          activados: Number(r.activados),
+          estudiantes: Number(r.estudiantes),
+          empresas: Number(r.empresas),
+          comunidades: Number(r.comunidades),
         }))
       );
       setLoading(false);
@@ -75,6 +95,11 @@ export default function Promoters() {
       active = false;
     };
   }, [session]);
+
+  async function removePromoter(code: string) {
+    const { error } = await supabase.rpc('admin_remove_promoter', { p_code: code });
+    if (!error) loadRanking();
+  }
 
   async function copyLink() {
     if (!link) return;
@@ -195,39 +220,71 @@ export default function Promoters() {
 
       {/* Ranking de promotores (visible para todos) */}
       <div className="mb-3 flex items-center gap-2">
-        <Trophy className="h-4 w-4 text-amber-300" />
-        <h2 className="text-sm font-semibold text-white">Ranking de promotores</h2>
+        <Trophy className="h-5 w-5 text-amber-300" />
+        <h2 className="text-base font-bold text-white">Ranking de promotores</h2>
       </div>
 
-      <Card className="overflow-x-auto p-0">
-        <table className="w-full min-w-[360px] text-left text-sm">
-          <thead className="border-b border-white/10 text-xs uppercase tracking-wide text-white/45">
-            <tr>
-              <th className="px-4 py-3 font-medium">#</th>
-              <th className="px-4 py-3 font-medium">Promotor</th>
-              <th className="px-4 py-3 font-medium text-right">Sumados</th>
-              <th className="px-4 py-3 font-medium text-right">Activados</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ranking.map((r, i) => (
-              <tr key={`${r.nombre}-${i}`} className="border-b border-white/5 last:border-0">
-                <td className="px-4 py-3 text-white/50">{i + 1}</td>
-                <td className="px-4 py-3 font-medium text-white">{r.nombre}</td>
-                <td className="px-4 py-3 text-right font-semibold text-white">{r.total}</td>
-                <td className="px-4 py-3 text-right text-white/70">{r.activados}</td>
-              </tr>
-            ))}
-            {ranking.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-white/45">
-                  Todavía no hay promotores. ¡Podés ser el primero!
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </Card>
+      <div className="space-y-2.5">
+        {ranking.map((r, i) => {
+          const medal = ['🥇', '🥈', '🥉'][i];
+          const top = i === 0;
+          return (
+            <div
+              key={r.code}
+              className={`group flex items-center gap-3 rounded-2xl border p-3 transition sm:gap-4 sm:p-4 ${
+                top
+                  ? 'border-amber-300/40 bg-gradient-to-r from-amber-300/15 via-white/[0.04] to-transparent'
+                  : 'border-white/10 bg-gradient-to-r from-white/[0.06] to-white/[0.02] hover:border-brand-400/40 hover:from-brand-400/10'
+              }`}
+            >
+              <div
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-lg font-black ${
+                  medal ? 'bg-white/10' : 'bg-white/5 text-sm text-white/50'
+                }`}
+              >
+                {medal ?? i + 1}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px] font-bold text-white">{r.nombre}</p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-sky-400/20 bg-sky-400/10 px-2 py-0.5 text-[11px] font-medium text-sky-200">
+                    <GraduationCap className="h-3 w-3" /> {r.estudiantes} estudiantes
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-[11px] font-medium text-emerald-200">
+                    <Building2 className="h-3 w-3" /> {r.empresas} empresas
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-2 py-0.5 text-[11px] font-medium text-fuchsia-200">
+                    <Users className="h-3 w-3" /> {r.comunidades} comunidades
+                  </span>
+                </div>
+              </div>
+
+              <div className="shrink-0 text-right">
+                <p className="text-2xl font-black leading-none text-brand-300">{r.total}</p>
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-white/40">
+                  sumados
+                </p>
+              </div>
+
+              {profile?.is_admin && (
+                <button
+                  onClick={() => removePromoter(r.code)}
+                  title="Quitar promotor"
+                  className="shrink-0 rounded-xl border border-red-400/20 bg-red-500/5 p-2 text-red-300 opacity-0 transition hover:bg-red-500/15 group-hover:opacity-100"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          );
+        })}
+        {ranking.length === 0 && (
+          <Card className="text-center text-sm text-white/45">
+            Todavía no hay promotores. ¡Podés ser el primero!
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

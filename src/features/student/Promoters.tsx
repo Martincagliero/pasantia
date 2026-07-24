@@ -180,12 +180,10 @@ export default function Promoters() {
             </div>
           </div>
 
-          <div className="mt-3 grid grid-cols-4 gap-2 sm:mt-5 sm:gap-3">
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3">
             {[
-              { label: 'Total', value: me.total },
               { label: 'Estudiantes', value: me.estudiantes },
               { label: 'Empresas', value: me.empresas },
-              { label: 'Activados', value: me.activados },
             ].map((m) => (
               <div
                 key={m.label}

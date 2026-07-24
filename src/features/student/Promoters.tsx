@@ -4,7 +4,7 @@
 // - Si no lo es, ve un botón para solicitar ser promotor por Instagram.
 // Los códigos NO se autogeneran: los asigna el admin.
 import { useEffect, useState } from 'react';
-import { Copy, Check, Share2, Trophy, Sparkles, Send, Trash2, GraduationCap, Building2, Users } from 'lucide-react';
+import { Copy, Check, Share2, Trophy, Send, Trash2, GraduationCap, Building2, Users, Link2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { CONTACT } from '../../lib/constants';
@@ -153,8 +153,8 @@ export default function Promoters() {
       {/* Bloque personal: enlace propio (si sos promotor) o CTA para solicitarlo */}
       {me ? (
         <Card className="mb-6">
-          <div className="flex items-center gap-2 text-brand-300">
-            <Sparkles className="h-4 w-4" />
+          <div className="flex items-center gap-2 text-white/70">
+            <Link2 className="h-4 w-4" />
             <span className="text-xs font-semibold uppercase tracking-wide">Tu enlace de promotor</span>
           </div>
           <p className="mt-2 text-sm text-white/60">
@@ -196,7 +196,7 @@ export default function Promoters() {
         </Card>
       ) : (
         <Card className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-brand-300">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/70">
             <Send className="h-6 w-6" />
           </div>
           <h3 className="text-base font-semibold text-white">¿Querés ser promotor/a?</h3>
@@ -211,7 +211,7 @@ export default function Promoters() {
             </Button>
           </div>
           {msgCopied && (
-            <p className="mt-3 text-xs text-brand-300">
+            <p className="mt-3 text-xs text-white/70">
               Copiamos un mensaje sugerido: pegalo en el chat de Instagram.
             </p>
           )}
@@ -220,48 +220,43 @@ export default function Promoters() {
 
       {/* Ranking de promotores (visible para todos) */}
       <div className="mb-3 flex items-center gap-2">
-        <Trophy className="h-5 w-5 text-amber-300" />
+        <Trophy className="h-5 w-5 text-white/70" />
         <h2 className="text-base font-bold text-white">Ranking de promotores</h2>
       </div>
 
       <div className="space-y-2.5">
         {ranking.map((r, i) => {
-          const medal = ['🥇', '🥈', '🥉'][i];
           const top = i === 0;
           return (
             <div
               key={r.code}
               className={`group flex items-center gap-3 rounded-2xl border p-3 transition sm:gap-4 sm:p-4 ${
                 top
-                  ? 'border-amber-300/40 bg-gradient-to-r from-amber-300/15 via-white/[0.04] to-transparent'
-                  : 'border-white/10 bg-gradient-to-r from-white/[0.06] to-white/[0.02] hover:border-brand-400/40 hover:from-brand-400/10'
+                  ? 'border-white/25 bg-white/[0.06]'
+                  : 'border-white/10 bg-white/[0.03] hover:border-white/20'
               }`}
             >
-              <div
-                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-lg font-black ${
-                  medal ? 'bg-white/10' : 'bg-white/5 text-sm text-white/50'
-                }`}
-              >
-                {medal ?? i + 1}
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/12 bg-white/5 text-sm font-bold text-white/70">
+                {i + 1}
               </div>
 
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[15px] font-bold text-white">{r.nombre}</p>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  <span className="inline-flex items-center gap-1 rounded-full border border-sky-400/20 bg-sky-400/10 px-2 py-0.5 text-[11px] font-medium text-sky-200">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-white/70">
                     <GraduationCap className="h-3 w-3" /> {r.estudiantes} estudiantes
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-[11px] font-medium text-emerald-200">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-white/70">
                     <Building2 className="h-3 w-3" /> {r.empresas} empresas
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-2 py-0.5 text-[11px] font-medium text-fuchsia-200">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-white/70">
                     <Users className="h-3 w-3" /> {r.comunidades} comunidades
                   </span>
                 </div>
               </div>
 
               <div className="shrink-0 text-right">
-                <p className="text-2xl font-black leading-none text-brand-300">{r.total}</p>
+                <p className="text-2xl font-black leading-none text-white">{r.total}</p>
                 <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-white/40">
                   sumados
                 </p>

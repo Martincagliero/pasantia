@@ -320,15 +320,50 @@ function Onboarding({
               },
               { onConflict: 'id' }
             );
+
+            // Guardamos en el perfil los datos que cargó en el formulario, para
+            // que entre con el perfil ya completado. Si alguna columna no existe
+            // todavía en la base, reintentamos solo con el id (sin perder la cuenta).
+            const saveSub = async (table: string, full: Record<string, unknown>) => {
+              const { error: subErr } = await supabase.from(table).upsert(full, { onConflict: 'id' });
+              if (subErr) {
+                const m = (subErr.message || '').toLowerCase();
+                if (/column|schema|does not exist|could not find/.test(m)) {
+                  await supabase.from(table).upsert({ id: uid }, { onConflict: 'id' });
+                }
+              }
+            };
+
             if (data.role === 'empresa') {
-              await supabase.from('company_profiles').upsert({ id: uid }, { onConflict: 'id' });
+              await saveSub('company_profiles', {
+                id: uid,
+                company_name: data.empresa.trim() || data.nombre.trim(),
+                industry: data.rubro.trim() || null,
+                size: data.tamano.trim() || null,
+                description: data.perfil.trim() || data.mensaje.trim() || null,
+              });
             } else if (data.role === 'embajador') {
-              await supabase.from('ambassador_profiles').upsert(
-                { id: uid, org_name: data.org_name || data.nombre.trim() },
-                { onConflict: 'id' }
-              );
+              await saveSub('ambassador_profiles', {
+                id: uid,
+                org_name: data.org_name.trim() || data.nombre.trim(),
+                org_type: data.org_type.trim() || null,
+                university: data.universidad.trim() || null,
+                instagram_url: data.instagram_link.trim() || null,
+                reach: data.followers_range.trim() || null,
+                description: data.perfil.trim() || data.mensaje.trim() || null,
+              });
             } else {
-              await supabase.from('student_profiles').upsert({ id: uid }, { onConflict: 'id' });
+              await saveSub('student_profiles', {
+                id: uid,
+                university: data.universidad.trim() || null,
+                career: data.carrera.trim() || null,
+                year: data.anio.trim() || null,
+                area: data.area.trim() || null,
+                availability: data.disponibilidad.trim() || null,
+                phone: data.telefono.trim() || null,
+                bio: data.perfil.trim() || data.mensaje.trim() || null,
+                instagram_url: data.instagram_link.trim() || null,
+              });
             }
           }
         } catch {

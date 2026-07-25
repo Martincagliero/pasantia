@@ -12,8 +12,9 @@ const sanitize = (raw: string): string =>
 
 /**
  * Lee ?ref= (o ?promo=) de la URL y lo guarda en localStorage.
- * Llamar una vez al iniciar la app. No pisa un referido ya guardado
- * (el primero que trajo a la persona se lleva el crédito).
+ * Llamar una vez al iniciar la app. Si la URL trae un código explícito, ese
+ * código PISA al que hubiera guardado antes: la persona está entrando ahora
+ * mismo por ese enlace, así que ese promotor se lleva el crédito.
  */
 export function captureReferral(): void {
   if (typeof window === 'undefined') return;
@@ -22,8 +23,7 @@ export function captureReferral(): void {
     const raw = params.get('ref') ?? params.get('promo') ?? '';
     const code = sanitize(raw);
     if (!code) return;
-    const existing = localStorage.getItem(STORAGE_KEY);
-    if (!existing) localStorage.setItem(STORAGE_KEY, code);
+    localStorage.setItem(STORAGE_KEY, code);
   } catch {
     /* ignore: si localStorage falla, seguimos sin tracking */
   }

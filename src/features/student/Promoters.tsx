@@ -4,7 +4,7 @@
 // - Si no lo es, ve un botón para solicitar ser promotor por Instagram.
 // Los códigos NO se autogeneran: los asigna el admin.
 import { useEffect, useState } from 'react';
-import { Copy, Check, Share2, Trophy, Send, Trash2, GraduationCap, Building2, Users, Link2 } from 'lucide-react';
+import { Copy, Check, Share2, Trophy, Send, Trash2, GraduationCap, Building2, Users, Link2, Info, X, Gift, Rocket } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { CONTACT } from '../../lib/constants';
@@ -40,6 +40,7 @@ export default function Promoters() {
   const [ranking, setRanking] = useState<RankRow[]>([]);
   const [copied, setCopied] = useState(false);
   const [msgCopied, setMsgCopied] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
 
   const link = me ? `${window.location.origin}/?ref=${me.code}` : '';
 
@@ -145,10 +146,62 @@ export default function Promoters() {
 
   return (
     <div>
-      <PageHeader
-        title="Promotores"
-        description="Ayudanos a construir Pasantía. Mirá quiénes están sumando gente y sumate vos también."
-      />
+      <div className="flex items-start justify-between gap-3">
+        <PageHeader
+          title="Promotores"
+          description="Ayudanos a construir Pasantía. Mirá quiénes están sumando gente y sumate vos también."
+        />
+        <button
+          onClick={() => setShowInfo(true)}
+          title="¿Qué es ser promotor?"
+          aria-label="Información sobre promotores"
+          className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/5 text-white/70 transition hover:bg-white/10 hover:text-white"
+        >
+          <Info className="h-4 w-4" />
+        </button>
+      </div>
+
+      {showInfo && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          onClick={() => setShowInfo(false)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-3xl border border-white/12 bg-[#16181D] p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowInfo(false)}
+              aria-label="Cerrar"
+              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-white/50 transition hover:bg-white/10 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white">
+              <Rocket className="h-5 w-5" />
+            </div>
+            <h3 className="text-lg font-bold text-white">Ser promotor/a</h3>
+            <p className="mt-1 text-sm text-white/60">
+              Ayudás a construir Pasantía invitando gente con tu enlace personal.
+            </p>
+            <ul className="mt-4 space-y-3">
+              {[
+                { icon: Link2, text: 'Tenés tu enlace propio (?ref=) para compartir.' },
+                { icon: Users, text: 'Cada persona que se registra con tu enlace suma a tu nombre.' },
+                { icon: Trophy, text: 'Aparecés en el ranking público de promotores.' },
+                { icon: Gift, text: 'Mientras más sumás, más cerca estás de los beneficios que vamos a habilitar.' },
+              ].map((b, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70">
+                    <b.icon className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="text-sm text-white/80">{b.text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
 
       {/* Bloque personal: enlace propio (si sos promotor) o CTA para solicitarlo */}
       {me ? (

@@ -171,7 +171,7 @@ export default function AdminPanel() {
       ) : tab === 'usuarios' ? (
         <UsersTab users={users} />
       ) : tab === 'solicitudes' ? (
-        <RequestsTab requests={requests} onChanged={load} />
+        <RequestsTab requests={requests} users={users} onChanged={load} />
       ) : (
         <PromotersTab promoters={promoters} users={users} onChanged={load} />
       )}
@@ -268,9 +268,26 @@ function UsersTab({ users }: { users: UserRow[] }) {
 }
 
 /* ----------------------------- Formulario ----------------------------- */
-function RequestsTab({ requests, onChanged }: { requests: RequestRow[]; onChanged: () => void }) {
+function RequestsTab({
+  requests,
+  users,
+  onChanged,
+}: {
+  requests: RequestRow[];
+  users: UserRow[];
+  onChanged: () => void;
+}) {
   const [q, setQ] = useState('');
   const [statusFilter, setStatusFilter] = useState<'todos' | 'pendiente' | 'activado'>('todos');
+  const [regFilter, setRegFilter] = useState<'todos' | 'si' | 'no'>('todos');
+
+  // Emails que YA tienen cuenta (perfil registrado).
+  const registered = useMemo(
+    () => new Set(users.map((u) => (u.email || '').trim().toLowerCase())),
+    [users]
+  );
+  const isRegistered = (email: string | null) =>
+    !!email && registered.has(email.trim().toLowerCase());
 
   async function setStatus(id: string, status: string) {
     const { error } = await supabase.rpc('admin_set_request_status', { p_id: id, p_status: status });
@@ -279,6 +296,8 @@ function RequestsTab({ requests, onChanged }: { requests: RequestRow[]; onChange
 
   const filtered = requests.filter((r) => {
     if (statusFilter !== 'todos' && (r.status ?? 'pendiente') !== statusFilter) return false;
+    if (regFilter === 'si' && !isRegistered(r.email)) return false;
+    if (regFilter === 'no' && isRegistered(r.email)) return false;
     const s = q.trim().toLowerCase();
     if (!s) return true;
     return [r.nombre, r.email, r.universidad, r.empresa, r.org_name, r.referred_by]
@@ -300,6 +319,15 @@ function RequestsTab({ requests, onChanged }: { requests: RequestRow[]; onChange
             className="w-full rounded-full border border-white/12 bg-white/5 py-2 pl-9 pr-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-brand-400/60"
           />
         </div>
+        <select
+          value={regFilter}
+          onChange={(e) => setRegFilter(e.target.value as 'todos' | 'si' | 'no')}
+          className="rounded-full border border-white/12 bg-white/5 px-4 py-2 text-sm text-white outline-none focus:border-brand-400/60"
+        >
+          <option value="todos">Todos</option>
+          <option value="si">Registrados</option>
+          <option value="no">Sin cuenta</option>
+        </select>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as 'todos' | 'pendiente' | 'activado')}
@@ -332,6 +360,15 @@ function RequestsTab({ requests, onChanged }: { requests: RequestRow[]; onChange
                   >
                     {(r.status ?? 'pendiente') === 'activado' ? 'Activado' : 'Pendiente'}
                   </span>
+                  {isRegistered(r.email) ? (
+                    <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-xs text-emerald-200">
+                      Registrado
+                    </span>
+                  ) : (
+                    <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-white/50">
+                      Sin cuenta
+                    </span>
+                  )}
                 </div>
                 <p className="mt-1 text-sm text-white/70">{r.email || '—'}</p>
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/50">

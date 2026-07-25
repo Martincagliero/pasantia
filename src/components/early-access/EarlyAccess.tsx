@@ -323,8 +323,22 @@ function Onboarding({
       // Guardar la solicitud en la base de datos (best-effort): queda en la
       // tabla early_access_requests para poder activarla luego. Si la tabla no
       // existe o falla, seguimos con la notificación habitual.
+      // IMPORTANTE: referred_by (el ?ref= del promotor) tiene que quedar sí o sí
+      // para que sume en el ranking de promotores. Si el insert falla por alguna
+      // columna nueva que aún no esté en la base (ej. fecha_nacimiento),
+      // reintentamos sin esas columnas opcionales pero conservando referred_by.
       try {
-        await supabase.from('early_access_requests').insert(payload);
+        const { error: insErr } = await supabase.from('early_access_requests').insert(payload);
+        if (insErr) {
+          const msg = (insErr.message || '').toLowerCase();
+          const columnIssue = /column|schema|does not exist|could not find/.test(msg);
+          if (columnIssue) {
+            const { fecha_nacimiento: _fn, followers_range: _fr, ...safePayload } = payload;
+            void _fn;
+            void _fr;
+            await supabase.from('early_access_requests').insert(safePayload);
+          }
+        }
       } catch {
         /* ignore */
       }

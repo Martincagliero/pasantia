@@ -409,15 +409,21 @@ function Onboarding({
         });
         if (!res.ok) throw new Error('supabase');
       } else if (FORM_ENDPOINT) {
-        const res = await fetch(FORM_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify({
-            _subject: `Acceso anticipado (${data.role || 'sin rol'}) — PasantIA`,
-            ...payload,
-          }),
-        });
-        if (!res.ok) throw new Error('formspree');
+        // Aviso por email (Formspree). Es SOLO una notificación: los datos ya
+        // quedaron guardados en early_access_requests (Supabase). Si Formspree
+        // falla (ej. superó su cuota gratis de 50/mes), NO rompemos el registro.
+        try {
+          await fetch(FORM_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({
+              _subject: `Acceso anticipado (${data.role || 'sin rol'}) — PasantIA`,
+              ...payload,
+            }),
+          });
+        } catch {
+          /* aviso best-effort: si falla, el registro sigue OK */
+        }
       } else {
         const lines = Object.entries(payload)
           .filter(([, v]) => v)

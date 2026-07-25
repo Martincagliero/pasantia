@@ -134,6 +134,24 @@ export function EarlyAccessProvider({ children }: { children: ReactNode }) {
   const close = useCallback(() => setIsOpen(false), []);
   const value = useMemo(() => ({ open }), [open]);
 
+  // Si la persona llega con un enlace de promotor (?ref= / ?promo=), abrimos
+  // directo el onboarding de acceso anticipado en la pantalla de roles, para
+  // que se registre y sume al promotor que la invitó.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const hasRef = !!(params.get('ref') || params.get('promo'));
+      const inAppArea = window.location.pathname.startsWith('/app');
+      if (hasRef && !inAppArea) {
+        setPresetRole(undefined);
+        setIsOpen(true);
+      }
+    } catch {
+      /* ignore: si falla, se puede abrir manualmente */
+    }
+  }, []);
+
   return (
     <EarlyAccessContext.Provider value={value}>
       {children}

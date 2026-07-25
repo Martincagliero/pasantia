@@ -37,10 +37,19 @@ interface RequestRow {
   telefono: string | null;
   universidad: string | null;
   carrera: string | null;
+  anio: string | null;
+  area: string | null;
+  disponibilidad: string | null;
   empresa: string | null;
+  rubro: string | null;
+  tamano: string | null;
+  perfil: string | null;
   org_name: string | null;
+  org_type: string | null;
   instagram_link: string | null;
+  followers_range: string | null;
   mensaje: string | null;
+  origen: string | null;
   referred_by: string | null;
   status: string | null;
   created_at: string;
@@ -375,12 +384,21 @@ function RequestsTab({
                   {r.telefono && <span>Tel: {r.telefono}</span>}
                   {r.universidad && <span>Universidad: {r.universidad}</span>}
                   {r.carrera && <span>Carrera: {r.carrera}</span>}
+                  {r.anio && <span>Año: {r.anio}</span>}
+                  {r.area && <span>Área: {r.area}</span>}
+                  {r.disponibilidad && <span>Disponibilidad: {r.disponibilidad}</span>}
                   {r.empresa && <span>Empresa: {r.empresa}</span>}
+                  {r.rubro && <span>Rubro: {r.rubro}</span>}
+                  {r.tamano && <span>Tamaño: {r.tamano}</span>}
                   {r.org_name && <span>Comunidad: {r.org_name}</span>}
+                  {r.org_type && <span>Tipo: {r.org_type}</span>}
                   {r.instagram_link && <span>IG: {r.instagram_link}</span>}
+                  {r.followers_range && <span>Seguidores: {r.followers_range}</span>}
+                  {r.origen && <span>Origen: {r.origen}</span>}
                   {r.referred_by && <span className="text-brand-300">Promotor: {r.referred_by}</span>}
                   <span>{fmtDate(r.created_at)}</span>
                 </div>
+                {r.perfil && <p className="mt-2 text-sm text-white/60">{r.perfil}</p>}
                 {r.mensaje && <p className="mt-2 text-sm text-white/60">“{r.mensaje}”</p>}
               </div>
               <div className="shrink-0">

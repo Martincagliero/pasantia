@@ -95,13 +95,13 @@ end $$;
 -- ---- (Opcional) datos y una pasantía de ejemplo publicada por la empresa demo ----
 update public.company_profiles
 set company_name = 'Empresa Demo S.A.', industry = 'Tecnología', size = '11-50',
-    description = 'Empresa de ejemplo para probar la plataforma.'
+    description = '⚠️ Cuenta DEMO de ejemplo. Empresa de ejemplo para probar la plataforma.'
 where id = (select id from public.profiles where email = 'pasantia.empresa.demo@gmail.com');
 
 insert into public.internships (company_id, title, description, area, modality, location, requirements)
 select p.id,
        'Pasantía en Desarrollo Frontend',
-       'Sumate a nuestro equipo para construir interfaces con React. Aprendé en proyectos reales con mentoría.',
+       '⚠️ Pasantía DEMO de ejemplo. Sumate a nuestro equipo para construir interfaces con React. Aprendé en proyectos reales con mentoría.',
        'Tecnología', 'hibrido', 'Buenos Aires',
        'Ganas de aprender, nociones de HTML/CSS/JS. React es un plus.'
 from public.profiles p

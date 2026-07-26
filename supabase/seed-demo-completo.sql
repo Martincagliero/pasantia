@@ -264,14 +264,18 @@ begin
   -- ---- COMUNIDADES DEMO ----
   -- Si la tabla communities no existe (no corriste communities.sql), se saltea.
   begin
+    alter table public.communities add column if not exists avatar_url text;
     delete from public.communities where name like '%(DEMO)%';
-    insert into public.communities (creator_id, name, description, is_public, members_count) values
+    insert into public.communities (creator_id, name, description, avatar_url, is_public, members_count) values
       (s_val, 'Comunidad Sistemas UBA (DEMO)',
-       '⚠️ Comunidad DEMO de ejemplo. Estudiantes de sistemas compartiendo pasantías, recursos y experiencias.', true, 24),
+       '⚠️ Comunidad DEMO de ejemplo. Estudiantes de sistemas compartiendo pasantías, recursos y experiencias.',
+       'https://ui-avatars.com/api/?name=Sistemas+UBA&background=0A66C2&color=fff&size=256&bold=true', true, 24),
       (s_mat, 'Ingeniería Industrial UTN (DEMO)',
-       '⚠️ Comunidad DEMO de ejemplo. Difundimos oportunidades y consejos para estudiantes de ingeniería.', true, 15),
+       '⚠️ Comunidad DEMO de ejemplo. Difundimos oportunidades y consejos para estudiantes de ingeniería.',
+       'https://ui-avatars.com/api/?name=Ing+UTN&background=DC2626&color=fff&size=256&bold=true', true, 15),
       (s_val, 'Diseño & UX Argentina (DEMO)',
-       '⚠️ Comunidad DEMO de ejemplo. Comunidad de diseñadores junior buscando su primera experiencia laboral.', true, 31);
+       '⚠️ Comunidad DEMO de ejemplo. Comunidad de diseñadores junior buscando su primera experiencia laboral.',
+       'https://ui-avatars.com/api/?name=UX+Arg&background=7C3AED&color=fff&size=256&bold=true', true, 31);
   exception when undefined_table then
     raise notice 'Tabla communities no existe; salteo comunidades demo (corré communities.sql).';
   end;

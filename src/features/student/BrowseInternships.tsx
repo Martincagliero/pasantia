@@ -11,6 +11,7 @@ import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { ReportButton } from '../ui/ReportButton';
 import { PostInteractions } from '../ui/PostInteractions';
 import { InternshipDetailModal } from '../ui/InternshipDetailModal';
+import { EmojiText } from '../ui/EmojiText';
 import { useModalGuard } from '../ui/modalGuard';
 
 const modalityLabel: Record<Modality, string> = {
@@ -225,7 +226,7 @@ export default function BrowseInternships() {
                   onClick={() => setDetail(i)}
                   className="mt-2 line-clamp-2 cursor-pointer text-sm text-white/60 sm:mt-3 sm:line-clamp-3"
                 >
-                  {i.description}
+                  <EmojiText text={i.description} />
                 </p>
                 <div className="mt-4 flex items-center gap-2 sm:mt-5">
                   {applied ? (
@@ -344,7 +345,7 @@ export function ApplyModal({
       >
         <p className="text-sm text-white/60">{internship.company_name || internship.company?.company_name || 'Empresa'}</p>
         <h2 className="mt-1 text-xl font-bold text-white">{internship.title}</h2>
-        <p className="mt-3 text-sm text-white/70">{internship.description}</p>
+        <p className="mt-3 text-sm text-white/70"><EmojiText text={internship.description} /></p>
         {internship.requirements && (
           <div className="mt-4">
             <p className="text-sm font-semibold text-white/80">Requisitos</p>

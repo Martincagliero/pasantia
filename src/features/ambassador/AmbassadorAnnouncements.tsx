@@ -8,6 +8,7 @@ import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
 import { AmbassadorInternshipForm } from './AmbassadorInternshipForm';
 import { PostInteractions } from '../ui/PostInteractions';
 import { InternshipDetailModal } from '../ui/InternshipDetailModal';
+import { EmojiText } from '../ui/EmojiText';
 
 const modalityLabel: Record<Modality, string> = {
   presencial: 'Presencial',
@@ -195,7 +196,7 @@ export default function AmbassadorAnnouncements() {
                   onClick={() => setDetail(i)}
                   className="mt-2 line-clamp-2 flex-1 cursor-pointer text-sm text-white/60 sm:mt-3 sm:line-clamp-3"
                 >
-                  {i.description}
+                  <EmojiText text={i.description} />
                 </p>
                 <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-5">
                   {/* Difundir: solo en pasantías de OTROS, no en las propias */}

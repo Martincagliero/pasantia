@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/Button';
 import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { Card, EmptyState, PageLoader } from '../ui/primitives';
 import { AvatarUpload } from '../ui/AvatarUpload';
+import { EmojiText } from '../ui/EmojiText';
 import { ProfileHeader } from '../ui/ProfileHeader';
 import { ProfileCompletion } from '../ui/ProfileCompletion';
 import { UserPosts } from '../posts/UserPosts';
@@ -265,7 +266,7 @@ export default function CompanyProfileForm() {
         <Card>
           <h3 className="mb-3 text-base font-semibold text-white">Sobre la empresa</h3>
           <p className="text-sm leading-relaxed text-white/70">
-            {form.description || 'Todavía no agregaste una descripción. Tocá “Editar perfil” para completarla.'}
+            {form.description ? <EmojiText text={form.description} /> : 'Todavía no agregaste una descripción. Tocá “Editar perfil” para completarla.'}
           </p>
           <dl className="mt-4 grid gap-3 sm:grid-cols-2">
             <ViewField label="Contacto" value={fullName} />

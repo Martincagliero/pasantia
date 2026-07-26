@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
 import { TextField, TextArea } from '../ui/Field';
 import { AvatarUpload } from '../ui/AvatarUpload';
+import { EmojiText } from '../ui/EmojiText';
 import { Link } from 'react-router-dom';
 
 // Foto de perfil de la comunidad (con ícono por defecto si no tiene).
@@ -243,7 +244,7 @@ export default function StudentCommunities() {
                     <ExternalLink className="h-4 w-4 text-white/40 group-hover:text-brand-300 transition shrink-0" />
                   </div>
                   {c.description && (
-                    <p className="mt-1.5 text-sm text-white/65 line-clamp-2">{c.description}</p>
+                    <p className="mt-1.5 text-sm text-white/65 line-clamp-2"><EmojiText text={c.description} /></p>
                   )}
                 </div>
 
@@ -308,7 +309,7 @@ export default function StudentCommunities() {
                     <h3 className="min-w-0 flex-1 text-base font-semibold text-white sm:text-lg">{c.name}</h3>
                   </div>
                   {c.description && (
-                    <p className="mt-1.5 line-clamp-2 text-sm text-white/65">{c.description}</p>
+                    <p className="mt-1.5 line-clamp-2 text-sm text-white/65"><EmojiText text={c.description} /></p>
                   )}
                 </div>
                 <div className="mt-3 flex items-center gap-1.5 border-t border-white/10 pt-3 text-xs text-white/50">

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { X, Building2, MapPin } from 'lucide-react';
 import type { InternshipWithCompany, Modality } from '../../lib/database.types';
 import { PostInteractions } from './PostInteractions';
+import { EmojiText } from './EmojiText';
 import { useModalGuard } from './modalGuard';
 
 const modalityLabel: Record<Modality, string> = {
@@ -74,7 +75,7 @@ export function InternshipDetailModal({
           <div className="mt-5">
             <p className="text-sm font-semibold text-white/80">Descripción</p>
             <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-white/70">
-              {i.description}
+              <EmojiText text={i.description} />
             </p>
           </div>
 

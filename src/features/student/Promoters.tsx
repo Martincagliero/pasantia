@@ -10,6 +10,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { CONTACT } from '../../lib/constants';
 import { Button } from '../../components/ui/Button';
 import { Card, PageHeader, PageLoader } from '../ui/primitives';
+import rankingIcon from '../../assets/images/emojis/estrella-de-ranking.svg';
 
 interface MyPromoter {
   code: string;
@@ -274,7 +275,7 @@ export default function Promoters() {
 
       {/* Ranking de promotores (visible para todos) */}
       <div className="mb-3 flex items-center gap-2">
-        <span className="text-lg leading-none" aria-hidden="true">🏆</span>
+        <img src={rankingIcon} alt="" className="h-6 w-6 object-contain" />
         <h2 className="text-base font-bold text-white">Ranking de promotores</h2>
       </div>
 

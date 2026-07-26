@@ -38,6 +38,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { UserPosts } from '../posts/UserPosts';
 import { LinkPreview } from '../ui/LinkPreview';
 import { PostInteractions } from '../ui/PostInteractions';
+import { EmojiText } from '../ui/EmojiText';
 import { ReportButton } from '../ui/ReportButton';
 
 type Tab = 'estudiantes' | 'empresas' | 'embajadores' | 'red';
@@ -623,7 +624,7 @@ function StudentDetail({ row, onMessage, isFollowing, onToggleFollow }: { row: S
 
       {row.bio && (
         <Section title="Sobre el estudiante">
-          <p className="text-sm leading-relaxed text-white/70">{row.bio}</p>
+          <p className="text-sm leading-relaxed text-white/70"><EmojiText text={row.bio} /></p>
         </Section>
       )}
 
@@ -672,7 +673,7 @@ function CompanyDetail({ row, onMessage, isFollowing, onToggleFollow }: { row: C
 
       {row.description && (
         <Section title="Sobre la empresa">
-          <p className="text-sm leading-relaxed text-white/70">{row.description}</p>
+          <p className="text-sm leading-relaxed text-white/70"><EmojiText text={row.description} /></p>
         </Section>
       )}
 
@@ -735,7 +736,7 @@ function AmbassadorDetail({ row, onMessage, isFollowing, onToggleFollow }: { row
 
       {row.description && (
         <Section title="Sobre la comunidad">
-          <p className="text-sm leading-relaxed text-white/70">{row.description}</p>
+          <p className="text-sm leading-relaxed text-white/70"><EmojiText text={row.description} /></p>
         </Section>
       )}
 

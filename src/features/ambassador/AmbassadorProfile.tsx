@@ -12,6 +12,7 @@ import { UniversityAutocomplete } from '../ui/UniversityAutocomplete';
 import { ProfileHeader } from '../ui/ProfileHeader';
 import { ProfileCompletion } from '../ui/ProfileCompletion';
 import { UserPosts } from '../posts/UserPosts';
+import { EmojiText } from '../ui/EmojiText';
 import { whatsappLink } from '../../lib/constants';
 import { Upload } from 'lucide-react';
 
@@ -190,7 +191,7 @@ export default function AmbassadorProfile() {
         <Card>
           <h3 className="mb-3 text-base font-semibold text-white">Sobre la comunidad</h3>
           <p className="text-sm leading-relaxed text-white/70">
-            {form.description || 'Todavía no agregaste una descripción. Tocá “Editar perfil” para completarla.'}
+            {form.description ? <EmojiText text={form.description} /> : 'Todavía no agregaste una descripción. Tocá “Editar perfil” para completarla.'}
           </p>
           <dl className="mt-4 grid gap-3 sm:grid-cols-2">
             <AView label="Tipo" value={orgTypeLabel(form.org_type)} />

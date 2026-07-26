@@ -10,6 +10,7 @@ import { Accent } from '../../components/ui/Accent';
 import { Button } from '../../components/ui/Button';
 import { Mail, Share2, Users, TrendingUp, Trophy, Zap } from 'lucide-react';
 import { useEarlyAccess } from '../../components/early-access/EarlyAccess';
+import { EmojiText } from '../ui/EmojiText';
 
 export default function AmbassadorDirectory() {
   const { open: openEarlyAccess } = useEarlyAccess();
@@ -146,7 +147,7 @@ export default function AmbassadorDirectory() {
                   {/* Descripción */}
                   {amb.description && (
                     <p className="mb-4 text-sm leading-relaxed text-white/70">
-                      {amb.description}
+                      <EmojiText text={amb.description} />
                     </p>
                   )}
 

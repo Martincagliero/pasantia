@@ -10,6 +10,7 @@ import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
 import { LinkPreview } from '../ui/LinkPreview';
 import { PostInteractions } from '../ui/PostInteractions';
+import { EmojiText } from '../ui/EmojiText';
 import { useModalGuard } from '../ui/modalGuard';
 
 const CATEGORIES: { value: PostCategory; label: string }[] = [
@@ -156,7 +157,7 @@ export default function Novedades() {
               </div>
 
               <h3 className="text-base font-semibold leading-snug text-white sm:text-lg">{p.title}</h3>
-              <p className="mt-1.5 line-clamp-4 whitespace-pre-line text-sm text-white/70 sm:mt-2 sm:line-clamp-none">{p.body}</p>
+              <p className="mt-1.5 line-clamp-4 whitespace-pre-line text-sm text-white/70 sm:mt-2 sm:line-clamp-none"><EmojiText text={p.body} /></p>
 
               {p.link_url && <LinkPreview url={p.link_url} className="mt-2.5 sm:mt-3" />}
 

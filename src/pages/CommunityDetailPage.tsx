@@ -29,6 +29,7 @@ import type {
 } from '../lib/database.types';
 import { Button } from '../components/ui/Button';
 import { Card, EmptyState, PageLoader } from '../features/ui/primitives';
+import { EmojiText } from '../features/ui/EmojiText';
 import { TextArea } from '../features/ui/Field';
 import { ReportButton } from '../features/ui/ReportButton';
 import { LinkPreview } from '../features/ui/LinkPreview';
@@ -384,7 +385,7 @@ export default function CommunityDetailPage() {
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">{community.name}</h1>
           {community.description && (
-            <p className="mx-auto mt-2 max-w-md text-[15px] text-white/60">{community.description}</p>
+            <p className="mx-auto mt-2 max-w-md text-[15px] text-white/60"><EmojiText text={community.description} /></p>
           )}
           <div className="mt-3 flex items-center justify-center gap-1.5 text-sm text-white/50">
             <Users className="h-4 w-4" />
@@ -444,7 +445,7 @@ export default function CommunityDetailPage() {
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-2xl font-bold tracking-tight text-white">{community.name}</h1>
           <p className="mt-1 line-clamp-2 text-sm text-white/60">
-            {community.description || 'Comunidad de estudiantes'}
+            {community.description ? <EmojiText text={community.description} /> : 'Comunidad de estudiantes'}
           </p>
         </div>
       </div>
@@ -708,7 +709,7 @@ function PostCard({
             )}
           </div>
           <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-white/85">
-            {post.content}
+            <EmojiText text={post.content} />
           </p>
           {url && <LinkPreview url={url} className="mt-3 max-w-full" />}
           <PostInteractions targetType="community_post" targetId={post.id} />
@@ -744,7 +745,7 @@ function InternshipCard({
               </span>
             </div>
             <h3 className="mb-2 text-base font-semibold text-white sm:text-lg">{i.title}</h3>
-            <p className="mb-3 line-clamp-2 text-white/70">{i.description}</p>
+            <p className="mb-3 line-clamp-2 text-white/70"><EmojiText text={i.description} /></p>
             <div className="flex flex-wrap gap-2">
               <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/70">
                 {i.area}

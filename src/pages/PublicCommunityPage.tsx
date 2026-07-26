@@ -7,6 +7,7 @@ import { useAuth } from '../features/auth/AuthProvider';
 import type { Community, InternshipWithCompany, Modality } from '../lib/database.types';
 import { Button } from '../components/ui/Button';
 import { Card, EmptyState } from '../features/ui/primitives';
+import { EmojiText } from '../features/ui/EmojiText';
 import { useEarlyAccess } from '../components/early-access/EarlyAccess';
 
 const modalityLabel: Record<Modality, string> = {
@@ -151,7 +152,7 @@ export default function PublicCommunityPage() {
           <h1 className="text-3xl font-bold text-white mb-2">{community.name}</h1>
 
           {community.description && (
-            <p className="text-white/70 mb-4 max-w-md mx-auto">{community.description}</p>
+            <p className="text-white/70 mb-4 max-w-md mx-auto"><EmojiText text={community.description} /></p>
           )}
 
           <div className="flex items-center justify-center gap-2 text-sm text-white/50 mb-6">

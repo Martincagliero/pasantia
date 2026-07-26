@@ -17,6 +17,7 @@ import {
   Search,
   ChevronDown,
   UserMinus,
+  MessageSquare,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../features/auth/AuthProvider';
@@ -34,6 +35,7 @@ import { TextArea } from '../features/ui/Field';
 import { ReportButton } from '../features/ui/ReportButton';
 import { LinkPreview } from '../features/ui/LinkPreview';
 import { PostInteractions } from '../features/ui/PostInteractions';
+import { useMessages } from '../features/messages/MessagesProvider';
 
 const modalityLabel: Record<Modality, string> = {
   presencial: 'Presencial',
@@ -85,6 +87,7 @@ function normalizeLink(url: string): string | null {
 export default function CommunityDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { session, profile } = useAuth();
+  const { openChatWith } = useMessages();
   const navigate = useNavigate();
 
   const [community, setCommunity] = useState<Community | null>(null);
@@ -94,7 +97,7 @@ export default function CommunityDetailPage() {
   const [isCreator, setIsCreator] = useState(false);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
-  const [members, setMembers] = useState<{ student_id: string; name: string }[]>([]);
+  const [members, setMembers] = useState<{ student_id: string; name: string; avatar: string | null }[]>([]);
   const [showMembers, setShowMembers] = useState(false);
   const [kicking, setKicking] = useState<string | null>(null);
 
@@ -232,7 +235,17 @@ export default function CommunityDetailPage() {
     const nameById = new Map(
       (profs as { id: string; full_name: string }[] | null ?? []).map((p) => [p.id, p.full_name])
     );
-    setMembers(ids.map((sid) => ({ student_id: sid, name: nameById.get(sid) || 'Estudiante' })));
+    const { data: studs } = await supabase.from('student_profiles').select('id, avatar_url').in('id', ids);
+    const avatarById = new Map(
+      (studs as { id: string; avatar_url: string | null }[] | null ?? []).map((s) => [s.id, s.avatar_url])
+    );
+    setMembers(
+      ids.map((sid) => ({
+        student_id: sid,
+        name: nameById.get(sid) || 'Estudiante',
+        avatar: avatarById.get(sid) ?? null,
+      }))
+    );
   }
 
   async function handleKick(studentId: string, name: string) {
@@ -471,53 +484,79 @@ export default function CommunityDetailPage() {
         </a>
       </div>
 
-      {/* Gestión de miembros (solo el creador puede echar) */}
-      {isCreator && (
-        <Card className="mb-6">
-          <button
-            onClick={() => {
-              if (!showMembers) loadMembers();
-              setShowMembers((v) => !v);
-            }}
-            className="flex w-full items-center justify-between gap-2"
-          >
-            <h3 className="text-base font-semibold text-white">
-              Miembros <span className="text-white/45">({community.members_count})</span>
-            </h3>
-            <ChevronDown
-              className={`h-4 w-4 shrink-0 text-white/40 transition-transform ${showMembers ? 'rotate-180' : ''}`}
-            />
-          </button>
-          {showMembers && (
-            <div className="mt-3 space-y-2">
-              {members.length === 0 ? (
-                <p className="text-sm text-white/50">Todavía no hay miembros para mostrar.</p>
-              ) : (
-                members.map((m) => (
+      {/* Miembros: cualquier miembro puede verlos y escribirles. El creador puede echarlos. */}
+      <Card className="mb-6">
+        <button
+          onClick={() => {
+            if (!showMembers) loadMembers();
+            setShowMembers((v) => !v);
+          }}
+          className="flex w-full items-center justify-between gap-2"
+        >
+          <h3 className="text-base font-semibold text-white">
+            Miembros <span className="text-white/45">({community.members_count})</span>
+          </h3>
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 text-white/40 transition-transform ${showMembers ? 'rotate-180' : ''}`}
+          />
+        </button>
+        {showMembers && (
+          <div className="mt-3 space-y-2">
+            {members.length === 0 ? (
+              <p className="text-sm text-white/50">Todavía no hay miembros para mostrar.</p>
+            ) : (
+              members.map((m) => {
+                const isSelf = m.student_id === session!.user.id;
+                return (
                   <div
                     key={m.student_id}
                     className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
                   >
-                    <span className="truncate text-sm text-white/80">{m.name}</span>
-                    <button
-                      onClick={() => handleKick(m.student_id, m.name)}
-                      disabled={kicking === m.student_id}
-                      className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-red-400/30 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-300 transition hover:bg-red-500/20 disabled:opacity-60"
-                    >
-                      {kicking === m.student_id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <UserMinus className="h-3.5 w-3.5" />
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/12 bg-white/5 text-[11px] font-semibold text-white/70">
+                        {m.avatar ? (
+                          <img src={m.avatar} alt={m.name} className="h-full w-full object-cover" />
+                        ) : (
+                          initials(m.name)
+                        )}
+                      </div>
+                      <span className="truncate text-sm text-white/80">
+                        {m.name}
+                        {isSelf && <span className="ml-1 text-white/40">(vos)</span>}
+                      </span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {!isSelf && (
+                        <button
+                          onClick={() => openChatWith(m.student_id, m.name, m.avatar)}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-white/80 transition hover:bg-white/10"
+                        >
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          Mensaje
+                        </button>
                       )}
-                      Echar
-                    </button>
+                      {isCreator && !isSelf && (
+                        <button
+                          onClick={() => handleKick(m.student_id, m.name)}
+                          disabled={kicking === m.student_id}
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-red-400/30 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-300 transition hover:bg-red-500/20 disabled:opacity-60"
+                        >
+                          {kicking === m.student_id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <UserMinus className="h-3.5 w-3.5" />
+                          )}
+                          Echar
+                        </button>
+                      )}
+                    </div>
                   </div>
-                ))
-              )}
-            </div>
-          )}
-        </Card>
-      )}
+                );
+              })
+            )}
+          </div>
+        )}
+      </Card>
 
       {/* Composer */}
       <Card className="mb-6">

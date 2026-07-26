@@ -274,7 +274,7 @@ export default function Promoters() {
 
       {/* Ranking de promotores (visible para todos) */}
       <div className="mb-3 flex items-center gap-2">
-        <Trophy className="h-5 w-5 text-white/70" />
+        <span className="text-lg leading-none" aria-hidden="true">🏆</span>
         <h2 className="text-base font-bold text-white">Ranking de promotores</h2>
       </div>
 
@@ -296,15 +296,15 @@ export default function Promoters() {
 
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[15px] font-bold text-white">{r.nombre}</p>
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  <span className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-white/70">
-                    <GraduationCap className="h-3 w-3" /> {r.estudiantes} estudiantes
+                <div className="mt-1.5 flex flex-wrap gap-1 sm:gap-1.5">
+                  <span className="inline-flex items-center gap-0.5 rounded-full border border-white/12 bg-white/5 px-1.5 py-px text-[9px] font-medium text-white/70 sm:gap-1 sm:px-2 sm:py-0.5 sm:text-[11px]">
+                    <GraduationCap className="h-2.5 w-2.5 sm:h-3 sm:w-3" /> {r.estudiantes} estudiantes
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-white/70">
-                    <Building2 className="h-3 w-3" /> {r.empresas} empresas
+                  <span className="inline-flex items-center gap-0.5 rounded-full border border-white/12 bg-white/5 px-1.5 py-px text-[9px] font-medium text-white/70 sm:gap-1 sm:px-2 sm:py-0.5 sm:text-[11px]">
+                    <Building2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" /> {r.empresas} empresas
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-white/70">
-                    <Users className="h-3 w-3" /> {r.comunidades} comunidades
+                  <span className="inline-flex items-center gap-0.5 rounded-full border border-white/12 bg-white/5 px-1.5 py-px text-[9px] font-medium text-white/70 sm:gap-1 sm:px-2 sm:py-0.5 sm:text-[11px]">
+                    <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3" /> {r.comunidades} comunidades
                   </span>
                 </div>
               </div>

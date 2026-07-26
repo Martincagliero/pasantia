@@ -7,7 +7,21 @@ import type { Community } from '../../lib/database.types';
 import { Button } from '../../components/ui/Button';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
 import { TextField, TextArea } from '../ui/Field';
+import { AvatarUpload } from '../ui/AvatarUpload';
 import { Link } from 'react-router-dom';
+
+// Foto de perfil de la comunidad (con ícono por defecto si no tiene).
+function CommunityAvatar({ url, name }: { url: string | null; name: string }) {
+  return (
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/12 bg-white/5">
+      {url ? (
+        <img src={url} alt={name} className="h-full w-full object-cover" />
+      ) : (
+        <Users className="h-5 w-5 text-white/40" />
+      )}
+    </div>
+  );
+}
 
 export default function StudentCommunities() {
   const { session } = useAuth();
@@ -16,7 +30,8 @@ export default function StudentCommunities() {
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', description: '', is_public: true });
+  const [form, setForm] = useState({ name: '', description: '', is_public: true, avatar_url: '' });
+  const [uploadId, setUploadId] = useState(() => crypto.randomUUID());
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -73,13 +88,15 @@ export default function StudentCommunities() {
           creator_id: session!.user.id,
           name: form.name.trim(),
           description: form.description.trim() || null,
+          avatar_url: form.avatar_url.trim() || null,
           is_public: form.is_public,
         })
         .select('*')
         .single();
       if (error) throw error;
       setCommunities((prev) => [data as Community, ...prev]);
-      setForm({ name: '', description: '', is_public: true });
+      setForm({ name: '', description: '', is_public: true, avatar_url: '' });
+      setUploadId(crypto.randomUUID());
       setShowForm(false);
     } finally {
       setSubmitting(false);
@@ -142,6 +159,14 @@ export default function StudentCommunities() {
       {showForm && (
         <Card className="mb-6 border-white/15">
           <div className="space-y-4">
+            <AvatarUpload
+              uid={uploadId}
+              value={form.avatar_url}
+              onChange={(url) => setForm((f) => ({ ...f, avatar_url: url }))}
+              label="Foto de la comunidad"
+              hint="JPG, PNG o WEBP · máx 5 MB · opcional"
+              required={false}
+            />
             <div>
               <label className="block text-sm font-medium text-white/80 mb-1.5">
                 Nombre de la comunidad
@@ -211,7 +236,10 @@ export default function StudentCommunities() {
               <Card className="flex flex-col h-full transition group-hover:border-brand-300/50">
                 <div className="flex-1">
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="text-base font-semibold text-white flex-1 sm:text-lg">{c.name}</h3>
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <CommunityAvatar url={c.avatar_url} name={c.name} />
+                      <h3 className="min-w-0 flex-1 text-base font-semibold text-white sm:text-lg">{c.name}</h3>
+                    </div>
                     <ExternalLink className="h-4 w-4 text-white/40 group-hover:text-brand-300 transition shrink-0" />
                   </div>
                   {c.description && (
@@ -275,7 +303,10 @@ export default function StudentCommunities() {
             {discover.map((c) => (
               <Card key={c.id} className="flex h-full flex-col">
                 <div className="flex-1">
-                  <h3 className="text-base font-semibold text-white sm:text-lg">{c.name}</h3>
+                  <div className="mb-2 flex items-center gap-3">
+                    <CommunityAvatar url={c.avatar_url} name={c.name} />
+                    <h3 className="min-w-0 flex-1 text-base font-semibold text-white sm:text-lg">{c.name}</h3>
+                  </div>
                   {c.description && (
                     <p className="mt-1.5 line-clamp-2 text-sm text-white/65">{c.description}</p>
                   )}

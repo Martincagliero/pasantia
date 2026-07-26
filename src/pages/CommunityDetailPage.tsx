@@ -28,7 +28,7 @@ import type {
   Role,
 } from '../lib/database.types';
 import { Button } from '../components/ui/Button';
-import { Card, EmptyState, PageHeader, PageLoader } from '../features/ui/primitives';
+import { Card, EmptyState, PageLoader } from '../features/ui/primitives';
 import { TextArea } from '../features/ui/Field';
 import { ReportButton } from '../features/ui/ReportButton';
 import { LinkPreview } from '../features/ui/LinkPreview';
@@ -375,8 +375,12 @@ export default function CommunityDetailPage() {
     return (
       <div className="max-w-xl">
         <Card className="text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-            <Users className="h-7 w-7 text-white/80" />
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+            {community.avatar_url ? (
+              <img src={community.avatar_url} alt={community.name} className="h-full w-full object-cover" />
+            ) : (
+              <Users className="h-7 w-7 text-white/80" />
+            )}
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">{community.name}</h1>
           {community.description && (
@@ -429,10 +433,21 @@ export default function CommunityDetailPage() {
 
   return (
     <div className="max-w-3xl">
-      <PageHeader
-        title={community.name}
-        description={community.description || 'Comunidad de estudiantes'}
-      />
+      <div className="mb-4 flex items-center gap-4">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+          {community.avatar_url ? (
+            <img src={community.avatar_url} alt={community.name} className="h-full w-full object-cover" />
+          ) : (
+            <Users className="h-8 w-8 text-white/60" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-2xl font-bold tracking-tight text-white">{community.name}</h1>
+          <p className="mt-1 line-clamp-2 text-sm text-white/60">
+            {community.description || 'Comunidad de estudiantes'}
+          </p>
+        </div>
+      </div>
 
       <div className="mb-5 flex items-center gap-4 text-sm text-white/60">
         <span className="inline-flex items-center gap-1.5">

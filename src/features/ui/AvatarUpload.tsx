@@ -10,9 +10,11 @@ interface Props {
   onChange: (url: string) => void;
   label?: string;
   hint?: string;
+  /** Si es false, no muestra el asterisco de obligatorio. Default true. */
+  required?: boolean;
 }
 
-export function AvatarUpload({ uid, value, onChange, label = 'Foto de perfil', hint }: Props) {
+export function AvatarUpload({ uid, value, onChange, label = 'Foto de perfil', hint, required = true }: Props) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,7 +54,7 @@ export function AvatarUpload({ uid, value, onChange, label = 'Foto de perfil', h
   return (
     <div>
       <label className="mb-2 block text-sm font-medium text-white/80">
-        {label} <span className="text-red-300">*</span>
+        {label} {required && <span className="text-red-300">*</span>}
       </label>
       <div className="flex items-center gap-4">
         <div className="relative shrink-0">
@@ -77,7 +79,7 @@ export function AvatarUpload({ uid, value, onChange, label = 'Foto de perfil', h
             />
           </label>
           <p className="mt-1.5 text-xs text-white/45">
-            {hint ?? 'JPG, PNG o WEBP · máx 5 MB · obligatoria'}
+            {hint ?? (required ? 'JPG, PNG o WEBP · máx 5 MB · obligatoria' : 'JPG, PNG o WEBP · máx 5 MB · opcional')}
           </p>
         </div>
       </div>

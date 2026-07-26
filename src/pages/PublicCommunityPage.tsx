@@ -137,9 +137,15 @@ export default function PublicCommunityPage() {
 
         <Card className="border-white/15 text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="p-3 rounded-full bg-brand-300/10">
-              <Users className="h-8 w-8 text-brand-300" />
-            </div>
+            {community.avatar_url ? (
+              <div className="h-20 w-20 overflow-hidden rounded-full border border-white/12 bg-white/5">
+                <img src={community.avatar_url} alt={community.name} className="h-full w-full object-cover" />
+              </div>
+            ) : (
+              <div className="p-3 rounded-full bg-brand-300/10">
+                <Users className="h-8 w-8 text-brand-300" />
+              </div>
+            )}
           </div>
 
           <h1 className="text-3xl font-bold text-white mb-2">{community.name}</h1>

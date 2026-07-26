@@ -1,13 +1,34 @@
-// Reacciones con emojis + comentarios para publicaciones, proyectos y pasantías.
+// Reacciones con imágenes propias + comentarios para publicaciones, proyectos y pasantías.
 // Visible para todos los usuarios autenticados. Degrada si faltan las tablas.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MessageCircle, Trash2, SmilePlus, Send } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
+import likeIcon from '../../assets/images/emojis/red-social.svg';
+import careIcon from '../../assets/images/emojis/mano-sosteniendo-corazon.svg';
+import celebrateIcon from '../../assets/images/emojis/cuerno-de-fiesta.svg';
+import clapIcon from '../../assets/images/emojis/manos-aplaudiendo.svg';
+import fireIcon from '../../assets/images/emojis/fuego.svg';
 
 export type InteractionTarget = 'post' | 'community_post' | 'internship';
 
-const EMOJIS = ['👍', '❤️', '🎉', '👏', '🔥'];
+// Cada reacción guarda una clave estable en la base y se dibuja con su imagen.
+const REACTIONS = [
+  { key: 'like', src: likeIcon, label: 'Me gusta' },
+  { key: 'care', src: careIcon, label: 'Me encanta' },
+  { key: 'celebrate', src: celebrateIcon, label: 'Felicitaciones' },
+  { key: 'clap', src: clapIcon, label: 'Aplausos' },
+  { key: 'fire', src: fireIcon, label: 'Fuego' },
+] as const;
+const EMOJIS = REACTIONS.map((r) => r.key);
+const REACTION_SRC: Record<string, string> = Object.fromEntries(REACTIONS.map((r) => [r.key, r.src]));
+
+// Dibuja la imagen de la reacción; si es un valor viejo (emoji) lo muestra como texto.
+function ReactionIcon({ value, className }: { value: string; className?: string }) {
+  const src = REACTION_SRC[value];
+  if (src) return <img src={src} alt="" className={className} />;
+  return <span className={className}>{value}</span>;
+}
 
 interface Comment {
   id: string;
@@ -209,9 +230,9 @@ export function PostInteractions({
               className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1 text-xs text-white/50 transition hover:bg-white/10 hover:text-white"
               title="Ver quién reaccionó"
             >
-              <span className="flex">
+              <span className="flex items-center gap-0.5">
                 {activeEmojis.slice(0, 3).map((e) => (
-                  <span key={e} className="text-sm leading-none">{e}</span>
+                  <ReactionIcon key={e} value={e} className="h-4 w-4 object-contain" />
                 ))}
               </span>
               {totalReactions}
@@ -226,7 +247,7 @@ export function PostInteractions({
                     key={r.user_id + idx}
                     className="flex items-center gap-2 rounded-lg px-1.5 py-1.5"
                   >
-                    <span className="text-base leading-none">{r.emoji}</span>
+                    <ReactionIcon value={r.emoji} className="h-5 w-5 object-contain" />
                     <span className="truncate text-[13px] text-white/80">
                       {reactorNames[r.user_id] ||
                         (r.user_id === uid ? profile?.full_name || 'Vos' : 'Usuario')}
@@ -248,20 +269,21 @@ export function PostInteractions({
               myEmoji ? 'text-brand-500' : 'text-white/60 hover:text-white'
             }`}
           >
-            {myEmoji ? <span className="text-base leading-none">{myEmoji}</span> : <SmilePlus className="h-4 w-4" />}
+            {myEmoji ? <ReactionIcon value={myEmoji} className="h-4 w-4 object-contain" /> : <SmilePlus className="h-4 w-4" />}
             Reaccionar
           </button>
           {pickerOpen && (
             <div className="dash-panel absolute bottom-full left-0 z-20 mb-2 flex gap-1 rounded-full border border-white/12 p-1.5 shadow-xl">
-              {EMOJIS.map((e) => (
+              {REACTIONS.map((r) => (
                 <button
-                  key={e}
-                  onClick={() => react(e)}
-                  className={`flex h-9 w-9 items-center justify-center rounded-full text-lg transition hover:scale-125 ${
-                    myEmoji === e ? 'bg-brand-500/20' : 'hover:bg-white/10'
+                  key={r.key}
+                  onClick={() => react(r.key)}
+                  title={r.label}
+                  className={`flex h-9 w-9 items-center justify-center rounded-full transition hover:scale-125 ${
+                    myEmoji === r.key ? 'bg-brand-500/20' : 'hover:bg-white/10'
                   }`}
                 >
-                  {e}
+                  <img src={r.src} alt={r.label} className="h-6 w-6 object-contain" />
                 </button>
               ))}
             </div>

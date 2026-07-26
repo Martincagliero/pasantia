@@ -159,6 +159,7 @@ export interface Community {
   creator_id: string;
   name: string;
   description: string | null;
+  avatar_url: string | null;
   is_public: boolean;
   members_count: number;
   created_at: string;

@@ -188,7 +188,9 @@ export default function Explore() {
       const [{ data: st }, { data: co }, { data: am }] = await Promise.all([
         supabase.from('student_profiles').select(studentSelect).eq('is_public', true),
         supabase.from('company_profiles').select('*, profile:profiles(full_name, email)'),
-        supabase.from('ambassador_profiles').select('*').eq('verified', true),
+        // Mostramos todas las comunidades (incluye las del acceso anticipado, aún
+        // sin verificar). El tilde de verificado se muestra solo si corresponde.
+        supabase.from('ambassador_profiles').select('*'),
       ]);
       if (!active) return;
       setStudents((st as unknown as StudentRow[]) ?? []);
@@ -380,7 +382,7 @@ export default function Explore() {
                 subtitle={[orgTypeLabel(r.org_type), r.university].filter(Boolean).join(' · ')}
                 tags={r.reach ? [`${r.reach} de alcance`] : []}
                 onClick={() => setSelected({ type: 'embajadores', row: r })}
-                badge={<VerifiedBadge verified />}
+                badge={r.verified ? <VerifiedBadge verified small /> : undefined}
               />
             ))}
         </div>

@@ -363,6 +363,10 @@ function Onboarding({
                 phone: data.telefono.trim() || null,
                 bio: data.perfil.trim() || data.mensaje.trim() || null,
                 instagram_url: data.instagram_link.trim() || null,
+                // Público por defecto: quien se registra en el acceso anticipado
+                // quiere ser encontrado en "Explorar perfiles". Puede ocultarse
+                // luego desde su perfil.
+                is_public: true,
               });
             }
           }

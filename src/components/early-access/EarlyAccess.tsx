@@ -378,7 +378,14 @@ function Onboarding({
           /* si falla, el perfil se crea igual al iniciar sesión */
         }
 
-        await signOut();
+        // Best-effort: si signUp no llegó a crear sesión (cuenta ya existía,
+        // error de cupo/rate-limit, etc.) signOut() puede tirar "Auth session
+        // missing". No dejamos que eso corte el registro.
+        try {
+          await signOut();
+        } catch {
+          /* ignore */
+        }
       }
 
       // Guardar la solicitud en la base de datos (best-effort): queda en la

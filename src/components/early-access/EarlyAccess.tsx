@@ -301,8 +301,12 @@ function Onboarding({
           fullName: data.nombre.trim(),
           role: data.role as Role,
         });
-        if (suErr && !/ya existe una cuenta/i.test(suErr)) {
-          throw new Error(suErr);
+        // Si signUp falla (cuenta ya existe, sin cupo/lugar en el plan, límite
+        // de Supabase, etc.) NO cortamos el registro: la solicitud igual queda
+        // guardada en early_access_requests (lo que realmente nos llega) y le
+        // mostramos éxito al usuario. La cuenta se puede crear después a mano.
+        if (suErr) {
+          console.warn('Acceso anticipado: signUp falló, se continúa igual:', suErr);
         }
 
         // Con la sesión recién creada, dejamos su PERFIL con el rol elegido

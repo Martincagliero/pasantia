@@ -13,6 +13,7 @@ import {
   Check,
   Search,
   RefreshCw,
+  Trash2,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
@@ -178,7 +179,7 @@ export default function AdminPanel() {
       {loading ? (
         <PageLoader />
       ) : tab === 'usuarios' ? (
-        <UsersTab users={users} />
+        <UsersTab users={users} onChanged={load} />
       ) : tab === 'solicitudes' ? (
         <RequestsTab requests={requests} users={users} onChanged={load} />
       ) : (
@@ -189,9 +190,25 @@ export default function AdminPanel() {
 }
 
 /* ----------------------------- Registrados ----------------------------- */
-function UsersTab({ users }: { users: UserRow[] }) {
+function UsersTab({ users, onChanged }: { users: UserRow[]; onChanged: () => void }) {
   const [q, setQ] = useState('');
   const [roleFilter, setRoleFilter] = useState<'todos' | Role>('todos');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function handleDelete(u: UserRow) {
+    const ok = window.confirm(
+      `¿Borrar definitivamente la cuenta de "${u.full_name || u.email}"? Esta acción no se puede deshacer.`
+    );
+    if (!ok) return;
+    setDeletingId(u.id);
+    const { error } = await supabase.rpc('admin_delete_user', { p_id: u.id });
+    setDeletingId(null);
+    if (error) {
+      alert(`No se pudo borrar: ${error.message}`);
+      return;
+    }
+    onChanged();
+  }
 
   const counts = useMemo(() => {
     const c = { estudiante: 0, empresa: 0, embajador: 0 } as Record<string, number>;
@@ -247,6 +264,7 @@ function UsersTab({ users }: { users: UserRow[] }) {
               <th className="px-4 py-3 font-medium">Email</th>
               <th className="px-4 py-3 font-medium">Rol</th>
               <th className="px-4 py-3 font-medium">Alta</th>
+              <th className="px-4 py-3 font-medium" />
             </tr>
           </thead>
           <tbody>
@@ -260,11 +278,21 @@ function UsersTab({ users }: { users: UserRow[] }) {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-white/50">{fmtDate(u.created_at)}</td>
+                <td className="px-4 py-3 text-right">
+                  <button
+                    onClick={() => handleDelete(u)}
+                    disabled={deletingId === u.id}
+                    title="Borrar cuenta"
+                    className="rounded-lg p-1.5 text-red-300/70 transition hover:bg-red-500/10 hover:text-red-300 disabled:opacity-40"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </td>
               </tr>
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-white/45">
+                <td colSpan={5} className="px-4 py-8 text-center text-white/45">
                   Sin resultados.
                 </td>
               </tr>

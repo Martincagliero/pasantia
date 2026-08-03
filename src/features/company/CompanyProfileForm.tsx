@@ -79,8 +79,10 @@ export default function CompanyProfileForm() {
     return () => {
       active = false;
     };
+    // Solo recarga si cambia el usuario logueado, NO en cada refresh de token
+    // (ej: al volver de otra pestaña), para no pisar cambios sin guardar.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session]);
+  }, [session?.user.id]);
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));

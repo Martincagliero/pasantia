@@ -12,6 +12,7 @@ import { LinkPreview } from '../ui/LinkPreview';
 import { PostInteractions } from '../ui/PostInteractions';
 import { EmojiText } from '../ui/EmojiText';
 import { useModalGuard } from '../ui/modalGuard';
+import { normalizeUrl } from '../../lib/url';
 
 const CATEGORIES: { value: PostCategory; label: string }[] = [
   { value: 'novedad', label: 'Novedad' },
@@ -236,7 +237,7 @@ function PostForm({
         title: title.trim(),
         body: body.trim(),
         category,
-        link_url: linkUrl.trim() || null,
+        link_url: normalizeUrl(linkUrl) || null,
       })
       .select('*')
       .single();
@@ -296,7 +297,7 @@ function PostForm({
           <FormRow label="Link (opcional)" htmlFor="link">
             <TextField
               id="link"
-              type="url"
+              type="text"
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               placeholder="https://…"

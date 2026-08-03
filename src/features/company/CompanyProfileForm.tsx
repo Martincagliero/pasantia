@@ -14,6 +14,7 @@ import { EmojiText } from '../ui/EmojiText';
 import { ProfileHeader } from '../ui/ProfileHeader';
 import { ProfileCompletion } from '../ui/ProfileCompletion';
 import { UserPosts } from '../posts/UserPosts';
+import { normalizeUrl } from '../../lib/url';
 
 interface InternshipLite {
   id: string;
@@ -125,7 +126,7 @@ export default function CompanyProfileForm() {
           company_name: form.company_name || null,
           industry: form.industry || null,
           size: form.size || null,
-          website: form.website || null,
+          website: normalizeUrl(form.website ?? '') || null,
           description: form.description || null,
         })
         .eq('id', uid),
@@ -208,7 +209,7 @@ export default function CompanyProfileForm() {
             <FormRow label="Sitio web (opcional)" htmlFor="website">
               <TextField
                 id="website"
-                type="url"
+                type="text"
                 value={form.website ?? ''}
                 onChange={(e) => set('website', e.target.value)}
                 placeholder="https://…"

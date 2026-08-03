@@ -320,7 +320,7 @@ export default function AmbassadorProfile() {
                 <TextField
                   value={form.instagram_url}
                   onChange={(e) => set('instagram_url', e.target.value)}
-                  type="url"
+                  type="text"
                   placeholder="https://instagram.com/…"
                   required
                 />

@@ -14,6 +14,7 @@ import { UserPosts } from '../posts/UserPosts';
 import { whatsappLink } from '../../lib/constants';
 import { UniversityAutocomplete } from '../ui/UniversityAutocomplete';
 import { AVAILABILITY_OPTIONS, CAREERS, suggestFor } from './suggestions';
+import { normalizeUrl } from '../../lib/url';
 
 const MAX_CV_MB = 20;
 
@@ -202,14 +203,14 @@ export default function StudentProfileForm() {
             : null,
           availability: form.availability || null,
           bio: form.bio || null,
-          cv_url: form.cv_url || null,
-          linkedin_url: form.linkedin_url || null,
-          portfolio_url: form.portfolio_url || null,
+          cv_url: normalizeUrl(form.cv_url ?? '') || null,
+          linkedin_url: normalizeUrl(form.linkedin_url ?? '') || null,
+          portfolio_url: normalizeUrl(form.portfolio_url ?? '') || null,
           phone: form.phone || null,
           location: form.location || null,
           gpa: form.gpa || null,
           transcript_url: form.transcript_url || null,
-          github_url: form.github_url || null,
+          github_url: normalizeUrl(form.github_url ?? '') || null,
           instagram_url: form.instagram_url || null,
           is_public: form.is_public,
         })
@@ -392,7 +393,7 @@ export default function StudentProfileForm() {
                 <FormRow label="GitHub (opcional)" htmlFor="github">
                   <TextField
                     id="github"
-                    type="url"
+                    type="text"
                     value={form.github_url ?? ''}
                     onChange={(e) => set('github_url', e.target.value)}
                     placeholder="https://github.com/…"
@@ -404,7 +405,7 @@ export default function StudentProfileForm() {
                 <FormRow label="LinkedIn (opcional)" htmlFor="linkedin">
                   <TextField
                     id="linkedin"
-                    type="url"
+                    type="text"
                     value={form.linkedin_url ?? ''}
                     onChange={(e) => set('linkedin_url', e.target.value)}
                     placeholder="https://linkedin.com/in/…"
@@ -413,7 +414,7 @@ export default function StudentProfileForm() {
                 <FormRow label="Portfolio / web (opcional)" htmlFor="portfolio">
                   <TextField
                     id="portfolio"
-                    type="url"
+                    type="text"
                     value={form.portfolio_url ?? ''}
                     onChange={(e) => set('portfolio_url', e.target.value)}
                     placeholder="https://…"
@@ -424,10 +425,7 @@ export default function StudentProfileForm() {
               <FormRow label="Link a tu CV (opcional)" htmlFor="cv">
                 <TextField
                   id="cv"
-                  type="url"
-                  value={form.cv_url ?? ''}
-                  onChange={(e) => set('cv_url', e.target.value)}
-                  placeholder="https://…"
+                  type="text"
                 />
               </FormRow>
 

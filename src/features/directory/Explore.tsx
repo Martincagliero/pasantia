@@ -231,40 +231,46 @@ export default function Explore() {
 
   const filteredStudents = useMemo(
     () =>
-      students.filter((r) => {
-        if (!q) return true;
-        return [r.profile?.full_name, r.career, r.university, r.area, (r.skills ?? []).join(' ')]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase()
-          .includes(q);
-      }),
+      students
+        .filter((r) => {
+          if (!q) return true;
+          return [r.profile?.full_name, r.career, r.university, r.area, (r.skills ?? []).join(' ')]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+            .includes(q);
+        })
+        .sort((a, b) => (b.avatar_url ? 1 : 0) - (a.avatar_url ? 1 : 0)),
     [students, q]
   );
 
   const filteredCompanies = useMemo(
     () =>
-      companies.filter((r) => {
-        if (!q) return true;
-        return [r.company_name, r.industry, r.profile?.full_name, r.description]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase()
-          .includes(q);
-      }),
+      companies
+        .filter((r) => {
+          if (!q) return true;
+          return [r.company_name, r.industry, r.profile?.full_name, r.description]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+            .includes(q);
+        })
+        .sort((a, b) => (b.avatar_url ? 1 : 0) - (a.avatar_url ? 1 : 0)),
     [companies, q]
   );
 
   const filteredAmbassadors = useMemo(
     () =>
-      ambassadors.filter((r) => {
-        if (!q) return true;
-        return [r.org_name, r.university, orgTypeLabel(r.org_type), r.description]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase()
-          .includes(q);
-      }),
+      ambassadors
+        .filter((r) => {
+          if (!q) return true;
+          return [r.org_name, r.university, orgTypeLabel(r.org_type), r.description]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+            .includes(q);
+        })
+        .sort((a, b) => (b.logo_url ? 1 : 0) - (a.logo_url ? 1 : 0)),
     [ambassadors, q]
   );
 

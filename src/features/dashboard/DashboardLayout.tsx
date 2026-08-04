@@ -135,6 +135,20 @@ export function DashboardLayout() {
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
+  // Oculta la barra inferior (mobile) al scrollear hacia abajo, reaparece al subir.
+  const [hideBottomNav, setHideBottomNav] = useState(false);
+  const lastScrollYRef = useRef(0);
+  useEffect(() => {
+    function onScroll() {
+      const y = window.scrollY;
+      const goingDown = y > lastScrollYRef.current;
+      setHideBottomNav(goingDown && y > 80);
+      lastScrollYRef.current = y;
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   async function handleSignOut() {
     await signOut();
     navigate('/', { replace: true });
@@ -270,8 +284,13 @@ export function DashboardLayout() {
           <Outlet />
         </main>
 
-        {/* Barra de navegación inferior (mobile, estilo LinkedIn) */}
-        <nav className="dash-panel fixed inset-x-0 bottom-0 z-40 border-t border-white/10 pb-[env(safe-area-inset-bottom)] lg:hidden">
+        {/* Barra de navegación inferior (mobile, estilo LinkedIn). Se oculta al scrollear hacia abajo. */}
+        <nav
+          className={`dash-panel fixed inset-x-0 bottom-0 z-40 border-t border-white/10 pb-[env(safe-area-inset-bottom)] transition-transform duration-300 lg:hidden ${
+            hideBottomNav ? 'translate-y-full' : 'translate-y-0'
+          }`}
+        >
+
           <div className="mx-auto flex max-w-7xl items-stretch">
             {bottomNav.map(({ to, label, icon: Icon, end }) => (
               <NavLink

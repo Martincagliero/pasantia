@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -103,10 +104,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  // getSession() (carga inicial) y onAuthStateChange (login/logout/refresh)
+  // pueden disparar loadProfile en paralelo. Si sus respuestas llegan
+  // desordenadas (frecuente en mobile por latencia/reconexiones), la más
+  // vieja podía pisar a la más nueva y dejar el perfil de OTRA cuenta
+  // (ej. admin) trabado en pantalla. Este ref guarda cuál es el usuario
+  // "vigente" para descartar respuestas tardías que ya no corresponden.
+  const currentUserIdRef = useRef<string | null>(null);
 
   const loadProfile = useCallback(async (user: User) => {
+    currentUserIdRef.current = user.id;
     const p = await ensureProfile(user);
+    if (currentUserIdRef.current !== user.id) return; // respuesta obsoleta, se descarta
     setProfile(p);
+  }, []);
+
+  const clearProfile = useCallback(() => {
+    currentUserIdRef.current = null;
+    setProfile(null);
   }, []);
 
   useEffect(() => {
@@ -116,7 +131,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(async ({ data }) => {
       if (!active) return;
       setSession(data.session);
-      if (data.session?.user) await loadProfile(data.session.user);
+      if (data.session?.user) {
+        await loadProfile(data.session.user);
+      } else {
+        clearProfile();
+      }
       setLoading(false);
     });
 
@@ -127,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (newSession?.user) {
         await loadProfile(newSession.user);
       } else {
-        setProfile(null);
+        clearProfile();
       }
     });
 
@@ -135,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       active = false;
       sub.subscription.unsubscribe();
     };
-  }, [loadProfile]);
+  }, [loadProfile, clearProfile]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -155,8 +174,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
-    setProfile(null);
-  }, []);
+    clearProfile();
+  }, [clearProfile]);
 
   const refreshProfile = useCallback(async () => {
     if (session?.user) await loadProfile(session.user);

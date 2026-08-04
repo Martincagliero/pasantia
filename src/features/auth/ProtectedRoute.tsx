@@ -27,12 +27,6 @@ export function ProtectedRoute({ children, role }: ProtectedRouteProps) {
     return <Navigate to="/ingresar" state={{ from: location.pathname }} replace />;
   }
 
-  // Un admin no debe ver paneles de rol (estudiante/empresa/embajador): siempre
-  // al panel de administración, sin importar de dónde venga (login, bookmark, etc).
-  if (role && profile?.is_admin) {
-    return <Navigate to="/app/admin" replace />;
-  }
-
   // Si el rol requerido no coincide, lo mandamos a su propio panel.
   if (role && profile && profile.role !== role) {
     return <Navigate to="/app" replace />;

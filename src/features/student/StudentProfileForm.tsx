@@ -226,16 +226,16 @@ export default function StudentProfileForm() {
 
   if (editing) {
     return (
-      <div className="max-w-3xl">
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold tracking-tight text-white">Editar perfil</h1>
+      <div className="max-w-6xl">
+        <div className="mb-5 flex items-center justify-between">
+          <h1 className="text-xl font-bold tracking-tight text-white lg:text-2xl">Editar perfil</h1>
           <Button as="button" variant="secondary" size="sm" onClick={() => setEditing(false)}>
             Cancelar
           </Button>
         </div>
 
       <form onSubmit={handleSubmit}>
-        <Card className="mb-6">
+        <Card className="mb-6 lg:p-6">
           <AvatarUpload
             uid={session!.user.id}
             value={form.avatar_url ?? ''}
@@ -243,11 +243,11 @@ export default function StudentProfileForm() {
             hint="Tu cara ayuda a que las empresas te reconozcan. JPG, PNG o WEBP · máx 5 MB."
           />
         </Card>
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
           {/* ── Columna izquierda: datos académicos ── */}
-          <Card>
-            <h3 className="mb-5 text-base font-semibold text-white">Datos académicos</h3>
-            <div className="space-y-4">
+          <Card className="lg:p-8">
+            <h3 className="mb-5 text-base font-semibold text-white lg:text-lg">Datos académicos</h3>
+            <div className="space-y-4 lg:space-y-5">
               <FormRow label="Nombre completo" htmlFor="name">
                 <TextField
                   id="name"
@@ -358,9 +358,9 @@ export default function StudentProfileForm() {
           </Card>
 
           {/* ── Columna derecha: contacto, links y archivos ── */}
-          <Card>
-            <h3 className="mb-5 text-base font-semibold text-white">Links y archivos</h3>
-            <div className="space-y-4">
+          <Card className="lg:p-8">
+            <h3 className="mb-5 text-base font-semibold text-white lg:text-lg">Links y archivos</h3>
+            <div className="space-y-4 lg:space-y-5">
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormRow label="Teléfono (opcional)" htmlFor="phone">
                   <TextField

@@ -227,14 +227,20 @@ export default function StudentProfileForm() {
   if (editing) {
     return (
       <div className="max-w-6xl">
-        <div className="mb-5 flex items-center justify-between">
+        <div className="mb-5 flex items-center justify-between gap-3">
           <h1 className="text-xl font-bold tracking-tight text-white lg:text-2xl">Editar perfil</h1>
-          <Button as="button" variant="secondary" size="sm" onClick={() => setEditing(false)}>
-            Cancelar
-          </Button>
+          <div className="flex items-center gap-3">
+            {saved && <span className="text-sm text-emerald-300">Guardado</span>}
+            <Button as="button" variant="secondary" size="sm" onClick={() => setEditing(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" form="student-profile-form" variant="primary" size="sm" disabled={saving}>
+              {saving ? 'Guardando…' : 'Guardar cambios'}
+            </Button>
+          </div>
         </div>
 
-      <form onSubmit={handleSubmit}>
+      <form id="student-profile-form" onSubmit={handleSubmit}>
         <Card className="mb-6 lg:p-6">
           <AvatarUpload
             uid={session!.user.id}
@@ -537,13 +543,6 @@ export default function StudentProfileForm() {
                   habilidades y área. Podés desactivarlo cuando quieras.
                 </span>
               </label>
-
-              <div className="flex items-center gap-3 pt-2">
-                <Button type="submit" variant="primary" size="sm" disabled={saving}>
-                  {saving ? 'Guardando…' : 'Guardar cambios'}
-                </Button>
-                {saved && <span className="text-sm text-emerald-300">Guardado</span>}
-              </div>
             </div>
           </Card>
         </div>

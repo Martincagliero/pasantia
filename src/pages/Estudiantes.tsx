@@ -13,7 +13,7 @@ import { BenefitsGrid } from '../components/sections/BenefitsGrid';
 import { HowItWorks, type Step } from '../components/sections/HowItWorks';
 import { EarlyAccessCTA } from '../components/sections/EarlyAccessCTA';
 import { IMAGES } from '../lib/images';
-import estudianteImg from '../assets/images/estudiante.jpg';
+import estudianteImg from '../assets/images/estudiante.webp';
 
 const BENEFITS = [
   {

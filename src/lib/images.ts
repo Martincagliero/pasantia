@@ -1,7 +1,7 @@
 // Imágenes de Unsplash centralizadas.
 // TODO: si más adelante se quieren imágenes propias, reemplazar estas URLs
 // por archivos en /src/assets/images/ y actualizar acá.
-import ambassadorImg from '../assets/images/embajador.jpg';
+import ambassadorImg from '../assets/images/embajador.webp';
 
 const p = (id: string, w = 1200) =>
   `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;

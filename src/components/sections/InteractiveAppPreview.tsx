@@ -184,7 +184,7 @@ export function InteractiveAppPreview({ variant = 'section' }: InteractiveAppPre
 
   if (variant === 'hero') {
     return (
-      <div className="mx-auto flex w-full max-w-md flex-col items-center">
+      <div className="relative mx-auto flex w-full max-w-md flex-col items-center">
         <div className="relative w-[13.5rem] rounded-[2.65rem] border border-white/30 bg-slate-950 p-[6px] shadow-[0_32px_70px_rgba(1,19,84,0.5)] xs:w-[15rem] md:w-[14rem] lg:w-[14.5rem] xl:w-[17rem]">
           <div className="absolute left-1/2 top-[11px] z-30 h-5 w-20 -translate-x-1/2 rounded-full bg-slate-950" />
           <div className="relative aspect-[9/19.1] overflow-hidden rounded-[2.3rem] bg-[#f8fafc]">
@@ -208,6 +208,53 @@ export function InteractiveAppPreview({ variant = 'section' }: InteractiveAppPre
             </nav>
           </div>
         </div>
+        <motion.div
+          initial={{ opacity: 0, rotate: -4, y: 8 }}
+          animate={{ opacity: 1, rotate: -4, y: 0 }}
+          transition={{ duration: 0.55, delay: 1.05 }}
+          aria-hidden="true"
+          className="pointer-events-none relative -mt-1 flex h-9 w-full items-center justify-center gap-1 text-white md:absolute md:bottom-[3.9rem] md:left-[calc(50%+6.2rem)] md:block md:h-auto md:w-[5.5rem] md:text-center lg:left-[calc(50%+6.4rem)] xl:bottom-[4.2rem] xl:left-[calc(50%+7.4rem)]"
+        >
+          <span className="block whitespace-nowrap font-['Caveat'] text-[1.05rem] font-semibold leading-[0.9] drop-shadow-sm xl:text-lg">
+            tocá para
+            <br className="hidden md:block" />{' '}
+            probar
+          </span>
+          <svg
+            viewBox="0 0 72 42"
+            fill="none"
+            className="hidden md:-ml-8 md:-mt-1 md:block md:h-10 md:w-[4.5rem] md:-rotate-[8deg]"
+          >
+            <path
+              d="M67 5C54 7 42 12 35 20C29 27 25 32 13 34"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+            />
+            <path
+              d="M19 27C17 30 14 33 10 35C14 36 18 37 21 39"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <svg viewBox="0 0 48 42" fill="none" className="h-8 w-10 md:hidden">
+            <path
+              d="M44 36C32 34 20 27 13 10"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+            />
+            <path
+              d="M8 17C10 14 12 10 13 6C16 10 19 13 22 15"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </motion.div>
         <div className="mt-4 hidden w-full grid-cols-5 gap-2 md:grid">
           {PREVIEWS.map(({ id, label, icon: Icon }) => (
             <button key={id} onClick={() => setActiveId(id)} aria-pressed={activeId === id} className={`flex min-w-0 flex-col items-center gap-1 rounded-lg border px-1 py-1.5 text-[7px] font-semibold transition-colors md:text-[8px] ${activeId === id ? 'border-white/35 bg-white text-brand-600' : 'border-white/12 bg-white/[0.05] text-white/60 hover:bg-white/10 hover:text-white'}`}>

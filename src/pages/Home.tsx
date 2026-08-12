@@ -30,8 +30,8 @@ import { Typewriter } from '../components/ui/Typewriter';
 import { HowItWorks, type Step } from '../components/sections/HowItWorks';
 import { EarlyAccessCTA } from '../components/sections/EarlyAccessCTA';
 import { PlatformShowcase } from '../components/sections/PlatformShowcase';
+import { InteractiveAppPreview } from '../components/sections/InteractiveAppPreview';
 import { IMAGES, AVATARS } from '../lib/images';
-import appPreview from '../assets/images/2daseccion.webp';
 import estudianteImg from '../assets/images/estudiante.webp';
 import iconosHero from '../assets/images/iconos-hero.png';
 
@@ -120,8 +120,8 @@ export default function Home() {
 
   return (
     <>
-      {/* ===================== HERO (inspirado en go-marz) ===================== */}
-      <section className="relative overflow-hidden pt-20 pb-12 sm:pt-52 sm:pb-32">
+      {/* ===================== HERO + PREVIEW INTERACTIVA ===================== */}
+      <section className="relative min-h-[100svh] overflow-hidden pb-2 pt-[4.5rem] md:flex md:items-center md:pb-6 md:pt-20 xl:pb-10 xl:pt-24">
         <Glow className="left-1/2 top-16 h-[20rem] w-[20rem] -translate-x-1/2 sm:h-[34rem] sm:w-[34rem]" />
         <Glow
           className="right-10 top-1/3 h-56 w-56 sm:h-72 sm:w-72"
@@ -129,14 +129,15 @@ export default function Home() {
         />
 
         <div className="container-px">
-          <div className="relative mx-auto flex min-h-[100svh] max-w-4xl flex-col items-center justify-center text-center sm:min-h-0 sm:justify-start">
+          <div className="relative grid items-center gap-6 md:grid-cols-[minmax(0,1.05fr)_minmax(17rem,0.75fr)] md:gap-8 lg:gap-12">
+            <div className="hidden text-left md:block">
             {/* Headline con iconos de referentes al lado de "pasantía" */}
             <div className="relative w-full">
               <AnimatedHeadline
                 lines={[
                   <span
                     key="l1"
-                    className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2"
+                    className="flex flex-wrap items-center justify-start gap-x-3 gap-y-2"
                   >
                     <span className="whitespace-nowrap">La pasantía</span>
                     <img
@@ -163,7 +164,7 @@ export default function Home() {
                   </span>,
                 ]}
                 delay={0.15}
-                className="text-[2.6rem] font-semibold leading-[1] tracking-tightest text-white xs:text-[3.25rem] xs:leading-[0.95] sm:text-6xl lg:text-[6.5rem]"
+                className="text-5xl font-semibold leading-[0.96] tracking-tightest text-white lg:text-[4.6rem] xl:text-[5.2rem]"
               />
             </div>
 
@@ -171,7 +172,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.7 }}
-              className="mt-4 max-w-xl text-sm font-light leading-relaxed text-white/60 sm:mt-8 sm:text-xl sm:text-white/70"
+              className="mt-6 max-w-lg text-base font-light leading-relaxed text-white/70 lg:text-lg"
             >
               Conectá con empresas verificadas, gestioná todo desde un mismo lugar y
               arrancá tu pasantía.
@@ -182,27 +183,27 @@ export default function Home() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.85 }}
-              className="relative mt-7 flex w-full flex-col gap-3 sm:mt-9 sm:w-auto sm:flex-row"
+              className="relative mt-7 flex gap-3"
             >
               <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-24 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/25 blur-3xl" />
-              <div className="[&>*]:w-full sm:[&>*]:w-auto">
+              <div>
                 <Button
                   as="link"
                   to="/estudiantes"
                   size="lg"
-                  className="w-full justify-center max-sm:!h-11 sm:w-auto"
+                  className="justify-center"
                 >
                   <GraduationCap size={20} />
                   Soy estudiante
                 </Button>
               </div>
-              <div className="[&>*]:w-full sm:[&>*]:w-auto">
+              <div>
                 <Button
                   as="link"
                   to="/empresas"
                   variant="secondary"
                   size="lg"
-                  className="w-full justify-center max-sm:!h-11 sm:w-auto"
+                  className="justify-center"
                 >
                   <Building2 size={20} />
                   Soy empresa
@@ -215,9 +216,9 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.7, delay: 1 }}
-              className="mt-7 flex flex-col items-center gap-5 sm:mt-10 sm:flex-row sm:gap-6"
+              className="mt-7 flex items-center gap-5 lg:gap-6"
             >
-              <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:gap-3 sm:text-left">
+              <div className="flex items-center gap-3 text-left">
                 <div className="flex -space-x-2.5">
                   {AVATARS.map((src, i) => (
                     <img
@@ -230,15 +231,15 @@ export default function Home() {
                     />
                   ))}
                 </div>
-                <span className="text-sm leading-tight text-white/60 sm:text-left">
+                <span className="text-xs leading-tight text-white/60 lg:text-sm">
                   Estudiantes y empresas
                   <br className="hidden sm:block" /> en un mismo lugar
                 </span>
               </div>
 
-              <div className="hidden h-8 w-px bg-white/15 sm:block" />
+              <div className="h-8 w-px bg-white/15" />
 
-              <div className="flex items-center gap-2 text-sm text-white/70">
+              <div className="flex items-center gap-2 text-xs text-white/70 lg:text-sm">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-70" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
@@ -246,31 +247,49 @@ export default function Home() {
                 Acceso anticipado abierto
               </div>
             </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===================== 2DA SECCIÓN: PREVIEW DEL PRODUCTO (estilo Marz) ===================== */}
-      {/* Imagen del usuario con bordes redondeados y máscara que la corta/difumina hacia el fondo. */}
-      <section className="relative -mt-4 pb-8 sm:-mt-6 sm:pb-12">
-        <div className="container-px">
-          <Reveal>
-            <div className="relative mx-auto max-w-6xl">
-              <div className="absolute -inset-x-6 -top-8 bottom-0 -z-10 rounded-[3rem] bg-white/5 blur-3xl" />
-              <img
-                src={appPreview}
-                alt="Vista previa de PasantIA: la app para estudiantes y el panel para empresas"
-                loading="lazy"
-                className="w-full rounded-t-[2rem] border-x border-t border-white/12"
-                style={{
-                  maskImage:
-                    'linear-gradient(to bottom, #000 42%, rgba(0,0,0,0.55) 72%, transparent 96%)',
-                  WebkitMaskImage:
-                    'linear-gradient(to bottom, #000 42%, rgba(0,0,0,0.55) 72%, transparent 96%)',
-                }}
-              />
             </div>
-          </Reveal>
+
+            <motion.div
+              initial={{ opacity: 0, y: 18, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.75, delay: 0.2 }}
+              className="flex flex-col items-center"
+            >
+              <div className="mb-2 text-center md:hidden">
+                <h1 className="text-[1.75rem] font-semibold leading-[0.98] tracking-tighter text-white">
+                  <span className="block">Tu oportunidad,</span>
+                  <span className="mt-1 block whitespace-nowrap font-light text-white/70">
+                    en un solo{' '}
+                    <Typewriter
+                      words={['lugar.', 'perfil.', 'clic.']}
+                      className="inline-block min-w-[7ch] text-left font-semibold text-white"
+                      typeSpeed={80}
+                      deleteSpeed={45}
+                      holdTime={1500}
+                    />
+                  </span>
+                </h1>
+              </div>
+              <InteractiveAppPreview variant="hero" />
+              <div className="mt-3 flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[9px] font-medium text-white/65 md:hidden">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-70" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                </span>
+                Acceso anticipado abierto
+              </div>
+              <div className="mt-2 md:hidden">
+                <Button
+                  onClick={() => openEarlyAccess('estudiante')}
+                  size="sm"
+                  className="!h-9 px-5 text-xs"
+                >
+                  Registrarme
+                  <ArrowRight size={14} />
+                </Button>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
 

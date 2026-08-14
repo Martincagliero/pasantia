@@ -278,7 +278,7 @@ export default function Home() {
                 </span>
                 Acceso anticipado abierto
               </div>
-              <div className="mt-2 md:hidden">
+              <div className="mt-2 flex flex-col items-center gap-1.5 md:hidden">
                 <Button
                   onClick={() => openEarlyAccess('estudiante')}
                   size="sm"
@@ -287,6 +287,12 @@ export default function Home() {
                   Registrarme
                   <ArrowRight size={14} />
                 </Button>
+                <Link
+                  to="/ingresar"
+                  className="rounded-full px-3 py-1 text-[10px] font-medium text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white"
+                >
+                  Ingresar al acceso anticipado
+                </Link>
               </div>
             </motion.div>
           </div>

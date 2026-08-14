@@ -83,6 +83,12 @@ export function Navbar() {
 
         {/* CTA desktop */}
         <div className="hidden items-center gap-1 md:flex">
+          <Link
+            to="/ingresar"
+            className="rounded-full px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:text-white"
+          >
+            Ingresar
+          </Link>
           <Button onClick={() => open()} size="sm">
             Acceso anticipado
           </Button>

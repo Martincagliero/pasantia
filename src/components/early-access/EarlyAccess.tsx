@@ -6,10 +6,12 @@ import {
   useMemo,
   useRef,
   useState,
+  type ChangeEvent,
   type ReactNode,
 } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, ArrowRight, ArrowLeft, Check, Eye, EyeOff } from 'lucide-react';
+import { X, ArrowRight, ArrowLeft, Check, Eye, EyeOff, Camera } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import {
   CONTACT,
   FORM_ENDPOINT,
@@ -46,6 +48,8 @@ interface FormData {
   nombre: string;
   email: string;
   password: string;
+  avatar_file: File | null;
+  avatar_preview: string;
   fecha_nacimiento: string;
   telefono: string;
   universidad: string;
@@ -71,6 +75,8 @@ const EMPTY: FormData = {
   nombre: '',
   email: '',
   password: '',
+  avatar_file: null,
+  avatar_preview: '',
   fecha_nacimiento: '',
   telefono: '',
   universidad: '',
@@ -172,6 +178,7 @@ function Onboarding({
   onClose: () => void;
 }) {
   const { signUp, signOut } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [data, setData] = useState<FormData>(EMPTY);
   const [submitting, setSubmitting] = useState(false);
@@ -193,6 +200,16 @@ function Onboarding({
       document.body.style.overflow = '';
     };
   }, [isOpen, presetRole]);
+
+  // Dejamos visible el check de éxito y luego llevamos al ingreso.
+  useEffect(() => {
+    if (!submitted) return;
+    const timer = window.setTimeout(() => {
+      onClose();
+      navigate('/ingresar');
+    }, 2500);
+    return () => window.clearTimeout(timer);
+  }, [submitted, navigate, onClose]);
 
   const set = (patch: Partial<FormData>) => setData((d) => ({ ...d, ...patch }));
 
@@ -315,6 +332,19 @@ function Onboarding({
           const { data: sess } = await supabase.auth.getSession();
           const uid = sess.session?.user?.id;
           if (uid) {
+            let avatarUrl: string | null = null;
+            if (data.avatar_file) {
+              const ext = data.avatar_file.name.split('.').pop()?.toLowerCase() || 'jpg';
+              const path = `avatars/${uid}.${ext}`;
+              const { error: uploadError } = await supabase.storage
+                .from('cvs')
+                .upload(path, data.avatar_file, { upsert: true });
+              if (!uploadError) {
+                const { data: publicData } = supabase.storage.from('cvs').getPublicUrl(path);
+                avatarUrl = `${publicData.publicUrl}?t=${Date.now()}`;
+              }
+            }
+
             await supabase.from('profiles').upsert(
               {
                 id: uid,
@@ -345,6 +375,7 @@ function Onboarding({
                 industry: data.rubro.trim() || null,
                 size: data.tamano.trim() || null,
                 description: data.perfil.trim() || data.mensaje.trim() || null,
+                avatar_url: avatarUrl,
               });
             } else if (data.role === 'embajador') {
               await saveSub('ambassador_profiles', {
@@ -355,6 +386,7 @@ function Onboarding({
                 instagram_url: data.instagram_link.trim() || null,
                 reach: data.followers_range.trim() || null,
                 description: data.perfil.trim() || data.mensaje.trim() || null,
+                logo_url: avatarUrl,
               });
             } else {
               await saveSub('student_profiles', {
@@ -367,6 +399,7 @@ function Onboarding({
                 phone: data.telefono.trim() || null,
                 bio: data.perfil.trim() || data.mensaje.trim() || null,
                 instagram_url: data.instagram_link.trim() || null,
+                avatar_url: avatarUrl,
                 // Público por defecto: quien se registra en el acceso anticipado
                 // quiere ser encontrado en "Explorar perfiles". Puede ocultarse
                 // luego desde su perfil.
@@ -491,13 +524,24 @@ function Onboarding({
               <img src={logo} alt="PasantIA" className="h-8 w-8 rounded-lg object-contain" />
               <span className="text-lg font-semibold tracking-tight">PasantIA</span>
             </div>
-            <button
-              onClick={onClose}
-              aria-label="Cerrar"
-              className="flex h-10 w-10 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-            >
-              <X size={22} />
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => {
+                  onClose();
+                  navigate('/ingresar');
+                }}
+                className="rounded-full px-3 py-2 text-sm font-semibold text-white/75 transition-colors hover:bg-white/10 hover:text-white sm:px-4"
+              >
+                Ingresar
+              </button>
+              <button
+                onClick={onClose}
+                aria-label="Cerrar"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <X size={22} />
+              </button>
+            </div>
           </header>
 
           {/* Barra de progreso */}
@@ -513,7 +557,13 @@ function Onboarding({
           <div className="flex flex-1 overflow-y-auto px-4 py-3 sm:px-8 sm:py-6">
             {submitted ? (
               <div className="m-auto w-full max-w-md">
-                <Success role={data.role} onClose={onClose} />
+                <Success
+                  role={data.role}
+                  onLogin={() => {
+                    onClose();
+                    navigate('/ingresar');
+                  }}
+                />
               </div>
             ) : (
               <AnimatePresence mode="wait">
@@ -670,6 +720,26 @@ function StepContacto({
   data: FormData;
   set: (p: Partial<FormData>) => void;
 }) {
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+
+  function handleAvatar(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setAvatarError('Elegí una imagen JPG, PNG o WEBP.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('La imagen no puede superar los 5 MB.');
+      return;
+    }
+    setAvatarError(null);
+    const reader = new FileReader();
+    reader.onload = () => set({ avatar_file: file, avatar_preview: String(reader.result ?? '') });
+    reader.readAsDataURL(file);
+  }
+
   return (
     <div className="mx-auto max-w-md">
       <Heading title="Empecemos por tus datos" />
@@ -695,6 +765,24 @@ function StepContacto({
           onChange={(v) => set({ password: v })}
           placeholder="Al menos 6 caracteres"
         />
+        <div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/[0.04] p-3">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/[0.06]">
+            {data.avatar_preview ? (
+              <img src={data.avatar_preview} alt="Vista previa" className="h-full w-full object-cover" />
+            ) : (
+              <Camera className="h-5 w-5 text-white/45" />
+            )}
+          </div>
+          <div className="min-w-0 flex-1 text-left">
+            <p className="text-sm font-medium text-white">Foto de perfil <span className="font-normal text-white/45">(opcional)</span></p>
+            <p className="mt-0.5 text-xs text-white/45">JPG, PNG o WEBP · máximo 5 MB</p>
+            {avatarError && <p className="mt-1 text-xs text-red-200">{avatarError}</p>}
+          </div>
+          <label className="shrink-0 cursor-pointer rounded-full border border-white/20 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10">
+            {data.avatar_preview ? 'Cambiar' : 'Subir'}
+            <input type="file" accept="image/*" onChange={handleAvatar} className="hidden" />
+          </label>
+        </div>
         {data.role === 'estudiante' && (
           <div>
             <Input
@@ -952,7 +1040,7 @@ function StepMensaje({
   );
 }
 
-function Success({ role, onClose }: { role: FormData['role']; onClose: () => void }) {
+function Success({ role, onLogin }: { role: FormData['role']; onLogin: () => void }) {
   return (
     <div className="text-center">
       <motion.div
@@ -967,8 +1055,7 @@ function Success({ role, onClose }: { role: FormData['role']; onClose: () => voi
         ¡Estás en la lista!
       </h2>
       <p className="mx-auto mt-5 max-w-md text-lg font-light text-white/65">
-        Ya estás en la lista de espera. Vas a poder ingresar con tu email y
-        contraseña cuando habilitemos el acceso
+        Tu cuenta quedó creada. En un momento te llevamos a iniciar sesión con tu email y contraseña
         {role === 'empresa'
           ? ' para empresas.'
           : role === 'estudiante'
@@ -976,10 +1063,10 @@ function Success({ role, onClose }: { role: FormData['role']; onClose: () => voi
             : '.'}
       </p>
       <button
-        onClick={onClose}
+        onClick={onLogin}
         className="mt-10 inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-brand-600 transition-colors hover:bg-brand-950 hover:text-white"
       >
-        Volver al sitio
+        Iniciar sesión ahora
       </button>
     </div>
   );

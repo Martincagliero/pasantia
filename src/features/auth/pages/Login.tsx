@@ -68,7 +68,7 @@ export default function Login() {
   return (
     <div
       onMouseMove={handleMove}
-      className="app-shrink relative min-h-screen overflow-hidden bg-[#05070E]"
+      className="relative min-h-screen overflow-hidden bg-[#05070E]"
       style={{ perspective: 1200 }}
     >
       {/* Fondo decorativo con parallax */}

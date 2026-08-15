@@ -115,6 +115,7 @@ const TABS: { key: Tab; label: string; icon: typeof Users }[] = [
 
 export default function Explore() {
   const [params] = useSearchParams();
+  const paramQuery = params.get('q') ?? '';
   const { openChatWith } = useMessages();
   const { profile: viewer } = useAuth();
   const viewerRole = viewer?.role;
@@ -127,6 +128,11 @@ export default function Explore() {
   const [ambassadors, setAmbassadors] = useState<AmbRow[]>([]);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Selected | null>(null);
+
+  // La barra superior puede buscar varias veces sin desmontar esta página.
+  useEffect(() => {
+    setQuery(paramQuery);
+  }, [paramQuery]);
 
   // Cargar a quién sigue el usuario actual.
   useEffect(() => {
@@ -274,6 +280,14 @@ export default function Explore() {
     [ambassadors, q]
   );
 
+  // Las búsquedas globales abren la primera categoría que tenga resultados.
+  useEffect(() => {
+    if (loading || !paramQuery.trim()) return;
+    if (filteredStudents.length > 0) setTab('estudiantes');
+    else if (filteredCompanies.length > 0) setTab('empresas');
+    else if (filteredAmbassadors.length > 0) setTab('embajadores');
+  }, [loading, paramQuery, filteredStudents.length, filteredCompanies.length, filteredAmbassadors.length]);
+
   if (loading) return <PageLoader />;
 
   function handleMessage(id: string, name: string, avatar?: string | null) {
@@ -291,8 +305,12 @@ export default function Explore() {
   return (
     <div>
       <PageHeader
-        title="Explorar perfiles"
-        description="Buscá y conocé a estudiantes, empresas y embajadores de la comunidad."
+        title={viewerRole === 'empresa' ? 'Explorar talentos' : 'Explorar perfiles'}
+        description={
+          viewerRole === 'empresa'
+            ? 'Encontrá estudiantes y conocé los perfiles de la comunidad.'
+            : 'Buscá y conocé a estudiantes, empresas y embajadores de la comunidad.'
+        }
       />
 
       {/* Tabs: categorías (segmentado) + "Red" como acceso aparte, minimalista */}

@@ -1,0 +1,310 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Bell, Briefcase, Check, MessageSquare, Newspaper, UserPlus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../auth/AuthProvider';
+import { useMessages } from '../messages/MessagesProvider';
+
+type NotificationKind = 'message' | 'internship' | 'post' | 'member';
+
+interface ActivityNotification {
+  id: string;
+  kind: NotificationKind;
+  title: string;
+  detail: string;
+  createdAt: string;
+  targetId?: string;
+  avatarUrl?: string | null;
+}
+
+const ICONS = {
+  message: MessageSquare,
+  internship: Briefcase,
+  post: Newspaper,
+  member: UserPlus,
+};
+
+function relativeTime(value: string): string {
+  const elapsed = Date.now() - new Date(value).getTime();
+  const minutes = Math.max(1, Math.floor(elapsed / 60_000));
+  if (minutes < 60) return `Hace ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Hace ${hours} h`;
+  const days = Math.floor(hours / 24);
+  return `Hace ${days} d`;
+}
+
+export function NotificationCenter() {
+  const { profile } = useAuth();
+  const { openMessages } = useMessages();
+  const navigate = useNavigate();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [items, setItems] = useState<ActivityNotification[]>([]);
+  const [lastSeen, setLastSeen] = useState(0);
+  const uid = profile?.id;
+  const storageKey = uid ? `pasantia_notifications_seen_${uid}` : '';
+
+  useEffect(() => {
+    if (!storageKey) return;
+    setLastSeen(Number(localStorage.getItem(storageKey)) || 0);
+  }, [storageKey]);
+
+  const load = useCallback(async () => {
+    if (!uid) return;
+    setLoading(true);
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    try {
+      const [messagesResult, internshipsResult, postsResult, membersResult] = await Promise.all([
+        supabase
+          .from('messages')
+          .select('id, sender_id, content, created_at')
+          .eq('recipient_id', uid)
+          .eq('read', false)
+          .order('created_at', { ascending: false })
+          .limit(10),
+        supabase
+          .from('internships')
+          .select('id, title, company_name, created_at')
+          .eq('is_active', true)
+          .gte('created_at', since)
+          .order('created_at', { ascending: false })
+          .limit(8),
+        supabase
+          .from('posts')
+          .select('id, title, author_name, created_at')
+          .gte('created_at', since)
+          .order('created_at', { ascending: false })
+          .limit(8),
+        supabase
+          .from('profiles')
+          .select('id, full_name, role, created_at')
+          .in('role', ['estudiante', 'empresa'])
+          .gte('created_at', since)
+          .order('created_at', { ascending: false })
+          .limit(8),
+      ]);
+
+      const messageRows = (messagesResult.data ?? []) as {
+        id: string;
+        sender_id: string;
+        content: string;
+        created_at: string;
+      }[];
+      const senderIds = [...new Set(messageRows.map((message) => message.sender_id))];
+      const senderNames = new Map<string, string>();
+      if (senderIds.length > 0) {
+        const { data } = await supabase.from('profiles').select('id, full_name').in('id', senderIds);
+        for (const sender of (data ?? []) as { id: string; full_name: string }[]) {
+          senderNames.set(sender.id, sender.full_name);
+        }
+      }
+
+      const memberRows = (membersResult.data ?? []) as {
+        id: string;
+        full_name: string;
+        role: 'estudiante' | 'empresa';
+        created_at: string;
+      }[];
+      const memberIds = memberRows.map((member) => member.id);
+      const avatarById = new Map<string, string>();
+      if (memberIds.length > 0) {
+        const [{ data: students }, { data: companies }] = await Promise.all([
+          supabase.from('student_profiles').select('id, avatar_url').in('id', memberIds),
+          supabase.from('company_profiles').select('id, avatar_url').in('id', memberIds),
+        ]);
+        for (const row of [...(students ?? []), ...(companies ?? [])] as {
+          id: string;
+          avatar_url: string | null;
+        }[]) {
+          if (row.avatar_url) avatarById.set(row.id, row.avatar_url);
+        }
+      }
+
+      const next: ActivityNotification[] = [
+        ...messageRows.map((message) => ({
+          id: `message-${message.id}`,
+          kind: 'message' as const,
+          title: `Mensaje de ${senderNames.get(message.sender_id) || 'un usuario'}`,
+          detail: message.content,
+          createdAt: message.created_at,
+        })),
+        ...((internshipsResult.data ?? []) as {
+          id: string;
+          title: string;
+          company_name: string | null;
+          created_at: string;
+        }[]).map((internship) => ({
+          id: `internship-${internship.id}`,
+          kind: 'internship' as const,
+          title: 'Nueva pasantía publicada',
+          detail: internship.company_name
+            ? `${internship.title} · ${internship.company_name}`
+            : internship.title,
+          createdAt: internship.created_at,
+        })),
+        ...((postsResult.data ?? []) as {
+          id: string;
+          title: string;
+          author_name: string;
+          created_at: string;
+        }[]).map((post) => ({
+          id: `post-${post.id}`,
+          kind: 'post' as const,
+          title: 'Nueva publicación en Novedades',
+          detail: `${post.author_name}: ${post.title}`,
+          createdAt: post.created_at,
+        })),
+        ...memberRows
+          .filter((member) => member.id !== uid)
+          .map((member) => ({
+            id: `member-${member.id}`,
+            kind: 'member' as const,
+            title: `${member.role === 'empresa' ? 'Nueva empresa' : 'Nuevo estudiante'} en PasantIA`,
+            detail: `${member.full_name} se sumó a la plataforma`,
+            createdAt: member.created_at,
+            targetId: member.id,
+            avatarUrl: avatarById.get(member.id) ?? null,
+          })),
+      ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      setItems(next.slice(0, 6));
+    } finally {
+      setLoading(false);
+    }
+  }, [uid]);
+
+  useEffect(() => {
+    load();
+    const timer = window.setInterval(load, 30_000);
+    return () => window.clearInterval(timer);
+  }, [load]);
+
+  useEffect(() => {
+    function closeOnOutsideClick(event: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', closeOnOutsideClick);
+    return () => document.removeEventListener('mousedown', closeOnOutsideClick);
+  }, []);
+
+  const unread = items.filter(
+    (item) => item.kind === 'message' || new Date(item.createdAt).getTime() > lastSeen
+  ).length;
+
+  function markSeen() {
+    const now = Date.now();
+    localStorage.setItem(storageKey, String(now));
+    setLastSeen(now);
+  }
+
+  function toggle() {
+    setOpen((current) => {
+      if (!current) {
+        markSeen();
+        load();
+      }
+      return !current;
+    });
+  }
+
+  function openItem(item: ActivityNotification) {
+    setOpen(false);
+    if (item.kind === 'message') {
+      openMessages();
+      return;
+    }
+    if (item.kind === 'post') navigate('/app/novedades');
+    if (item.kind === 'member') navigate(`/app/explorar?u=${item.targetId}`);
+    if (item.kind === 'internship') {
+      navigate(
+        profile?.role === 'estudiante'
+          ? '/app/pasantias'
+          : profile?.role === 'embajador'
+            ? '/app/anuncios'
+            : '/app/mis-pasantias'
+      );
+    }
+  }
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        onClick={toggle}
+        className="relative flex h-9 w-9 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
+        aria-label="Notificaciones"
+        title="Notificaciones"
+      >
+        <Bell className="h-[19px] w-[19px]" />
+        {unread > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-bold !text-white">
+            {unread > 9 ? '9+' : unread}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="dash-panel fixed right-2 top-[calc(env(safe-area-inset-top)+3.75rem)] z-50 max-h-[min(380px,calc(100dvh-5rem))] w-[calc(100vw-1rem)] max-w-[280px] overflow-hidden rounded-xl border border-white/12 shadow-xl shadow-black/20 sm:absolute sm:right-0 sm:top-full sm:mt-2">
+          <div className="flex items-center border-b border-white/10 px-3 py-2.5">
+            <div>
+              <h2 className="text-[13px] font-semibold text-white">Notificaciones</h2>
+              <p className="text-[11px] text-white/45">Actividad reciente de PasantIA</p>
+            </div>
+            <button
+              onClick={markSeen}
+              className="ml-auto flex items-center gap-1 text-[11px] font-medium text-brand-500"
+            >
+              <Check className="h-3 w-3" /> Vistas
+            </button>
+          </div>
+          <div className="max-h-[min(320px,calc(100dvh-9.5rem))] overflow-y-auto">
+            {loading && items.length === 0 ? (
+              <p className="px-3 py-6 text-center text-xs text-white/45">Cargando…</p>
+            ) : items.length === 0 ? (
+              <p className="px-3 py-6 text-center text-xs text-white/45">No hay actividad reciente.</p>
+            ) : (
+              items.map((item) => {
+                const Icon = ICONS[item.kind] ?? UserPlus;
+                const isUnread = item.kind === 'message' || new Date(item.createdAt).getTime() > lastSeen;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => openItem(item)}
+                    className={`flex w-full gap-2.5 border-b border-white/[0.07] px-3 py-2.5 text-left transition hover:bg-white/[0.05] ${
+                      isUnread ? 'bg-brand-500/[0.06]' : ''
+                    }`}
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-500/10 text-brand-500">
+                      {item.avatarUrl ? (
+                        <img
+                          src={item.avatarUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        <Icon className="h-4 w-4" />
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[13px] font-semibold leading-snug text-white">{item.title}</span>
+                      <span className="mt-0.5 block line-clamp-2 text-[11px] leading-relaxed text-white/55">
+                        {item.detail}
+                      </span>
+                      <span className="mt-0.5 block text-[10px] text-brand-500">
+                        {relativeTime(item.createdAt)}
+                      </span>
+                    </span>
+                    {isUnread && <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

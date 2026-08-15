@@ -26,6 +26,7 @@ import logo from '../../assets/logo.png';
 import { useAuth } from '../auth/AuthProvider';
 import { MessagesProvider, MessagesButton } from '../messages/MessagesProvider';
 import { NotificationsButton } from '../notifications/NotificationsButton';
+import { NotificationCenter } from '../notifications/NotificationCenter';
 import { supabase } from '../../lib/supabase';
 
 interface NavItem {
@@ -49,8 +50,7 @@ const companyNav: NavItem[] = [
   { to: '/app/inicio', label: 'Resumen', icon: LayoutDashboard },
   { to: '/app/mis-pasantias', label: 'Mis pasantías', icon: Briefcase },
   { to: '/app/postulaciones-recibidas', label: 'Postulaciones', icon: Inbox },
-  { to: '/app/talento', label: 'Buscar talento', icon: Users },
-  { to: '/app/explorar', label: 'Explorar perfiles', icon: Compass },
+  { to: '/app/explorar', label: 'Explorar talentos', icon: Compass },
   { to: '/app/novedades', label: 'Novedades', icon: Newspaper },
   { to: '/app/perfil', label: 'Perfil de empresa', icon: UserRound },
 ];
@@ -161,7 +161,7 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className="dash-root app-shrink min-h-screen" data-theme={theme}>
+    <div className="dash-root min-h-screen" data-theme={theme}>
       <MessagesProvider>
         <header className="dash-panel sticky top-0 z-40 border-b border-white/10 pt-[env(safe-area-inset-top)]">
           <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-4">
@@ -207,7 +207,8 @@ export function DashboardLayout() {
               <div className="mx-1.5 hidden h-7 w-px bg-white/10 lg:block" />
 
               {/* Mensajes (mobile: acceso desde la barra superior) */}
-              <MessagesButton className="mr-1.5 lg:hidden" />
+              <MessagesButton className="lg:hidden" />
+              <NotificationCenter />
 
               {/* Cuenta */}
               <div ref={accountRef} className="relative">
@@ -286,7 +287,7 @@ export function DashboardLayout() {
 
         {/* Barra de navegación inferior (mobile, estilo LinkedIn). Se oculta al scrollear hacia abajo. */}
         <nav
-          className={`dash-panel fixed inset-x-0 bottom-0 z-40 border-t border-white/10 pb-[env(safe-area-inset-bottom)] transition-transform duration-300 lg:hidden ${
+          className={`dash-panel mobile-end-gradient fixed inset-x-0 bottom-0 z-40 border-t border-white/10 pb-[env(safe-area-inset-bottom)] transition-transform duration-300 lg:hidden ${
             hideBottomNav ? 'translate-y-full' : 'translate-y-0'
           }`}
         >

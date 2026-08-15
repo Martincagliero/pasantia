@@ -73,22 +73,23 @@
   }
 }
 
-/* Plataforma (login + panel): achicar todo un poco en mobile para que entre
-   más contenido en pantalla. La landing NO se ve afectada (no lleva .app-shrink).
-   El min-height compensa el zoom para que el fondo cubra toda la altura. */
+/* iOS amplía la página al enfocar controles con texto menor a 16px. */
 @media (max-width: 640px) {
-  .app-shrink {
-    zoom: 0.85;
-    min-height: calc(100vh / 0.85);
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
   }
 }
 
-/* Teléfonos chicos: achicar todavía un poco más. */
-@media (max-width: 400px) {
-  .app-shrink {
-    zoom: 0.8;
-    min-height: calc(100vh / 0.8);
-  }
+/* Marca sutil del final de la plataforma, incluida el área segura de iOS. */
+.mobile-end-gradient {
+  background: linear-gradient(
+    to bottom,
+    var(--dash-panel) 0%,
+    var(--dash-panel) calc(100% - max(10px, env(safe-area-inset-bottom))),
+    rgb(10 102 194 / 0.18) 100%
+  );
 }
 
 /* Neutralizar el fondo del autocompletado del navegador (evita el tinte azulado

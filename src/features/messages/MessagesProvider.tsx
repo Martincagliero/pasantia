@@ -296,7 +296,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
         <div
           className={
             open
-              ? 'fixed inset-0 z-50 flex flex-col lg:inset-auto lg:bottom-0 lg:right-4 lg:block lg:w-[320px]'
+              ? 'fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col lg:inset-auto lg:bottom-0 lg:right-4 lg:block lg:h-auto lg:w-[320px]'
               : 'hidden lg:fixed lg:bottom-0 lg:right-4 lg:z-50 lg:block lg:w-[320px]'
           }
         >
@@ -388,7 +388,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 border-t border-white/10 p-2">
+                    <div className="mobile-end-gradient flex shrink-0 items-center gap-2 border-t border-white/10 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
                       <input
                         value={text}
                         onChange={(e) => setText(e.target.value)}
@@ -399,7 +399,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                           }
                         }}
                         placeholder="Escribí un mensaje…"
-                        className="min-w-0 flex-1 rounded-xl border border-white/12 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/35 outline-none focus:border-brand-400/60"
+                        className="min-w-0 flex-1 rounded-xl border border-white/12 bg-white/5 px-3 py-2 text-base text-white placeholder:text-white/35 outline-none focus:border-brand-400/60 lg:text-sm"
                       />
                       <button
                         onClick={handleSend}

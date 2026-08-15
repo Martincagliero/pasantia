@@ -129,7 +129,7 @@ export default function Home() {
         />
 
         <div className="container-px">
-          <div className="relative grid items-center gap-6 md:grid-cols-[minmax(0,1.05fr)_minmax(17rem,0.75fr)] md:gap-8 lg:gap-12">
+          <div className="relative grid items-center gap-6 md:grid-cols-[minmax(0,1.2fr)_minmax(17rem,0.6fr)] md:gap-8 lg:gap-12">
             <div className="hidden text-left md:block">
             {/* Headline con iconos de referentes al lado de "pasantía" */}
             <div className="relative w-full">
@@ -164,7 +164,7 @@ export default function Home() {
                   </span>,
                 ]}
                 delay={0.15}
-                className="text-5xl font-semibold leading-[0.96] tracking-tightest text-white lg:text-[4.6rem] xl:text-[5.2rem]"
+                className="text-[2.75rem] font-semibold leading-[0.96] tracking-tightest text-white lg:text-[4rem] xl:text-[4.6rem]"
               />
             </div>
 

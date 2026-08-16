@@ -1,17 +1,41 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
+import { ChevronDown, Menu, X } from 'lucide-react';
 import { useScrolled } from '../../hooks/useScrolled';
 import { NAV_LINKS, HASH_LINKS } from '../../lib/constants';
 import { Button } from '../ui/Button';
 import { useEarlyAccess } from '../early-access/EarlyAccess';
 import logo from '../../assets/logo.png';
+import studentPhoto from '../../assets/images/mockup/abril.webp';
+import companyPhoto from '../../assets/images/mockup/comunidad-industrial.webp';
+import ambassadorPhoto from '../../assets/images/mockup/comunidad-sistemas.webp';
 
 export function Navbar() {
   const scrolled = useScrolled(20);
   const [menuOpen, setMenuOpen] = useState(false);
   const { open } = useEarlyAccess();
+  const desktopLinks = NAV_LINKS.filter((link) => link.to === '/');
+  const audienceLinks = [
+    {
+      label: 'Estudiantes',
+      to: '/estudiantes',
+      description: 'Encontrá tu primera pasantía',
+      photo: studentPhoto,
+    },
+    {
+      label: 'Empresas',
+      to: '/empresas',
+      description: 'Conectá con talento joven',
+      photo: companyPhoto,
+    },
+    {
+      label: 'Embajadores',
+      to: '/embajadores',
+      description: 'Difundí oportunidades',
+      photo: ambassadorPhoto,
+    },
+  ] as const;
 
   // Bloquea el scroll del fondo mientras el menú mobile está abierto.
   useEffect(() => {
@@ -41,18 +65,18 @@ export function Navbar() {
         }`}
       >
         {/* Logo + marca */}
-        <Link to="/" className="flex items-center gap-2.5" aria-label="PasantIA — Inicio">
+        <Link to="/" className="flex items-center gap-1" aria-label="PasantIA — Inicio">
           <img
             src={logo}
             alt="PasantIA"
             className="h-9 w-9 rounded-lg object-contain"
           />
-          <span className="text-lg font-semibold tracking-tight">PasantIA</span>
+          <span className="text-lg font-semibold tracking-tight">asantIA</span>
         </Link>
 
         {/* Links desktop */}
         <ul className="hidden items-center gap-1 md:flex">
-          {NAV_LINKS.map((link) => (
+          {desktopLinks.map((link) => (
             <li key={link.to}>
               <NavLink
                 to={link.to}
@@ -69,6 +93,43 @@ export function Navbar() {
               </NavLink>
             </li>
           ))}
+          <li className="group relative">
+            <button
+              type="button"
+              className="flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-white/60 transition-colors hover:text-white focus:text-white focus:outline-none"
+              aria-haspopup="menu"
+            >
+              Para quién
+              <ChevronDown className="h-3.5 w-3.5 transition-transform group-hover:rotate-180 group-focus-within:rotate-180" />
+            </button>
+            <div className="pointer-events-none absolute left-1/2 top-full z-50 w-64 -translate-x-1/2 pt-2 opacity-0 transition duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl shadow-brand-950/25" role="menu">
+                {audienceLinks.map(({ label, to, description, photo }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    role="menuitem"
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${
+                        isActive ? 'bg-brand-50 text-brand-700' : 'text-slate-900 hover:bg-slate-100'
+                      }`
+                    }
+                  >
+                    <img
+                      src={photo}
+                      alt=""
+                      aria-hidden
+                      className="h-10 w-10 shrink-0 rounded-xl object-cover"
+                    />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold">{label}</span>
+                      <span className="block truncate text-[11px] opacity-60">{description}</span>
+                    </span>
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+          </li>
           {HASH_LINKS.map((link) => (
             <li key={link.to}>
               <Link
@@ -82,15 +143,12 @@ export function Navbar() {
         </ul>
 
         {/* CTA desktop */}
-        <div className="hidden items-center gap-1 md:flex">
-          <Link
-            to="/ingresar"
-            className="rounded-full px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:text-white"
-          >
+        <div className="hidden items-center gap-2 md:flex">
+          <Button as="link" to="/ingresar" variant="secondary" size="sm">
             Ingresar
-          </Link>
+          </Button>
           <Button onClick={() => open()} size="sm">
-            Acceso anticipado
+            Registrarse
           </Button>
         </div>
 
@@ -167,17 +225,28 @@ export function Navbar() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35, duration: 0.4 }}
-              className="flex flex-col items-center gap-3 px-6 pb-12"
+              className="flex w-full items-center justify-center gap-2 px-6 pb-12"
             >
+              <div className="flex-1" onClick={() => setMenuOpen(false)}>
+                <Button
+                  as="link"
+                  to="/ingresar"
+                  variant="secondary"
+                  size="lg"
+                  className="w-full justify-center"
+                >
+                  Ingresar
+                </Button>
+              </div>
               <Button
                 onClick={() => {
                   setMenuOpen(false);
                   open();
                 }}
                 size="lg"
-                className="w-full max-w-xs justify-center"
+                className="flex-1 justify-center"
               >
-                Acceso anticipado
+                Registrarse
               </Button>
             </motion.div>
           </motion.div>

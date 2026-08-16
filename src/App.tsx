@@ -44,6 +44,7 @@ const StudentCommunities = lazy(() => import('./features/student/StudentCommunit
 const CommunityDetailPage = lazy(() => import('./pages/CommunityDetailPage'));
 const PublicCommunityPage = lazy(() => import('./pages/PublicCommunityPage'));
 const AdminPanel = lazy(() => import('./features/admin/AdminPanel'));
+const HelpCenter = lazy(() => import('./features/help/HelpCenter'));
 
 const fallback = <div className="min-h-screen" aria-hidden />;
 
@@ -218,6 +219,7 @@ export default function App() {
               }
             />
             <Route path="perfil" element={<ProfileByRole />} />
+            <Route path="ayuda" element={<HelpCenter />} />
             <Route
               path="admin"
               element={

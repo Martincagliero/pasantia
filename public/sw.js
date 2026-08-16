@@ -1,12 +1,76 @@
-/* Service Worker de PasantIA — solo notificaciones push (sin caché offline).
-   Mantiene la app capaz de recibir avisos aunque esté cerrada. */
+/* Service Worker de PasantIA: push + caché runtime de imágenes/assets.
+  Los datos de Supabase (REST/Auth) nunca se cachean. */
+
+const STATIC_CACHE = 'pasantia-static-v3';
+const IMAGE_CACHE = 'pasantia-images-v3';
+const PAGE_CACHE = 'pasantia-pages-v3';
+const ACTIVE_CACHES = new Set([STATIC_CACHE, IMAGE_CACHE, PAGE_CACHE]);
 
 self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((key) => key.startsWith('pasantia-') && !ACTIVE_CACHES.has(key)).map((key) => caches.delete(key))))
+      .then(() => self.clients.claim())
+  );
+});
+
+async function trimCache(cacheName, maxEntries) {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  if (keys.length <= maxEntries) return;
+  await Promise.all(keys.slice(0, keys.length - maxEntries).map((key) => cache.delete(key)));
+}
+
+async function staleWhileRevalidate(request, cacheName, maxEntries) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  const network = fetch(request)
+    .then((response) => {
+      if (response.ok || response.type === 'opaque') {
+        cache.put(request, response.clone());
+        trimCache(cacheName, maxEntries);
+      }
+      return response;
+    })
+    .catch(() => cached);
+  return cached || network;
+}
+
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+  const isSupabaseApi =
+    url.hostname.endsWith('.supabase.co') &&
+    (url.pathname.startsWith('/rest/') || url.pathname.startsWith('/auth/') || url.pathname.startsWith('/functions/'));
+  if (isSupabaseApi) return;
+
+  if (request.destination === 'image') {
+    event.respondWith(staleWhileRevalidate(request, IMAGE_CACHE, 220));
+    return;
+  }
+
+  if (['script', 'style', 'font'].includes(request.destination)) {
+    event.respondWith(staleWhileRevalidate(request, STATIC_CACHE, 120));
+    return;
+  }
+
+  if (request.mode === 'navigate' && url.origin === self.location.origin) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) caches.open(PAGE_CACHE).then((cache) => cache.put(request, response.clone()));
+          return response;
+        })
+        .catch(async () => (await caches.open(PAGE_CACHE)).match(request) || (await caches.match('/')))
+    );
+  }
 });
 
 // Llega un push desde el servidor: mostramos la notificación.

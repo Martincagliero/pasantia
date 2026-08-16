@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { useMessages } from '../messages/MessagesProvider';
 
-type NotificationKind = 'message' | 'internship' | 'post' | 'member';
+type NotificationKind = 'message' | 'internship' | 'post' | 'member' | 'connection';
 
 interface ActivityNotification {
   id: string;
@@ -22,6 +22,7 @@ const ICONS = {
   internship: Briefcase,
   post: Newspaper,
   member: UserPlus,
+  connection: UserPlus,
 };
 
 function relativeTime(value: string): string {
@@ -56,7 +57,7 @@ export function NotificationCenter() {
     setLoading(true);
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     try {
-      const [messagesResult, internshipsResult, postsResult, membersResult] = await Promise.all([
+      const [messagesResult, internshipsResult, postsResult, membersResult, connectionsResult] = await Promise.all([
         supabase
           .from('messages')
           .select('id, sender_id, content, created_at')
@@ -84,6 +85,13 @@ export function NotificationCenter() {
           .gte('created_at', since)
           .order('created_at', { ascending: false })
           .limit(8),
+        supabase
+          .from('connection_requests')
+          .select('id, requester_id, created_at')
+          .eq('recipient_id', uid)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(8),
       ]);
 
       const messageRows = (messagesResult.data ?? []) as {
@@ -107,6 +115,11 @@ export function NotificationCenter() {
         role: 'estudiante' | 'empresa';
         created_at: string;
       }[];
+      const connectionRows = (connectionsResult.data ?? []) as {
+        id: string;
+        requester_id: string;
+        created_at: string;
+      }[];
       const memberIds = memberRows.map((member) => member.id);
       const avatarById = new Map<string, string>();
       if (memberIds.length > 0) {
@@ -119,6 +132,22 @@ export function NotificationCenter() {
           avatar_url: string | null;
         }[]) {
           if (row.avatar_url) avatarById.set(row.id, row.avatar_url);
+        }
+      }
+
+      const requesterNames = new Map<string, string>();
+      const requesterAvatars = new Map<string, string>();
+      const requesterIds = [...new Set(connectionRows.map((request) => request.requester_id))];
+      if (requesterIds.length > 0) {
+        const [{ data: profiles }, { data: students }] = await Promise.all([
+          supabase.from('profiles').select('id, full_name').in('id', requesterIds),
+          supabase.from('student_profiles').select('id, avatar_url').in('id', requesterIds),
+        ]);
+        for (const row of (profiles ?? []) as { id: string; full_name: string }[]) {
+          requesterNames.set(row.id, row.full_name);
+        }
+        for (const row of (students ?? []) as { id: string; avatar_url: string | null }[]) {
+          if (row.avatar_url) requesterAvatars.set(row.id, row.avatar_url);
         }
       }
 
@@ -167,6 +196,15 @@ export function NotificationCenter() {
             targetId: member.id,
             avatarUrl: avatarById.get(member.id) ?? null,
           })),
+        ...connectionRows.map((request) => ({
+          id: `connection-${request.id}`,
+          kind: 'connection' as const,
+          title: 'Nueva solicitud de conexión',
+          detail: `${requesterNames.get(request.requester_id) || 'Un estudiante'} quiere conectar con vos`,
+          createdAt: request.created_at,
+          targetId: request.requester_id,
+          avatarUrl: requesterAvatars.get(request.requester_id) ?? null,
+        })),
       ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setItems(next.slice(0, 6));
@@ -216,6 +254,7 @@ export function NotificationCenter() {
       return;
     }
     if (item.kind === 'post') navigate('/app/novedades');
+    if (item.kind === 'connection') navigate('/app/explorar?tab=red&requests=1');
     if (item.kind === 'member') navigate(`/app/explorar?u=${item.targetId}`);
     if (item.kind === 'internship') {
       navigate(

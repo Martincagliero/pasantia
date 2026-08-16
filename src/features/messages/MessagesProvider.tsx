@@ -69,6 +69,25 @@ interface Conversation {
   unread: number;
 }
 
+interface SuggestedContact {
+  id: string;
+  name: string;
+  avatar: string | null;
+  role: 'estudiante' | 'empresa' | 'embajador';
+}
+
+const suggestedRoleLabel: Record<SuggestedContact['role'], string> = {
+  estudiante: 'Estudiante',
+  empresa: 'Empresa',
+  embajador: 'Comunidad',
+};
+
+type EmbeddedProfile = { full_name: string } | Array<{ full_name: string }> | null;
+
+function embeddedProfileName(profile: EmbeddedProfile): string {
+  return (Array.isArray(profile) ? profile[0]?.full_name : profile?.full_name) || '';
+}
+
 function initials(name: string): string {
   const parts = (name || '').trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return 'U';
@@ -118,7 +137,97 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const [thread, setThread] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const [suggestions, setSuggestions] = useState<SuggestedContact[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
+  const suggestionsLoadedRef = useRef(false);
+
+  const loadSuggestions = useCallback(async () => {
+    if (!uid || suggestionsLoadedRef.current) return;
+    suggestionsLoadedRef.current = true;
+    setLoadingSuggestions(true);
+    try {
+      const [{ data: students }, { data: companies }, { data: ambassadors }] = await Promise.all([
+        supabase
+          .from('student_profiles')
+          .select('id, avatar_url, profile:profiles(full_name)')
+          .eq('is_public', true)
+          .limit(6),
+        supabase
+          .from('company_profiles')
+          .select('id, avatar_url, company_name, profile:profiles(full_name)')
+          .limit(6),
+        supabase
+          .from('ambassador_profiles')
+          .select('id, logo_url, org_name, profile:profiles(full_name)')
+          .limit(6),
+      ]);
+
+      const contacts: SuggestedContact[] = [];
+      for (const row of (students as unknown as Array<{
+        id: string;
+        avatar_url: string | null;
+        profile: EmbeddedProfile;
+      }>) ?? []) {
+        if (row.id !== uid) {
+          contacts.push({
+            id: row.id,
+            name: embeddedProfileName(row.profile) || 'Estudiante',
+            avatar: row.avatar_url,
+            role: 'estudiante',
+          });
+        }
+      }
+      for (const row of (companies as unknown as Array<{
+        id: string;
+        avatar_url: string | null;
+        company_name: string | null;
+        profile: EmbeddedProfile;
+      }>) ?? []) {
+        if (row.id !== uid) {
+          contacts.push({
+            id: row.id,
+            name: row.company_name || embeddedProfileName(row.profile) || 'Empresa',
+            avatar: row.avatar_url,
+            role: 'empresa',
+          });
+        }
+      }
+      for (const row of (ambassadors as unknown as Array<{
+        id: string;
+        logo_url: string | null;
+        org_name: string | null;
+        profile: EmbeddedProfile;
+      }>) ?? []) {
+        if (row.id !== uid) {
+          contacts.push({
+            id: row.id,
+            name: row.org_name || embeddedProfileName(row.profile) || 'Comunidad',
+            avatar: row.logo_url,
+            role: 'embajador',
+          });
+        }
+      }
+
+      const priority: Record<SuggestedContact['role'], number> =
+        profile?.role === 'empresa'
+          ? { estudiante: 0, embajador: 1, empresa: 2 }
+          : profile?.role === 'embajador'
+            ? { estudiante: 0, empresa: 1, embajador: 2 }
+            : { empresa: 0, embajador: 1, estudiante: 2 };
+      const roleOrder = (Object.keys(priority) as SuggestedContact['role'][]).sort(
+        (a, b) => priority[a] - priority[b]
+      );
+      const balanced = roleOrder.flatMap((role) =>
+        contacts.filter((contact) => contact.role === role).slice(0, 2)
+      );
+      setSuggestions(balanced.slice(0, 4));
+    } catch {
+      setSuggestions([]);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }, [uid, profile?.role]);
 
   const loadConversations = useCallback(async () => {
     if (!uid) return;
@@ -269,6 +378,15 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(t);
   }, [uid, loadConversations]);
 
+  useEffect(() => {
+    suggestionsLoadedRef.current = false;
+    setSuggestions([]);
+  }, [uid]);
+
+  useEffect(() => {
+    if (open && !active && convos.length === 0) loadSuggestions();
+  }, [open, active, convos.length, loadSuggestions]);
+
   // Polling del hilo abierto.
   useEffect(() => {
     if (!open || !active) return;
@@ -415,10 +533,48 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                   /* ── Lista de conversaciones ── */
                   <div className="h-full overflow-y-auto lg:h-auto lg:max-h-[380px]">
                     {convos.length === 0 ? (
-                      <p className="px-4 py-8 text-center text-xs text-white/45">
-                        Todavía no tenés conversaciones.<br />
-                        Abrí un perfil en “Explorar” y tocá “Enviar mensaje”.
-                      </p>
+                      <div className="px-3 py-5">
+                        <div className="px-1 text-center">
+                          <p className="text-sm font-semibold text-white">Empezá una conversación</p>
+                          <p className="mt-1 text-xs text-white/50">Perfiles que podrían interesarte</p>
+                        </div>
+                        {loadingSuggestions ? (
+                          <p className="py-6 text-center text-xs text-white/40">Buscando perfiles…</p>
+                        ) : suggestions.length > 0 ? (
+                          <div className="mt-4 space-y-1">
+                            {suggestions.map((contact) => (
+                              <button
+                                key={contact.id}
+                                type="button"
+                                onClick={() => openChatWith(contact.id, contact.name, contact.avatar)}
+                                className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition hover:bg-white/[0.06]"
+                              >
+                                <ChatAvatar url={contact.avatar} name={contact.name} />
+                                <span className="min-w-0 flex-1">
+                                  <span className="block truncate text-sm font-medium text-white">
+                                    {contact.name}
+                                  </span>
+                                  <span className="block text-[11px] text-white/45">
+                                    {suggestedRoleLabel[contact.role]}
+                                  </span>
+                                </span>
+                                <MessageSquare className="h-4 w-4 shrink-0 text-brand-500" />
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigate('/app/explorar');
+                              setOpen(false);
+                            }}
+                            className="mx-auto mt-4 block text-xs font-semibold text-brand-500 hover:underline"
+                          >
+                            Explorar perfiles
+                          </button>
+                        )}
+                      </div>
                     ) : (
                       convos.map((c) => (
                         <button

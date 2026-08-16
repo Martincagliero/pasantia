@@ -36,8 +36,14 @@ export function Spinner({ className = '' }: { className?: string }) {
 
 export function PageLoader() {
   return (
-    <div className="flex min-h-[40vh] items-center justify-center">
-      <Spinner className="h-8 w-8" />
+    <div className="animate-pulse space-y-4 py-2" aria-label="Cargando contenido" role="status">
+      <div className="h-7 w-52 rounded-lg bg-white/10" />
+      <div className="h-4 w-full max-w-md rounded bg-white/[0.06]" />
+      <div className="grid gap-3 pt-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="h-36 rounded-2xl border border-white/8 bg-white/[0.04]" />
+        <div className="h-36 rounded-2xl border border-white/8 bg-white/[0.04]" />
+        <div className="hidden h-36 rounded-2xl border border-white/8 bg-white/[0.04] lg:block" />
+      </div>
     </div>
   );
 }

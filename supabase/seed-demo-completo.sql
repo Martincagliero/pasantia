@@ -308,6 +308,14 @@ end $$;
 -- ---------------------------------------------------------------------------
 drop function if exists public.demo_create_user(text, text, text);
 
+-- Los perfiles demo de estudiantes ya no deben persistir en la plataforma.
+-- Se eliminan al final y las FK limpian sus posts/comunidades dependientes.
+delete from auth.users
+where lower(email) in (
+  'pasantia.demo.valentina@gmail.com',
+  'pasantia.demo.mateo@gmail.com'
+);
+
 -- ============================================================================
 -- LISTO. Todas las cuentas usan la contraseña: PasantIA2025!
 -- Las pasantías, novedades y perfiles quedaron marcados como (DEMO).

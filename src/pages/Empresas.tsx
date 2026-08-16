@@ -6,6 +6,7 @@ import { Accent } from '../components/ui/Accent';
 import { BenefitsGrid } from '../components/sections/BenefitsGrid';
 import { HowItWorks, type Step } from '../components/sections/HowItWorks';
 import { EarlyAccessCTA } from '../components/sections/EarlyAccessCTA';
+import { RoleProductDemo } from '../components/sections/RoleProductDemo';
 import { IMAGES } from '../lib/images';
 
 const BENEFITS = [
@@ -82,6 +83,7 @@ export default function Empresas() {
         headlineLines={['El talento joven', <Accent key="a">que tu equipo necesita.</Accent>]}
         subtitle="Accedé a candidatos filtrados, ahorrá tiempo en tu proceso de reclutamiento y conectá directo con estudiantes activos."
         role="empresa"
+        demoHref="#demo-plataforma"
         image={IMAGES.officeTeam}
         imageAlt="Equipo de trabajo joven en una oficina moderna"
       />
@@ -102,6 +104,8 @@ export default function Empresas() {
           </p>
         </div>
       </Section>
+
+      <RoleProductDemo role="empresa" />
 
       {/* Beneficios */}
       <Section>

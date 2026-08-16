@@ -20,6 +20,7 @@ import {
   ChevronDown,
   Rocket,
   Shield,
+  CircleHelp,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import logo from '../../assets/logo.png';
@@ -28,6 +29,7 @@ import { MessagesProvider, MessagesButton } from '../messages/MessagesProvider';
 import { NotificationsButton } from '../notifications/NotificationsButton';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import { supabase } from '../../lib/supabase';
+import { prefetchAppRoute, prefetchRoleRoutes } from '../../lib/prefetchApp';
 
 interface NavItem {
   to: string;
@@ -92,6 +94,16 @@ export function DashboardLayout() {
   const perfilTo = role === 'embajador' ? '/app/embajador-perfil' : '/app/perfil';
   // En mobile el perfil se accede desde el avatar de arriba, no en la barra inferior.
   const bottomNav = nav.filter((item) => item.to !== perfilTo);
+
+  useEffect(() => {
+    const warmRoutes = () => prefetchRoleRoutes(role, !!profile?.is_admin);
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(warmRoutes, { timeout: 1200 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const timer = setTimeout(warmRoutes, 350);
+    return () => clearTimeout(timer);
+  }, [role, profile?.is_admin]);
 
   const [accountOpen, setAccountOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -163,7 +175,7 @@ export function DashboardLayout() {
   return (
     <div className="dash-root min-h-screen" data-theme={theme}>
       <MessagesProvider>
-        <header className="dash-panel sticky top-0 z-40 border-b border-white/10 pt-[env(safe-area-inset-top)]">
+        <header className="dash-panel sticky top-0 z-[45] border-b border-white/10 pt-[env(safe-area-inset-top)]">
           <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-4">
             <Link to="/" className="shrink-0">
               <img src={logo} alt="PasantIA" className="h-7 w-auto rounded-lg" />
@@ -190,6 +202,9 @@ export function DashboardLayout() {
                     to={to}
                     end={end}
                     title={label}
+                    onMouseEnter={() => prefetchAppRoute(to)}
+                    onFocus={() => prefetchAppRoute(to)}
+                    onTouchStart={() => prefetchAppRoute(to)}
                     className={({ isActive }) =>
                       `group flex h-14 flex-col items-center justify-center gap-0.5 border-b-2 px-3 text-[11px] font-medium transition-colors ${
                         isActive
@@ -234,7 +249,7 @@ export function DashboardLayout() {
                 </button>
 
                 {accountOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-2xl border border-white/12 dash-panel shadow-2xl shadow-black/40">
+                  <div className="dash-panel absolute right-0 top-full mt-2 max-h-[calc(100dvh-env(safe-area-inset-top)-5rem)] w-56 overflow-y-auto rounded-2xl border border-white/12 shadow-2xl shadow-black/40">
                     <div className="border-b border-white/10 px-4 py-3">
                       <p className="truncate text-sm font-semibold text-white">
                         {profile?.full_name || 'Cuenta'}
@@ -243,6 +258,8 @@ export function DashboardLayout() {
                     </div>
                     <Link
                       to={perfilTo}
+                      onMouseEnter={() => prefetchAppRoute(perfilTo)}
+                      onTouchStart={() => prefetchAppRoute(perfilTo)}
                       onClick={() => setAccountOpen(false)}
                       className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/[0.06] hover:text-white"
                     >
@@ -251,12 +268,23 @@ export function DashboardLayout() {
                     {profile?.is_admin && (
                       <Link
                         to="/app/admin"
+                        onMouseEnter={() => prefetchAppRoute('/app/admin')}
+                        onTouchStart={() => prefetchAppRoute('/app/admin')}
                         onClick={() => setAccountOpen(false)}
                         className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/[0.06] hover:text-white"
                       >
                         <Shield className="h-[18px] w-[18px]" /> Administración
                       </Link>
                     )}
+                    <Link
+                      to="/app/ayuda"
+                      onMouseEnter={() => prefetchAppRoute('/app/ayuda')}
+                      onTouchStart={() => prefetchAppRoute('/app/ayuda')}
+                      onClick={() => setAccountOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/[0.06] hover:text-white"
+                    >
+                      <CircleHelp className="h-[18px] w-[18px]" /> Ayuda y soporte
+                    </Link>
                     <NotificationsButton />
                     <div
                       className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-white/40"
@@ -299,6 +327,9 @@ export function DashboardLayout() {
                 to={to}
                 end={end}
                 title={label}
+                onMouseEnter={() => prefetchAppRoute(to)}
+                onFocus={() => prefetchAppRoute(to)}
+                onTouchStart={() => prefetchAppRoute(to)}
                 className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 pb-1.5 pt-2"
               >
                 {({ isActive }) => (

@@ -12,6 +12,7 @@ import { Accent } from '../components/ui/Accent';
 import { BenefitsGrid } from '../components/sections/BenefitsGrid';
 import { HowItWorks, type Step } from '../components/sections/HowItWorks';
 import { EarlyAccessCTA } from '../components/sections/EarlyAccessCTA';
+import { RoleProductDemo } from '../components/sections/RoleProductDemo';
 import { IMAGES } from '../lib/images';
 import estudianteImg from '../assets/images/estudiante.webp';
 
@@ -89,6 +90,7 @@ export default function Estudiantes() {
         headlineLines={['Tu primera pasantía,', <Accent key="a">sin vueltas.</Accent>]}
         subtitle="Accedé a pasantías reales en empresas verificadas. Un proceso simple, directo y sin mandar CVs a ciegas."
         role="estudiante"
+        demoHref="#demo-plataforma"
         image={estudianteImg}
         imageAlt="Estudiante con mochila y cuadernos en el campus"
         imageClassName="aspect-[3/4] object-top"
@@ -110,6 +112,8 @@ export default function Estudiantes() {
           </p>
         </div>
       </Section>
+
+      <RoleProductDemo role="estudiante" />
 
       {/* Beneficios */}
       <Section>

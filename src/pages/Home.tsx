@@ -31,6 +31,7 @@ import { HowItWorks, type Step } from '../components/sections/HowItWorks';
 import { EarlyAccessCTA } from '../components/sections/EarlyAccessCTA';
 import { PlatformShowcase } from '../components/sections/PlatformShowcase';
 import { InteractiveAppPreview } from '../components/sections/InteractiveAppPreview';
+import { InstallAppSection } from '../components/sections/InstallAppSection';
 import { IMAGES, AVATARS } from '../lib/images';
 import estudianteImg from '../assets/images/estudiante.webp';
 import iconosHero from '../assets/images/iconos-hero.png';
@@ -110,7 +111,7 @@ const FAQ = [
 
 export default function Home() {
   useSeo({
-    title: 'Conectamos estudiantes y empresas',
+    title: 'Conectamos estudiantes con empresas',
     description:
       'PasantIA es la plataforma que conecta estudiantes con empresas para gestionar pasantías. Sumate al acceso anticipado.',
     path: '/',
@@ -135,10 +136,7 @@ export default function Home() {
             <div className="relative w-full">
               <AnimatedHeadline
                 lines={[
-                  <span
-                    key="l1"
-                    className="flex flex-wrap items-center justify-start gap-x-3 gap-y-2"
-                  >
+                  <span key="l1" className="flex flex-wrap items-center justify-start gap-x-3 gap-y-2">
                     <span className="whitespace-nowrap">La pasantía</span>
                     <img
                       src={iconosHero}
@@ -147,18 +145,9 @@ export default function Home() {
                     />
                   </span>,
                   'que buscabas,',
-                  <span
-                    key="tw"
-                    className="block min-h-[2.1em] whitespace-normal sm:min-h-0 sm:whitespace-nowrap"
-                  >
+                  <span key="tw" className="block min-h-[2.1em] whitespace-normal sm:min-h-0 sm:whitespace-nowrap">
                     <Typewriter
-                      words={[
-                        'sin buscar a ciegas.',
-                        'sin caos.',
-                        'sin vueltas.',
-                        'sin CVs al vacío.',
-                        'sin LinkedIn.',
-                      ]}
+                      words={['sin buscar a ciegas.', 'sin caos.', 'sin vueltas.', 'sin CVs al vacío.', 'sin LinkedIn.']}
                       className="font-light text-white/95"
                     />
                   </span>,
@@ -177,39 +166,6 @@ export default function Home() {
               Conectá con empresas verificadas, gestioná todo desde un mismo lugar y
               arrancá tu pasantía.
             </motion.p>
-
-            {/* CTAs centrados con glow bajo el primario */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.85 }}
-              className="relative mt-7 flex gap-3"
-            >
-              <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-24 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/25 blur-3xl" />
-              <div>
-                <Button
-                  as="link"
-                  to="/estudiantes"
-                  size="lg"
-                  className="justify-center"
-                >
-                  <GraduationCap size={20} />
-                  Soy estudiante
-                </Button>
-              </div>
-              <div>
-                <Button
-                  as="link"
-                  to="/empresas"
-                  variant="secondary"
-                  size="lg"
-                  className="justify-center"
-                >
-                  <Building2 size={20} />
-                  Soy empresa
-                </Button>
-              </div>
-            </motion.div>
 
             {/* Fila de confianza: avatares apilados + divisor + estado */}
             <motion.div
@@ -253,23 +209,45 @@ export default function Home() {
               initial={{ opacity: 0, y: 18, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.75, delay: 0.2 }}
-              className="flex flex-col items-center"
+              className="relative flex flex-col items-center md:pr-12 xl:pr-16"
             >
               <div className="mb-2 text-center md:hidden">
                 <h1 className="text-[1.75rem] font-semibold leading-[0.98] tracking-tighter text-white">
-                  <span className="block">Tu oportunidad,</span>
-                  <span className="mt-1 block whitespace-nowrap font-light text-white/70">
-                    en un solo{' '}
-                    <Typewriter
-                      words={['lugar.', 'perfil.', 'clic.']}
-                      className="inline-block min-w-[7ch] text-left font-semibold text-white"
-                      typeSpeed={80}
-                      deleteSpeed={45}
-                      holdTime={1500}
-                    />
+                  <span className="block"><span className="font-normal">Conectamos</span> estudiantes</span>
+                  <span className="mt-1 block font-light text-white/85">
+                    con <span className="font-semibold text-white">empresas</span>
                   </span>
                 </h1>
               </div>
+              <motion.div
+                initial={{ opacity: 0, x: 12, rotate: 5 }}
+                animate={{ opacity: 1, x: 0, rotate: 3, y: [0, -3, 0] }}
+                transition={{
+                  opacity: { duration: 0.5, delay: 1.15 },
+                  x: { duration: 0.5, delay: 1.15 },
+                  rotate: { duration: 0.5, delay: 1.15 },
+                  y: { duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1.7 },
+                }}
+                className="pointer-events-none relative z-30 mb-1 self-end pr-4 text-right text-white md:absolute md:right-0 md:top-[8.5rem] md:mb-0 md:max-w-[7.5rem] md:self-auto md:pr-0"
+                aria-label="Más de 100 estudiantes ya se registraron"
+              >
+                <p className="font-['Caveat'] text-sm font-semibold leading-[0.9] drop-shadow-md sm:text-base md:text-sm xl:text-base">
+                  +100 estudiantes
+                  <br />
+                  <span className="font-medium text-white/85">ya se registraron</span>
+                </p>
+                <svg viewBox="0 0 130 14" className="ml-auto mt-1 h-2.5 w-20 xl:w-24" fill="none" aria-hidden>
+                  <motion.path
+                    d="M3 9C35 3 83 5 127 8"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: 1, opacity: 0.75 }}
+                    transition={{ duration: 0.8, delay: 1.55 }}
+                  />
+                </svg>
+              </motion.div>
               <InteractiveAppPreview variant="hero" />
               <div className="mt-3 flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[9px] font-medium text-white/65 md:hidden">
                 <span className="relative flex h-2 w-2">
@@ -278,21 +256,24 @@ export default function Home() {
                 </span>
                 Acceso anticipado abierto
               </div>
-              <div className="mt-2 flex flex-col items-center gap-1.5 md:hidden">
+              <div className="mt-2 flex items-center justify-center gap-2 md:hidden">
+                <Button
+                  as="link"
+                  to="/ingresar"
+                  variant="secondary"
+                  size="sm"
+                  className="!h-9 justify-center px-4 text-xs"
+                >
+                  Ingresar
+                </Button>
                 <Button
                   onClick={() => openEarlyAccess('estudiante')}
                   size="sm"
-                  className="!h-9 px-5 text-xs"
+                  className="!h-9 justify-center px-4 text-xs"
                 >
                   Registrarme
                   <ArrowRight size={14} />
                 </Button>
-                <Link
-                  to="/ingresar"
-                  className="rounded-full px-3 py-1 text-[10px] font-medium text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white"
-                >
-                  Ingresar al acceso anticipado
-                </Link>
               </div>
             </motion.div>
           </div>
@@ -391,6 +372,9 @@ export default function Home() {
           steps={STEPS}
         />
       </Section>
+
+      {/* ===================== INSTALAR COMO APP ===================== */}
+      <InstallAppSection />
 
       {/* ===================== DOBLE CTA ESTUDIANTE / EMPRESA ===================== */}
       <Section className="bg-brand-950/30">

@@ -19,7 +19,7 @@ export function Footer() {
           <div>
             <Link
               to="/"
-              className="flex items-center gap-2.5"
+              className="flex items-center gap-1"
               aria-label="PasantIA — Inicio"
             >
               <img
@@ -27,7 +27,7 @@ export function Footer() {
                 alt="PasantIA"
                 className="h-10 w-10 rounded-lg object-contain"
               />
-              <span className="text-2xl font-semibold tracking-tight">PasantIA</span>
+              <span className="text-2xl font-semibold tracking-tight">asantIA</span>
             </Link>
             <p className="mt-5 max-w-xs text-[15px] font-light leading-relaxed text-white/60">
               Conectamos estudiantes con empresas para gestionar pasantías, sin buscar

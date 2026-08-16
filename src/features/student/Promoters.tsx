@@ -4,10 +4,11 @@
 // - Si no lo es, ve un botón para solicitar ser promotor por Instagram.
 // Los códigos NO se autogeneran: los asigna el admin.
 import { useEffect, useState } from 'react';
-import { Copy, Check, Share2, Trophy, Send, Trash2, GraduationCap, Building2, Users, Link2, Info, X, Gift, Rocket } from 'lucide-react';
+import { Copy, Check, Share2, Trophy, Send, Trash2, GraduationCap, Building2, Users, Link2, Info, X, Gift, Rocket, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { CONTACT } from '../../lib/constants';
+import { createAchievementStory, shareAchievementFile } from '../../lib/achievementStory';
 import { Button } from '../../components/ui/Button';
 import { Card, PageHeader, PageLoader } from '../ui/primitives';
 import rankingIcon from '../../assets/images/emojis/estrella-de-ranking.svg';
@@ -24,10 +25,33 @@ interface MyPromoter {
 interface RankRow {
   code: string;
   nombre: string;
+  avatar_url?: string | null;
   total: number;
   estudiantes: number;
   empresas: number;
   comunidades: number;
+}
+
+async function createPromoterAchievementImage(row: RankRow, rank: number): Promise<File> {
+  const safeName = row.nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'promotor';
+  return createAchievementStory({
+    filename: `logro-promotor-pasantia-${safeName}.png`,
+    kicker: 'Promotor/a que hace crecer la red',
+    name: row.nombre,
+    subtitle: 'Promotor/a de PasantIA',
+    rankingLabel: 'Ranking de promotores',
+    rank,
+    primaryLabel: 'Personas que sumé',
+    primaryValue: row.total,
+    primaryCaption: 'nuevas personas conectadas con la comunidad',
+    stats: [
+      { label: 'estudiantes', value: row.estudiantes },
+      { label: 'empresas', value: row.empresas },
+      { label: 'comunidades', value: row.comunidades },
+    ],
+    quote: 'Compartir también es abrir puertas.',
+    closing: 'La red crece cuando las oportunidades se comparten.',
+  });
 }
 
 // Mensaje sugerido para pedir ser promotor (se copia al portapapeles).
@@ -42,6 +66,8 @@ export default function Promoters() {
   const [copied, setCopied] = useState(false);
   const [msgCopied, setMsgCopied] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const [sharingAchievement, setSharingAchievement] = useState(false);
+  const [shareMessage, setShareMessage] = useState('');
 
   const link = me ? `${window.location.origin}/?ref=${me.code}` : '';
 
@@ -51,6 +77,7 @@ export default function Promoters() {
       ((data ?? []) as RankRow[]).map((r) => ({
         code: r.code,
         nombre: r.nombre,
+        avatar_url: r.avatar_url ?? null,
         total: Number(r.total),
         estudiantes: Number(r.estudiantes),
         empresas: Number(r.empresas),
@@ -85,6 +112,7 @@ export default function Promoters() {
         ((rank.data ?? []) as RankRow[]).map((r) => ({
           code: r.code,
           nombre: r.nombre,
+          avatar_url: r.avatar_url ?? null,
           total: Number(r.total),
           estudiantes: Number(r.estudiantes),
           empresas: Number(r.empresas),
@@ -131,6 +159,29 @@ export default function Promoters() {
     }
   }
 
+  async function shareAchievement(row: RankRow, rank: number) {
+    setSharingAchievement(true);
+    setShareMessage('');
+    try {
+      const file = await createPromoterAchievementImage(row, rank);
+      const result = await shareAchievementFile(
+        file,
+        `Mi logro como promotor/a de PasantIA: puesto #${rank}`,
+        `Estoy en el puesto #${rank} del ranking de promotores de PasantIA y ya sumé ${row.total} personas.`
+      );
+      setShareMessage(
+        result === 'shared'
+          ? 'Imagen lista para compartir.'
+          : 'Imagen descargada. Ya podés publicarla en LinkedIn, tu story o estado.'
+      );
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      setShareMessage('No pudimos generar la imagen. Intentá de nuevo.');
+    } finally {
+      setSharingAchievement(false);
+    }
+  }
+
   async function requestPromoter() {
     // Copiamos el mensaje sugerido y abrimos el DM de Instagram de Pasant.ia.
     try {
@@ -144,6 +195,9 @@ export default function Promoters() {
   }
 
   if (loading) return <PageLoader />;
+
+  const myRankIndex = me ? ranking.findIndex((row) => row.code === me.code) : -1;
+  const myRankRow = myRankIndex >= 0 ? ranking[myRankIndex] : null;
 
   return (
     <div>
@@ -248,6 +302,26 @@ export default function Promoters() {
               </div>
             ))}
           </div>
+          {myRankRow && (
+            <button
+              type="button"
+              onClick={() => void shareAchievement(myRankRow, myRankIndex + 1)}
+              disabled={sharingAchievement}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold !text-white transition hover:bg-brand-400 disabled:cursor-wait disabled:opacity-70 sm:mt-4"
+            >
+              {sharingAchievement ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Share2 className="h-4 w-4" />
+              )}
+              Compartir mi logro
+            </button>
+          )}
+          {shareMessage && (
+            <p className="mt-2 text-center text-xs font-medium text-brand-500" role="status">
+              {shareMessage}
+            </p>
+          )}
         </Card>
       ) : (
         <Card className="mb-6 text-center">
@@ -282,11 +356,14 @@ export default function Promoters() {
       <div className="space-y-2.5">
         {ranking.map((r, i) => {
           const top = i === 0;
+          const isMe = me?.code === r.code;
           return (
             <div
               key={r.code}
               className={`group flex items-center gap-3 rounded-2xl border p-3 transition sm:gap-4 sm:p-4 ${
-                top
+                isMe
+                  ? 'border-brand-500/40 bg-brand-500/[0.06]'
+                  : top
                   ? 'border-white/25 bg-white/[0.06]'
                   : 'border-white/10 bg-white/[0.03] hover:border-white/20'
               }`}
@@ -294,6 +371,26 @@ export default function Promoters() {
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/12 bg-white/5 text-sm font-bold text-white/70">
                 {i + 1}
               </div>
+
+              {r.avatar_url ? (
+                <img
+                  src={r.avatar_url}
+                  alt={r.nombre}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-10 w-10 shrink-0 rounded-full border border-white/12 object-cover"
+                />
+              ) : (
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/10 text-xs font-bold text-white">
+                  {r.nombre
+                    .trim()
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map((part) => part[0])
+                    .join('')
+                    .toUpperCase() || 'U'}
+                </span>
+              )}
 
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[15px] font-bold text-white">{r.nombre}</p>
@@ -316,6 +413,23 @@ export default function Promoters() {
                   sumados
                 </p>
               </div>
+
+              {isMe && (
+                <button
+                  type="button"
+                  onClick={() => void shareAchievement(r, i + 1)}
+                  disabled={sharingAchievement}
+                  title="Compartir mi logro"
+                  aria-label="Compartir mi logro"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-500 !text-white transition hover:bg-brand-400 disabled:cursor-wait disabled:opacity-70"
+                >
+                  {sharingAchievement ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Share2 className="h-4 w-4" />
+                  )}
+                </button>
+              )}
 
               {profile?.is_admin && (
                 <button

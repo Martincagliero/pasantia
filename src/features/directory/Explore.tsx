@@ -1,6 +1,6 @@
 // Sección "Explorar perfiles": cualquier rol puede buscar y ver perfiles
 // de estudiantes (públicos), empresas y embajadores (verificados).
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Search,
   X,
@@ -19,6 +19,7 @@ import {
   UserCheck,
   Network,
   ChevronDown,
+  Clock3,
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
@@ -26,8 +27,10 @@ import type {
   StudentProfile,
   CompanyProfile,
   AmbassadorProfile,
+  ConnectionRequest,
   Post,
 } from '../../lib/database.types';
+import { sendPush } from '../../lib/notify';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
 import { TextField } from '../ui/Field';
 import { useModalGuard } from '../ui/modalGuard';
@@ -55,6 +58,8 @@ type Selected =
   | { type: 'estudiantes'; row: StudentRow }
   | { type: 'empresas'; row: CompanyRow }
   | { type: 'embajadores'; row: AmbRow };
+
+type ConnectionState = 'none' | 'sent' | 'received' | 'connected';
 
 function initials(name: string): string {
   const parts = (name || '').trim().split(/\s+/).filter(Boolean);
@@ -120,13 +125,14 @@ export default function Explore() {
   const { profile: viewer } = useAuth();
   const viewerRole = viewer?.role;
   const uid = viewer?.id ?? null;
-  const [tab, setTab] = useState<Tab>('estudiantes');
+  const [tab, setTab] = useState<Tab>(() => (params.get('tab') === 'red' ? 'red' : 'estudiantes'));
   const [query, setQuery] = useState(params.get('q') ?? '');
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [companies, setCompanies] = useState<CompanyRow[]>([]);
   const [ambassadors, setAmbassadors] = useState<AmbRow[]>([]);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
+  const [connectionRequests, setConnectionRequests] = useState<ConnectionRequest[]>([]);
   const [selected, setSelected] = useState<Selected | null>(null);
 
   // La barra superior puede buscar varias veces sin desmontar esta página.
@@ -134,22 +140,34 @@ export default function Explore() {
     setQuery(paramQuery);
   }, [paramQuery]);
 
-  // Cargar a quién sigue el usuario actual.
   useEffect(() => {
+    if (params.get('tab') === 'red') setTab('red');
+  }, [params]);
+
+  const loadNetwork = useCallback(async () => {
     if (!uid) return;
-    let active = true;
-    (async () => {
-      const { data } = await supabase
+    const [followsResult, requestsResult] = await Promise.all([
+      supabase
         .from('follows')
         .select('following_id')
-        .eq('follower_id', uid);
-      if (!active) return;
-      setFollowingIds(new Set((data ?? []).map((f) => (f as { following_id: string }).following_id)));
-    })();
-    return () => {
-      active = false;
-    };
+        .eq('follower_id', uid),
+      supabase
+        .from('connection_requests')
+        .select('*')
+        .or(`requester_id.eq.${uid},recipient_id.eq.${uid}`)
+        .in('status', ['pending', 'accepted']),
+    ]);
+    setFollowingIds(
+      new Set(
+        (followsResult.data ?? []).map((f) => (f as { following_id: string }).following_id)
+      )
+    );
+    setConnectionRequests((requestsResult.data as ConnectionRequest[] | null) ?? []);
   }, [uid]);
+
+  useEffect(() => {
+    void loadNetwork();
+  }, [loadNetwork]);
 
   // Seguir / dejar de seguir (optimista).
   async function toggleFollow(targetId: string) {
@@ -177,6 +195,91 @@ export default function Explore() {
         }
       }
     }
+  }
+
+  function connectionStateFor(targetId: string): ConnectionState {
+    if (followingIds.has(targetId)) return 'connected';
+    const request = connectionRequests.find(
+      (row) =>
+        row.status === 'pending' &&
+        ((row.requester_id === uid && row.recipient_id === targetId) ||
+          (row.recipient_id === uid && row.requester_id === targetId))
+    );
+    if (!request) return 'none';
+    return request.requester_id === uid ? 'sent' : 'received';
+  }
+
+  async function respondConnection(request: ConnectionRequest, accept: boolean) {
+    const { error } = await supabase.rpc('respond_connection_request', {
+      p_request_id: request.id,
+      p_accept: accept,
+    });
+    if (error) {
+      alert(
+        /does not exist|schema cache|function/i.test(error.message)
+          ? 'Falta correr la migración "migracion-solicitudes-conexion.sql" en Supabase.'
+          : 'No se pudo responder la solicitud.'
+      );
+      return;
+    }
+    setConnectionRequests((current) => current.filter((row) => row.id !== request.id));
+    if (accept) {
+      setFollowingIds((current) => new Set(current).add(request.requester_id));
+      sendPush({
+        userId: request.requester_id,
+        title: 'Conexión aceptada',
+        body: `${viewer?.full_name || 'Un estudiante'} aceptó tu solicitud de conexión.`,
+        url: '/app/explorar?tab=red',
+      });
+    }
+  }
+
+  async function toggleConnection(targetId: string) {
+    if (!uid || targetId === uid) return;
+    const state = connectionStateFor(targetId);
+    const existing = connectionRequests.find(
+      (row) =>
+        row.status === 'pending' &&
+        ((row.requester_id === uid && row.recipient_id === targetId) ||
+          (row.recipient_id === uid && row.requester_id === targetId))
+    );
+    if (state === 'connected') return;
+    if (state === 'received' && existing) {
+      await respondConnection(existing, true);
+      return;
+    }
+    if (state === 'sent' && existing) {
+      const { error } = await supabase.from('connection_requests').delete().eq('id', existing.id);
+      if (!error) setConnectionRequests((current) => current.filter((row) => row.id !== existing.id));
+      return;
+    }
+
+    const { data, error } = await supabase.rpc('request_connection', { p_recipient_id: targetId });
+    if (error) {
+      alert(
+        /does not exist|schema cache|function/i.test(error.message)
+          ? 'Falta correr la migración "migracion-solicitudes-conexion.sql" en Supabase.'
+          : 'No se pudo enviar la solicitud.'
+      );
+      return;
+    }
+    setConnectionRequests((current) => [
+      ...current,
+      {
+        id: String(data),
+        requester_id: uid,
+        recipient_id: targetId,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ]);
+    sendPush({
+      userId: targetId,
+      title: 'Nueva solicitud de conexión',
+      body: `${viewer?.full_name || 'Un estudiante'} quiere conectar con vos.`,
+      url: '/app/explorar?tab=red',
+    });
   }
 
 
@@ -363,6 +466,11 @@ export default function Explore() {
           companies={companies.filter((c) => followingIds.has(c.id))}
           students={students.filter((s) => followingIds.has(s.id))}
           ambassadors={ambassadors.filter((a) => followingIds.has(a.id))}
+          requests={connectionRequests.filter(
+            (request) => request.status === 'pending' && request.recipient_id === uid
+          )}
+          allStudents={students}
+          onRespond={respondConnection}
           onOpen={setSelected}
         />
       ) : count === 0 ? (
@@ -419,6 +527,8 @@ export default function Explore() {
           onMessage={handleMessage}
           isFollowing={followingIds.has(selected.row.id)}
           onToggleFollow={() => toggleFollow(selected.row.id)}
+          connectionState={connectionStateFor(selected.row.id)}
+          onToggleConnection={() => toggleConnection(selected.row.id)}
         />
       )}
     </div>
@@ -477,12 +587,16 @@ function DetailModal({
   onMessage,
   isFollowing,
   onToggleFollow,
+  connectionState,
+  onToggleConnection,
 }: {
   selected: Selected;
   onClose: () => void;
   onMessage: (id: string, name: string, avatar?: string | null) => void;
   isFollowing: boolean;
   onToggleFollow: () => void;
+  connectionState: ConnectionState;
+  onToggleConnection: () => void;
 }) {
   useModalGuard();
   return (
@@ -502,7 +616,7 @@ function DetailModal({
         </button>
 
         {selected.type === 'estudiantes' && (
-          <StudentDetail row={selected.row} onMessage={onMessage} isFollowing={isFollowing} onToggleFollow={onToggleFollow} />
+          <StudentDetail row={selected.row} onMessage={onMessage} connectionState={connectionState} onToggleConnection={onToggleConnection} />
         )}
         {selected.type === 'empresas' && (
           <CompanyDetail row={selected.row} onMessage={onMessage} isFollowing={isFollowing} onToggleFollow={onToggleFollow} />
@@ -542,6 +656,34 @@ function FollowButton({
   );
 }
 
+function ConnectionButton({ state, onClick }: { state: ConnectionState; onClick: () => void }) {
+  const label =
+    state === 'connected'
+      ? 'Conectado'
+      : state === 'sent'
+        ? 'Solicitud enviada'
+        : state === 'received'
+          ? 'Aceptar conexión'
+          : 'Conectar';
+  const passive = state === 'connected' || state === 'sent';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={state === 'connected'}
+      title={state === 'sent' ? 'Tocá para cancelar la solicitud' : undefined}
+      className={
+        passive
+          ? 'inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-default'
+          : 'inline-flex items-center gap-2 rounded-full bg-brand-500 px-5 py-2.5 text-sm font-semibold !text-white transition hover:bg-brand-400'
+      }
+    >
+      {state === 'sent' ? <Clock3 size={16} /> : state === 'connected' ? <UserCheck size={16} /> : <UserPlus size={16} />}
+      {label}
+    </button>
+  );
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-5">
@@ -564,7 +706,7 @@ function LinkChip({ href, label, icon }: { href: string; label: string; icon: Re
   );
 }
 
-function StudentDetail({ row, onMessage, isFollowing, onToggleFollow }: { row: StudentRow; onMessage: (id: string, name: string, avatar?: string | null) => void; isFollowing: boolean; onToggleFollow: () => void }) {
+function StudentDetail({ row, onMessage, connectionState, onToggleConnection }: { row: StudentRow; onMessage: (id: string, name: string, avatar?: string | null) => void; connectionState: ConnectionState; onToggleConnection: () => void }) {
   const name = row.profile?.full_name || 'Estudiante';
   return (
     <>
@@ -595,12 +737,7 @@ function StudentDetail({ row, onMessage, isFollowing, onToggleFollow }: { row: S
       </div>
 
       <div className="mb-5 flex flex-wrap gap-3">
-        <FollowButton
-          isFollowing={isFollowing}
-          onClick={onToggleFollow}
-          followLabel="Conectar"
-          followingLabel="Conectado"
-        />
+        <ConnectionButton state={connectionState} onClick={onToggleConnection} />
         <button
           onClick={() => onMessage(row.id, name, row.avatar_url)}
           className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-brand-600 transition hover:bg-brand-950 hover:text-white"
@@ -798,11 +935,17 @@ function NetworkTab({
   companies,
   students,
   ambassadors,
+  requests,
+  allStudents,
+  onRespond,
   onOpen,
 }: {
   companies: CompanyRow[];
   students: StudentRow[];
   ambassadors: AmbRow[];
+  requests: ConnectionRequest[];
+  allStudents: StudentRow[];
+  onRespond: (request: ConnectionRequest, accept: boolean) => void;
   onOpen: (s: Selected) => void;
 }) {
   const followedIds = useMemo(
@@ -850,7 +993,8 @@ function NetworkTab({
     };
   }, [followedIds]);
 
-  const nothing = companies.length === 0 && students.length === 0 && ambassadors.length === 0;
+  const nothing =
+    companies.length === 0 && students.length === 0 && ambassadors.length === 0 && requests.length === 0;
 
   if (nothing) {
     return (
@@ -864,6 +1008,47 @@ function NetworkTab({
 
   return (
     <div className="space-y-5">
+      {requests.length > 0 && (
+        <NetSection title={`Solicitudes (${requests.length})`}>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {requests.map((request) => {
+              const student = allStudents.find((row) => row.id === request.requester_id);
+              const name = student?.profile?.full_name || 'Estudiante';
+              return (
+                <div
+                  key={request.id}
+                  className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2.5"
+                >
+                  <Avatar url={student?.avatar_url} name={name} className="h-9 w-9" />
+                  <button
+                    type="button"
+                    onClick={() => student && onOpen({ type: 'estudiantes', row: student })}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <span className="block truncate text-sm font-semibold text-white">{name}</span>
+                    <span className="block text-[11px] text-white/45">Quiere conectar con vos</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void onRespond(request, false)}
+                    className="rounded-lg px-2 py-1.5 text-xs font-medium text-white/55 hover:bg-white/10"
+                  >
+                    Rechazar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void onRespond(request, true)}
+                    className="rounded-lg bg-brand-500 px-2.5 py-1.5 text-xs font-semibold !text-white"
+                  >
+                    Aceptar
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </NetSection>
+      )}
+
       {/* Empresas y Estudiantes: apilados en mobile (evita cortes), lado a lado en sm+ */}
       <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
         <NetSection title={`Empresas (${companies.length})`}>

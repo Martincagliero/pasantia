@@ -8,9 +8,10 @@ import { Section } from '../../components/ui/Section';
 import { Reveal } from '../../components/ui/Reveal';
 import { Accent } from '../../components/ui/Accent';
 import { Button } from '../../components/ui/Button';
-import { Mail, Share2, Users, TrendingUp, Trophy, Zap } from 'lucide-react';
+import { Mail, Monitor, Share2, Users, TrendingUp, Trophy, Zap } from 'lucide-react';
 import { useEarlyAccess } from '../../components/early-access/EarlyAccess';
 import { EmojiText } from '../ui/EmojiText';
+import { RoleProductDemo } from '../../components/sections/RoleProductDemo';
 
 export default function AmbassadorDirectory() {
   const { open: openEarlyAccess } = useEarlyAccess();
@@ -27,7 +28,13 @@ export default function AmbassadorDirectory() {
         .order('created_at', { ascending: false });
       
       if (!active) return;
-      setAmbassadors((data as AmbassadorProfile[]) || []);
+      setAmbassadors(
+        ((data as AmbassadorProfile[]) || []).filter(
+          (ambassador) =>
+            !/\(DEMO\)/i.test(ambassador.org_name ?? '') &&
+            !/cuenta DEMO|comunidad DEMO/i.test(ambassador.description ?? '')
+        )
+      );
       setLoading(false);
     })();
     return () => {
@@ -55,6 +62,11 @@ export default function AmbassadorDirectory() {
             <p className="mt-4 text-lg font-light text-white/70">
               Comunidades e influencers que difunden pasantías verificadas
             </p>
+            <div className="mt-6">
+              <Button as="a" href="#demo-plataforma" variant="secondary">
+                <Monitor className="h-4 w-4" /> Probar panel de embajador
+              </Button>
+            </div>
           </div>
         </Reveal>
 
@@ -97,6 +109,8 @@ export default function AmbassadorDirectory() {
           </Reveal>
         </div>
       </Section>
+
+      <RoleProductDemo role="embajador" />
 
       {/* Embajadores verificados */}
       {ambassadors.length === 0 ? (

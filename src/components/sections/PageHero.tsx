@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Monitor } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
@@ -13,6 +14,7 @@ interface PageHeroProps {
   subtitle: string;
   role: 'estudiante' | 'empresa';
   ctaLabel?: string;
+  demoHref?: string;
   image: string;
   imageAlt: string;
   /** Clases de encuadre de la imagen (aspect/object-position). */
@@ -27,6 +29,7 @@ export function PageHero({
   subtitle,
   role,
   ctaLabel = 'Solicitar acceso anticipado',
+  demoHref,
   image,
   imageAlt,
   imageClassName = 'aspect-[4/5] object-center sm:aspect-[4/3] lg:aspect-[4/5]',
@@ -57,11 +60,16 @@ export function PageHero({
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.75 }}
-              className="mt-8"
+              className="mt-8 flex flex-wrap gap-3"
             >
               <Button onClick={() => open(role)} size="lg">
                 {ctaLabel}
               </Button>
+              {demoHref && (
+                <Button as="a" href={demoHref} variant="secondary" size="lg">
+                  <Monitor className="h-5 w-5" /> Ver demo interactivo
+                </Button>
+              )}
             </motion.div>
           </div>
 

@@ -213,6 +213,15 @@ export interface Follow {
   created_at: string;
 }
 
+export interface ConnectionRequest {
+  id: string;
+  requester_id: string;
+  recipient_id: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+  updated_at: string;
+}
+
 // --- Tipado genérico para el cliente de Supabase ---
 // Mantenido intencionalmente simple; el SDK igual funciona sin tipos exhaustivos.
 export interface Database {
@@ -254,6 +263,11 @@ export interface Database {
         Row: Follow;
         Insert: Partial<Follow> & Pick<Follow, 'follower_id' | 'following_id'>;
         Update: Partial<Follow>;
+      };
+      connection_requests: {
+        Row: ConnectionRequest;
+        Insert: Pick<ConnectionRequest, 'requester_id' | 'recipient_id'>;
+        Update: Partial<ConnectionRequest>;
       };
     };
     Views: Record<string, never>;

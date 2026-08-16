@@ -222,5 +222,6 @@ export const NAV_LINKS = [
 // Enlaces que hacen scroll a secciones del home (hash).
 export const HASH_LINKS = [
   { label: 'Cómo funciona', to: '/#como-funciona' },
+  { label: 'La app', to: '/#instalar-app' },
   { label: 'FAQs', to: '/#faqs' },
 ] as const;

@@ -27,6 +27,8 @@ interface AuthContextValue {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signInWithGoogle: () => Promise<{ error: string | null }>;
+  requestPasswordReset: (email: string) => Promise<{ error: string | null }>;
   signUp: (data: SignUpData) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -67,9 +69,9 @@ async function ensureSubtable(role: Role, id: string, name: string): Promise<voi
 // registrarse (guardados en user_metadata). Lo crea si falta o lo corrige si
 // quedó con otro rol. Así cada cuenta tiene su perfil separado y correcto.
 async function ensureProfile(user: User): Promise<Profile | null> {
-  const meta = (user.user_metadata ?? {}) as { role?: string; full_name?: string };
+  const meta = (user.user_metadata ?? {}) as { role?: string; full_name?: string; name?: string };
   const metaRole = VALID_ROLES.includes(meta.role as Role) ? (meta.role as Role) : null;
-  const metaName = (meta.full_name ?? '').trim();
+  const metaName = (meta.full_name ?? meta.name ?? '').trim();
 
   let prof: Profile | null = null;
   {
@@ -161,12 +163,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error ? translateError(error.message) : null };
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: { prompt: 'select_account' },
+      },
+    });
+    return { error: error ? translateError(error.message) : null };
+  }, []);
+
+  const requestPasswordReset = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/recovery`,
+    });
+    return { error: error ? translateError(error.message) : null };
+  }, []);
+
   const signUp = useCallback(async ({ email, password, fullName, role }: SignUpData) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { full_name: fullName, role },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
     return { error: error ? translateError(error.message) : null };
@@ -182,8 +203,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session, loadProfile]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ session, profile, loading, signIn, signUp, signOut, refreshProfile }),
-    [session, profile, loading, signIn, signUp, signOut, refreshProfile]
+    () => ({ session, profile, loading, signIn, signInWithGoogle, requestPasswordReset, signUp, signOut, refreshProfile }),
+    [session, profile, loading, signIn, signInWithGoogle, requestPasswordReset, signUp, signOut, refreshProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

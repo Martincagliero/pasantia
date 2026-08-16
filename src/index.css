@@ -231,6 +231,19 @@ input:-webkit-autofill:active {
    violeta/celeste) se muestran en gris neutro. No afecta login ni landing.
    ============================================================================= */
 .dash-root .bg-brand-500 { background-color: #0a66c2 !important; }
+.dash-root .dash-card-accent::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  right: 0.75rem;
+  bottom: -14px;
+  left: 0.75rem;
+  height: 18px;
+  border-radius: 0 0 1rem 1rem;
+  background: linear-gradient(to bottom, rgb(255 255 255 / 0.82) 0%, rgb(255 255 255 / 0.34) 38%, transparent 100%);
+  filter: blur(1.5px);
+  opacity: 0.9;
+}
 .dash-root .bg-brand-400 { background-color: #2178cf !important; }
 .dash-root .hover\:bg-brand-400:hover { background-color: #004182 !important; }
 .dash-root .bg-brand-500\/15,

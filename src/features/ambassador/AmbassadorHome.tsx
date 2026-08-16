@@ -158,7 +158,7 @@ function QuickLink({ to, icon, title, desc }: { to: string; icon: React.ReactNod
   return (
     <Link
       to={to}
-      className="glass group flex items-center justify-between gap-3 rounded-2xl border border-white/12 p-3.5 transition hover:-translate-y-0.5 hover:border-white/25 hover:shadow-xl hover:shadow-brand-950/30 sm:p-4"
+      className="dash-card-accent glass group relative flex items-center justify-between gap-3 rounded-2xl border border-white/12 p-3.5 transition hover:-translate-y-0.5 hover:border-white/25 hover:shadow-xl hover:shadow-brand-950/30 sm:p-4"
     >
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-white">{icon}</div>

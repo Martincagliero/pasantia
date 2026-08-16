@@ -46,6 +46,7 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') return;
   const isSupabaseApi =
     url.hostname.endsWith('.supabase.co') &&
     (url.pathname.startsWith('/rest/') || url.pathname.startsWith('/auth/') || url.pathname.startsWith('/functions/'));

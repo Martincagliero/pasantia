@@ -4,7 +4,7 @@
 // - Si no lo es, ve un botón para solicitar ser promotor por Instagram.
 // Los códigos NO se autogeneran: los asigna el admin.
 import { useEffect, useState } from 'react';
-import { Copy, Check, Share2, Trophy, Send, Trash2, GraduationCap, Building2, Users, Link2, Info, X, Gift, Rocket, Loader2 } from 'lucide-react';
+import { Copy, Check, Share2, Trophy, Send, Trash2, GraduationCap, Building2, Users, Link2, Info, X, Gift, Rocket, Loader2, ChevronDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { CONTACT } from '../../lib/constants';
@@ -66,6 +66,7 @@ export default function Promoters() {
   const [copied, setCopied] = useState(false);
   const [msgCopied, setMsgCopied] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const [promoterDetailsOpen, setPromoterDetailsOpen] = useState(false);
   const [sharingAchievement, setSharingAchievement] = useState(false);
   const [shareMessage, setShareMessage] = useState('');
 
@@ -261,67 +262,98 @@ export default function Promoters() {
       {/* Bloque personal: enlace propio (si sos promotor) o CTA para solicitarlo */}
       {me ? (
         <Card className="mb-4 !p-3 sm:mb-6 sm:!p-5">
-          <div className="flex items-center gap-2 text-white/70">
-            <Link2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="text-[11px] font-semibold uppercase tracking-wide sm:text-xs">Tu enlace de promotor</span>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-white/70">
+              <Link2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="text-[11px] font-semibold uppercase tracking-wide sm:text-xs">Tu enlace de promotor</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPromoterDetailsOpen((open) => !open)}
+              className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-brand-500 sm:hidden"
+              aria-expanded={promoterDetailsOpen}
+            >
+              {promoterDetailsOpen ? 'Ocultar' : 'Ver detalles'}
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${promoterDetailsOpen ? 'rotate-180' : ''}`} />
+            </button>
           </div>
-          <p className="mt-1 text-[11px] text-white/60 sm:mt-2 sm:text-sm">
-            Todo el que se registre con este enlace queda contabilizado a tu nombre.
-          </p>
 
-          <div className="mt-2.5 flex flex-col gap-2 sm:mt-4 sm:flex-row">
+          <div className={`${promoterDetailsOpen ? 'hidden' : 'flex'} mt-2.5 gap-2 sm:hidden`}>
             <input
               readOnly
               value={link}
               onFocus={(e) => e.currentTarget.select()}
-              className="min-w-0 flex-1 rounded-full border border-white/12 bg-white/5 px-3 py-2 text-xs text-white/90 outline-none focus:border-brand-400/60 sm:px-4 sm:py-2.5 sm:text-sm"
+              className="min-w-0 flex-1 truncate rounded-full border border-white/12 bg-white/5 px-3 py-2 text-xs text-white/90 outline-none focus:border-brand-400/60"
             />
-            <div className="flex gap-2">
-              <Button variant="secondary" size="sm" onClick={copyLink} className="flex-1 sm:flex-none">
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                {copied ? 'Copiado' : 'Copiar'}
-              </Button>
-              <Button variant="primary" size="sm" onClick={share} className="flex-1 sm:flex-none">
-                <Share2 className="h-4 w-4" />
-                Compartir
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3">
-            {[
-              { label: 'Estudiantes', value: me.estudiantes },
-              { label: 'Empresas', value: me.empresas },
-            ].map((m) => (
-              <div
-                key={m.label}
-                className="rounded-xl border border-white/10 bg-white/5 p-1.5 text-center sm:rounded-2xl sm:p-3"
-              >
-                <p className="text-base font-bold text-white sm:text-2xl">{m.value}</p>
-                <p className="mt-0.5 text-[9px] leading-tight text-white/55 sm:text-xs">{m.label}</p>
-              </div>
-            ))}
-          </div>
-          {myRankRow && (
             <button
               type="button"
-              onClick={() => void shareAchievement(myRankRow, myRankIndex + 1)}
-              disabled={sharingAchievement}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold !text-white transition hover:bg-brand-400 disabled:cursor-wait disabled:opacity-70 sm:mt-4"
+              onClick={copyLink}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 text-brand-500"
+              aria-label={copied ? 'Enlace copiado' : 'Copiar enlace'}
             >
-              {sharingAchievement ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Share2 className="h-4 w-4" />
-              )}
-              Compartir mi logro
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             </button>
-          )}
-          {shareMessage && (
-            <p className="mt-2 text-center text-xs font-medium text-brand-500" role="status">
-              {shareMessage}
+          </div>
+
+          <div className={`${promoterDetailsOpen ? 'block' : 'hidden'} sm:block`}>
+            <p className="mt-2 text-[11px] text-white/60 sm:text-sm">
+              Todo el que se registre con este enlace queda contabilizado a tu nombre.
             </p>
-          )}
+
+            <div className="mt-2.5 flex flex-col gap-2 sm:mt-4 sm:flex-row">
+              <input
+                readOnly
+                value={link}
+                onFocus={(e) => e.currentTarget.select()}
+                className="min-w-0 flex-1 rounded-full border border-white/12 bg-white/5 px-3 py-2 text-xs text-white/90 outline-none focus:border-brand-400/60 sm:px-4 sm:py-2.5 sm:text-sm"
+              />
+              <div className="flex gap-2">
+                <Button variant="secondary" size="sm" onClick={copyLink} className="flex-1 sm:flex-none">
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied ? 'Copiado' : 'Copiar'}
+                </Button>
+                <Button variant="primary" size="sm" onClick={share} className="flex-1 sm:flex-none">
+                  <Share2 className="h-4 w-4" />
+                  Compartir
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-5 sm:gap-3">
+              {[
+                { label: 'Estudiantes', value: me.estudiantes },
+                { label: 'Empresas', value: me.empresas },
+              ].map((m) => (
+                <div
+                  key={m.label}
+                  className="rounded-xl border border-white/10 bg-white/5 p-1.5 text-center sm:rounded-2xl sm:p-3"
+                >
+                  <p className="text-base font-bold text-white sm:text-2xl">{m.value}</p>
+                  <p className="mt-0.5 text-[9px] leading-tight text-white/55 sm:text-xs">{m.label}</p>
+                </div>
+              ))}
+            </div>
+            {myRankRow && (
+              <button
+                type="button"
+                onClick={() => void shareAchievement(myRankRow, myRankIndex + 1)}
+                disabled={sharingAchievement}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold !text-white transition hover:bg-brand-400 disabled:cursor-wait disabled:opacity-70 sm:mt-4"
+              >
+                {sharingAchievement ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Share2 className="h-4 w-4" />
+                )}
+                Compartir mi logro
+              </button>
+            )}
+            {shareMessage && (
+              <p className="mt-2 text-center text-xs font-medium text-brand-500" role="status">
+                {shareMessage}
+              </p>
+            )}
+          </div>
         </Card>
       ) : (
         <Card className="mb-6 text-center">

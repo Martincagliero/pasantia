@@ -20,6 +20,10 @@ const NormasComunidad = lazy(() => import('./pages/NormasComunidad'));
 
 // --- Sistema interno (auth + panel) ---
 const Login = lazy(() => import('./features/auth/pages/Login'));
+const AuthCallback = lazy(() => import('./features/auth/pages/AuthCallback'));
+const RecoveryCallback = lazy(() => import('./features/auth/pages/RecoveryCallback'));
+const ForgotPassword = lazy(() => import('./features/auth/pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./features/auth/pages/ResetPassword'));
 const DashboardHome = lazy(() => import('./features/dashboard/DashboardHome'));
 const BrowseInternships = lazy(() => import('./features/student/BrowseInternships'));
 const MyApplications = lazy(() => import('./features/student/MyApplications'));
@@ -54,7 +58,10 @@ export default function App() {
   // sin la Navbar ni el Footer de la landing.
   const isAppArea =
     location.pathname.startsWith('/app') ||
-    location.pathname === '/ingresar';
+    location.pathname.startsWith('/auth/') ||
+    location.pathname === '/ingresar' ||
+    location.pathname === '/recuperar-password' ||
+    location.pathname === '/restablecer-password';
 
   return (
     <EarlyAccessProvider>
@@ -62,6 +69,10 @@ export default function App() {
         <Suspense fallback={fallback}>
           <Routes>
           <Route path="/ingresar" element={<Login />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/auth/recovery" element={<RecoveryCallback />} />
+          <Route path="/recuperar-password" element={<ForgotPassword />} />
+          <Route path="/restablecer-password" element={<ResetPassword />} />
           <Route
             path="/app"
             element={

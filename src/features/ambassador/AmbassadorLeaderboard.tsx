@@ -1,6 +1,7 @@
 // Embajador: ranking de comunidades por difusiones.
 import { useEffect, useState } from 'react';
 import { ExternalLink, Loader2, Share2, Trophy } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { AmbassadorProfile } from '../../lib/database.types';
@@ -44,6 +45,7 @@ async function createAchievementImage(row: Ranked, rank: number): Promise<File> 
 
 export default function AmbassadorLeaderboard() {
   const { session } = useAuth();
+  const navigate = useNavigate();
   const [rows, setRows] = useState<Ranked[]>([]);
   const [loading, setLoading] = useState(true);
   const [sharingId, setSharingId] = useState<string | null>(null);
@@ -174,17 +176,15 @@ export default function AmbassadorLeaderboard() {
                   </div>
                   <p className="truncate text-xs text-white/50">{orgTypeLabel(r.org_type)}</p>
                 </div>
-                {r.instagram_url && (
-                  <a
-                    href={r.instagram_url}
-                    target="_blank"
-                    rel="noreferrer"
+                <button
+                    type="button"
+                    onClick={() => navigate(`/app/explorar?u=${encodeURIComponent(r.id)}`)}
                     className="shrink-0 text-white/50 transition hover:text-white"
-                    title="Instagram"
+                    title={`Ver perfil de ${r.name}`}
+                    aria-label={`Ver perfil de ${r.name}`}
                   >
                     <ExternalLink className="h-4 w-4" />
-                  </a>
-                )}
+                </button>
                 {isMe && (
                   <button
                     type="button"

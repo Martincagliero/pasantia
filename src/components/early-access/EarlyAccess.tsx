@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, ArrowRight, ArrowLeft, Check, Eye, EyeOff, Camera } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   CONTACT,
   FORM_ENDPOINT,
@@ -26,6 +26,12 @@ import { supabase } from '../../lib/supabase';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { getReferral } from '../../lib/referral';
 import { useAuth } from '../../features/auth/AuthProvider';
+import { GoogleLogo } from '../../features/auth/GoogleLogo';
+import {
+  clearPendingGoogleOnboarding,
+  readPendingGoogleOnboarding,
+  savePendingGoogleOnboarding,
+} from '../../features/auth/googleOnboarding';
 import estudianteImg from '../../assets/images/estudiante.webp';
 import logo from '../../assets/logo.png';
 
@@ -130,6 +136,7 @@ type Screen =
   | 'mensaje';
 
 export function EarlyAccessProvider({ children }: { children: ReactNode }) {
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [presetRole, setPresetRole] = useState<Role | undefined>(undefined);
 
@@ -144,19 +151,19 @@ export function EarlyAccessProvider({ children }: { children: ReactNode }) {
   // directo el onboarding de acceso anticipado en la pantalla de roles, para
   // que se registre y sume al promotor que la invitó.
   useEffect(() => {
-    if (typeof window === 'undefined') return;
     try {
-      const params = new URLSearchParams(window.location.search);
+      const params = new URLSearchParams(location.search);
       const hasRef = !!(params.get('ref') || params.get('promo'));
-      const inAppArea = window.location.pathname.startsWith('/app');
-      if (hasRef && !inAppArea) {
+      const isGoogleRegistration = params.get('registro') === 'google';
+      const inAppArea = location.pathname.startsWith('/app');
+      if ((hasRef || isGoogleRegistration) && !inAppArea) {
         setPresetRole(undefined);
         setIsOpen(true);
       }
     } catch {
       /* ignore: si falla, se puede abrir manualmente */
     }
-  }, []);
+  }, [location.pathname, location.search]);
 
   return (
     <EarlyAccessContext.Provider value={value}>
@@ -177,22 +184,48 @@ function Onboarding({
   presetRole?: Role;
   onClose: () => void;
 }) {
-  const { signUp, signOut } = useAuth();
+  const { signUp, signOut, signInWithGoogle, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [data, setData] = useState<FormData>(EMPTY);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [googleAuth, setGoogleAuth] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      setData({ ...EMPTY, role: presetRole ?? '' });
-      setStep(0);
+      const isGoogleReturn = new URLSearchParams(window.location.search).get('registro') === 'google';
+      const pendingGoogle = isGoogleReturn ? readPendingGoogleOnboarding() : null;
+      const initialRole = pendingGoogle?.role ?? presetRole ?? '';
+      setData({ ...EMPTY, role: initialRole });
+      setStep(pendingGoogle?.role ? 1 : 0);
       setSubmitted(false);
       setError(null);
       setSubmitting(false);
+      setGoogleAuth(isGoogleReturn);
       document.body.style.overflow = 'hidden';
+
+      if (isGoogleReturn) {
+        void supabase.auth.getUser().then(({ data: userData }) => {
+          const user = userData.user;
+          if (!user) return;
+          const metadata = user.user_metadata as {
+            full_name?: string;
+            name?: string;
+            avatar_url?: string;
+            picture?: string;
+          };
+          setData((current) => ({
+            ...current,
+            nombre: (metadata.full_name ?? metadata.name ?? '').trim(),
+            email: user.email ?? '',
+            password: '',
+            avatar_preview: metadata.avatar_url ?? metadata.picture ?? '',
+          }));
+          setGoogleAuth(true);
+        });
+      }
     } else {
       document.body.style.overflow = '';
     }
@@ -201,15 +234,15 @@ function Onboarding({
     };
   }, [isOpen, presetRole]);
 
-  // Dejamos visible el check de éxito y luego llevamos al ingreso.
+  // Dejamos visible el check de éxito y luego continuamos según el método usado.
   useEffect(() => {
     if (!submitted) return;
     const timer = window.setTimeout(() => {
       onClose();
-      navigate('/ingresar');
+      navigate(googleAuth ? '/app' : '/ingresar');
     }, 2500);
     return () => window.clearTimeout(timer);
-  }, [submitted, navigate, onClose]);
+  }, [submitted, googleAuth, navigate, onClose]);
 
   const set = (patch: Partial<FormData>) => setData((d) => ({ ...d, ...patch }));
 
@@ -235,8 +268,8 @@ function Onboarding({
         return (
           data.nombre.trim().length > 1 &&
           isEmail(data.email) &&
-          data.password.trim().length >= 6 &&
-          data.instagram_link.trim() !== '' &&
+          (googleAuth || data.password.trim().length >= 6) &&
+          (data.role === 'embajador' || data.instagram_link.trim() !== '') &&
           // La fecha de nacimiento y ser mayor de 18 sólo se exige a estudiantes.
           (data.role !== 'estudiante' || isAdultStudent(data.fecha_nacimiento))
         );
@@ -258,11 +291,37 @@ function Onboarding({
   const next = () => setStep((s) => Math.min(s + 1, screens.length - 1));
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
+  async function closeRegistration(goToLogin = false) {
+    if (googleAuth && !submitted) {
+      clearPendingGoogleOnboarding();
+      try {
+        await signOut();
+      } catch {
+        /* ignore */
+      }
+    }
+    onClose();
+    if (goToLogin || googleAuth) navigate('/ingresar');
+  }
+
+  async function startGoogleRegistration() {
+    if (!data.role) return;
+    savePendingGoogleOnboarding(data.role);
+    setSubmitting(true);
+    setError(null);
+    const result = await signInWithGoogle();
+    if (result.error) {
+      clearPendingGoogleOnboarding();
+      setError(result.error);
+      setSubmitting(false);
+    }
+  }
+
   // Cerrar con Escape; avanzar con Enter (si es válido y no estamos en textarea).
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') void closeRegistration();
       if (
         e.key === 'Enter' &&
         !(e.target instanceof HTMLTextAreaElement) &&
@@ -309,30 +368,38 @@ function Onboarding({
     };
 
     try {
-      // Crear la cuenta con la contraseña elegida, para que luego pueda ingresar
-      // con su email + contraseña. No dejamos la sesión abierta: es lista de espera.
-      if (isSupabaseConfigured && data.role && data.password) {
-        const { error: suErr } = await signUp({
-          email: data.email.trim(),
-          password: data.password,
-          fullName: data.nombre.trim(),
-          role: data.role as Role,
-        });
+      if (isSupabaseConfigured && data.role && (googleAuth || data.password)) {
+        let uid: string | undefined;
+
+        if (googleAuth) {
+          const { data: userData, error: userError } = await supabase.auth.getUser();
+          if (userError || !userData.user) throw new Error('google-session');
+          uid = userData.user.id;
+        } else {
+          const { error: suErr } = await signUp({
+            email: data.email.trim(),
+            password: data.password,
+            fullName: data.nombre.trim(),
+            role: data.role as Role,
+          });
         // Si signUp falla (cuenta ya existe, sin cupo/lugar en el plan, límite
         // de Supabase, etc.) NO cortamos el registro: la solicitud igual queda
         // guardada en early_access_requests (lo que realmente nos llega) y le
         // mostramos éxito al usuario. La cuenta se puede crear después a mano.
-        if (suErr) {
-          console.warn('Acceso anticipado: signUp falló, se continúa igual:', suErr);
+          if (suErr) {
+            console.warn('Acceso anticipado: signUp falló, se continúa igual:', suErr);
+          }
+          const { data: sess } = await supabase.auth.getSession();
+          uid = sess.session?.user?.id;
         }
 
         // Con la sesión recién creada, dejamos su PERFIL con el rol elegido
         // (no dependemos del trigger de la base). Cada cuenta = su rol + panel.
         try {
-          const { data: sess } = await supabase.auth.getSession();
-          const uid = sess.session?.user?.id;
           if (uid) {
-            let avatarUrl: string | null = null;
+            let avatarUrl: string | null = googleAuth && /^https:\/\//.test(data.avatar_preview)
+              ? data.avatar_preview
+              : null;
             if (data.avatar_file) {
               const ext = data.avatar_file.name.split('.').pop()?.toLowerCase() || 'jpg';
               const path = `avatars/${uid}.${ext}`;
@@ -406,18 +473,36 @@ function Onboarding({
                 is_public: true,
               });
             }
+
+            if (googleAuth) {
+              const { data: userData, error: userError } = await supabase.auth.getUser();
+              if (userError || !userData.user) throw new Error('google-session');
+              const { error: metadataError } = await supabase.auth.updateUser({
+                data: {
+                  ...userData.user.user_metadata,
+                  full_name: data.nombre.trim(),
+                  role: data.role,
+                  pasantia_onboarding_completed: true,
+                },
+              });
+              if (metadataError) throw metadataError;
+              await refreshProfile();
+            }
           }
-        } catch {
+        } catch (profileError) {
+          if (googleAuth) throw profileError;
           /* si falla, el perfil se crea igual al iniciar sesión */
         }
 
         // Best-effort: si signUp no llegó a crear sesión (cuenta ya existía,
         // error de cupo/rate-limit, etc.) signOut() puede tirar "Auth session
         // missing". No dejamos que eso corte el registro.
-        try {
-          await signOut();
-        } catch {
-          /* ignore */
+        if (!googleAuth) {
+          try {
+            await signOut();
+          } catch {
+            /* ignore */
+          }
         }
       }
 
@@ -490,6 +575,7 @@ function Onboarding({
       } catch {
         /* ignore */
       }
+      if (googleAuth) clearPendingGoogleOnboarding();
       setSubmitted(true);
     } catch {
       setError(
@@ -519,7 +605,7 @@ function Onboarding({
           <div className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[22rem] w-[22rem] -translate-x-1/2 rounded-full bg-white/10 blur-[130px] sm:h-[36rem] sm:w-[36rem]" />
 
           {/* Header */}
-          <header className="flex items-center justify-between px-5 py-4 sm:px-10 sm:py-5">
+          <header className="flex shrink-0 items-center justify-between px-3 py-3 sm:px-10 sm:py-5 lg:py-3">
             <div className="flex items-center gap-2.5">
               <img src={logo} alt="PasantIA" className="h-8 w-8 rounded-lg object-contain" />
               <span className="text-lg font-semibold tracking-tight">PasantIA</span>
@@ -527,15 +613,14 @@ function Onboarding({
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => {
-                  onClose();
-                  navigate('/ingresar');
+                  void closeRegistration(true);
                 }}
                 className="rounded-full px-3 py-2 text-sm font-semibold text-white/75 transition-colors hover:bg-white/10 hover:text-white sm:px-4"
               >
                 Ingresar
               </button>
               <button
-                onClick={onClose}
+                onClick={() => void closeRegistration()}
                 aria-label="Cerrar"
                 className="flex h-10 w-10 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
               >
@@ -554,14 +639,15 @@ function Onboarding({
           </div>
 
           {/* Contenido */}
-          <div className="flex flex-1 overflow-y-auto px-4 py-3 sm:px-8 sm:py-6">
+          <div className="flex min-h-0 flex-1 overflow-y-auto px-0 py-2 sm:px-8 sm:py-6 lg:overflow-hidden lg:py-2">
             {submitted ? (
               <div className="m-auto w-full max-w-md">
                 <Success
                   role={data.role}
+                  googleAuth={googleAuth}
                   onLogin={() => {
                     onClose();
-                    navigate('/ingresar');
+                    navigate(googleAuth ? '/app' : '/ingresar');
                   }}
                 />
               </div>
@@ -573,7 +659,7 @@ function Onboarding({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -16 }}
                   transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                  className="m-auto w-full max-w-lg sm:max-w-2xl md:max-w-4xl"
+                  className="mt-0 w-full px-0 pb-3 sm:m-auto sm:max-w-2xl sm:pb-0 md:max-w-4xl"
                 >
                   {current === 'role' && (
                     <StepRole
@@ -585,7 +671,15 @@ function Onboarding({
                       }}
                     />
                   )}
-                  {current === 'contacto' && <StepContacto data={data} set={set} />}
+                  {current === 'contacto' && (
+                    <StepContacto
+                      data={data}
+                      set={set}
+                      googleAuth={googleAuth}
+                      googleLoading={submitting}
+                      onGoogle={startGoogleRegistration}
+                    />
+                  )}
                   {current === 'eduUni' && <StepEduUni data={data} set={set} />}
                   {current === 'eduArea' && <StepEduArea data={data} set={set} />}
                   {current === 'empBasic' && <StepEmpBasic data={data} set={set} />}
@@ -600,17 +694,17 @@ function Onboarding({
 
           {/* Footer navegación */}
           {!submitted && current !== 'role' && (
-            <footer className="flex items-center justify-between gap-2 border-t border-white/10 px-4 py-3 text-sm sm:gap-4 sm:px-10 sm:py-5">
+            <footer className="flex shrink-0 items-center justify-between gap-1 border-t border-white/10 px-2 py-2 text-sm sm:gap-4 sm:px-10 sm:py-5 lg:py-2">
               <button
                 onClick={back}
                 disabled={step === 0}
-                className="inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold text-white/70 transition-colors hover:text-white disabled:pointer-events-none disabled:opacity-0"
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-2 text-xs font-semibold text-white/70 transition-colors hover:text-white disabled:pointer-events-none disabled:opacity-0 sm:gap-1.5 sm:px-4 sm:py-2.5 sm:text-sm"
               >
                 <ArrowLeft size={16} />
                 Atrás
               </button>
 
-              <span className="text-sm text-white/40">
+              <span className="whitespace-nowrap text-[11px] text-white/40 sm:text-sm">
                 Paso {step + 1} de {screens.length}
               </span>
 
@@ -618,7 +712,7 @@ function Onboarding({
                 <button
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold text-brand-600 transition-colors hover:bg-brand-950 hover:text-white disabled:opacity-60"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2.5 text-xs font-semibold text-brand-600 transition-colors hover:bg-brand-950 hover:text-white disabled:opacity-60 sm:gap-2 sm:px-7 sm:py-3 sm:text-sm"
                 >
                   {submitting ? 'Enviando…' : 'Enviar'}
                   {!submitting && <Check size={16} />}
@@ -627,7 +721,7 @@ function Onboarding({
                 <button
                   onClick={next}
                   disabled={!canContinue()}
-                  className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold text-brand-600 transition-colors hover:bg-brand-950 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2.5 text-xs font-semibold text-brand-600 transition-colors hover:bg-brand-950 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 sm:gap-2 sm:px-7 sm:py-3 sm:text-sm"
                 >
                   Continuar
                   <ArrowRight size={16} />
@@ -645,9 +739,9 @@ function Onboarding({
 
 function Heading({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <div className="mb-5 sm:mb-8 text-center">
-      <h2 className="text-xl font-semibold tracking-tighter sm:text-4xl md:text-5xl">{title}</h2>
-      {subtitle && <p className="mt-2 sm:mt-4 text-sm sm:text-lg md:text-xl font-light text-white/60">{subtitle}</p>}
+    <div className="mb-5 text-center sm:mb-8 lg:mb-4">
+      <h2 className="text-xl font-semibold tracking-tighter sm:text-4xl md:text-5xl lg:text-3xl">{title}</h2>
+      {subtitle && <p className="mt-2 text-sm font-light text-white/60 sm:mt-4 sm:text-lg md:text-xl lg:mt-2 lg:text-base">{subtitle}</p>}
     </div>
   );
 }
@@ -663,18 +757,21 @@ function StepRole({
     {
       role: 'estudiante' as const,
       img: estudianteImg,
+      objectPosition: '65% 18%',
       label: 'Soy estudiante',
       desc: 'Busco una pasantía',
     },
     {
       role: 'empresa' as const,
       img: IMAGES.officeTeam,
+      objectPosition: 'center',
       label: 'Soy empresa',
       desc: 'Busco talento joven',
     },
     {
       role: 'embajador' as const,
       img: IMAGES.ambassadorCommunity,
+      objectPosition: 'center',
       label: 'Soy comunidad / embajador',
       desc: 'Comparto oportunidades con mi comunidad',
     },
@@ -699,12 +796,13 @@ function StepRole({
                 alt=""
                 aria-hidden
                 loading="lazy"
-                className="h-24 w-full object-cover object-center sm:h-36 md:h-44 transition-transform duration-500 group-hover:scale-105"
+                className="h-24 w-full object-cover object-center transition-transform duration-500 group-hover:scale-105 sm:h-36 md:h-44 lg:h-32"
+                style={{ objectPosition: o.objectPosition }}
               />
             </div>
             <div className="flex flex-1 flex-col justify-start px-2 pb-2 pt-3 sm:px-3 sm:pb-3 sm:pt-4">
-              <span className="block text-sm font-semibold leading-snug sm:text-2xl">{o.label}</span>
-              <span className="mt-1 block text-[11px] leading-snug text-white/55 sm:mt-1.5 sm:text-base">{o.desc}</span>
+              <span className="block text-sm font-semibold leading-snug sm:text-2xl lg:text-xl">{o.label}</span>
+              <span className="mt-1 block text-[11px] leading-snug text-white/55 sm:mt-1.5 sm:text-base lg:text-sm">{o.desc}</span>
             </div>
           </button>
         ))}
@@ -716,9 +814,15 @@ function StepRole({
 function StepContacto({
   data,
   set,
+  googleAuth,
+  googleLoading,
+  onGoogle,
 }: {
   data: FormData;
   set: (p: Partial<FormData>) => void;
+  googleAuth: boolean;
+  googleLoading: boolean;
+  onGoogle: () => void;
 }) {
   const [avatarError, setAvatarError] = useState<string | null>(null);
 
@@ -743,29 +847,58 @@ function StepContacto({
   return (
     <div className="mx-auto max-w-md">
       <Heading title="Empecemos por tus datos" />
-      <div className="space-y-4">
-        <Input
-          label="Nombre y apellido"
-          value={data.nombre}
-          onChange={(v) => set({ nombre: v })}
-          placeholder="Tu nombre"
-          autoFocus
-        />
-        <Input
-          label="Email"
-          type="email"
-          value={data.email}
-          onChange={(v) => set({ email: v })}
-          placeholder="tucorreo@email.com"
-        />
-        <Input
-          label="Contraseña"
-          type="password"
-          value={data.password}
-          onChange={(v) => set({ password: v })}
-          placeholder="Al menos 6 caracteres"
-        />
-        <div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/[0.04] p-3">
+      <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-x-4 lg:gap-y-3 lg:space-y-0">
+        {googleAuth ? (
+          <div className="flex items-center gap-3 rounded-2xl border border-white/20 bg-white/[0.08] p-3 lg:col-span-2">
+            <GoogleLogo className="h-6 w-6 shrink-0" />
+            <div className="min-w-0 text-left">
+              <p className="truncate text-sm font-semibold text-white">{data.nombre}</p>
+              <p className="truncate text-xs text-white/60">{data.email}</p>
+            </div>
+            <span className="ml-auto shrink-0 text-xs font-semibold text-white/65">Verificado</span>
+          </div>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={onGoogle}
+              disabled={googleLoading}
+              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-brand-900 transition hover:bg-white/90 disabled:opacity-60 lg:col-span-2"
+            >
+              <GoogleLogo />
+              {googleLoading ? 'Conectando…' : 'Registrarme con Google'}
+            </button>
+            <div className="flex items-center gap-3 lg:col-span-2" aria-hidden>
+              <span className="h-px flex-1 bg-white/15" />
+              <span className="text-[11px] font-medium uppercase text-white/45">o con email</span>
+              <span className="h-px flex-1 bg-white/15" />
+            </div>
+            <Input
+              label="Nombre y apellido"
+              value={data.nombre}
+              onChange={(v) => set({ nombre: v })}
+              placeholder="Tu nombre"
+              autoFocus
+            />
+            <Input
+              label="Email"
+              type="email"
+              value={data.email}
+              onChange={(v) => set({ email: v })}
+              placeholder="tucorreo@email.com"
+            />
+            <div className="lg:col-span-2">
+              <Input
+                label="Contraseña"
+                type="password"
+                value={data.password}
+                onChange={(v) => set({ password: v })}
+                placeholder="Al menos 6 caracteres"
+              />
+            </div>
+          </>
+        )}
+        <div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/[0.04] p-3 lg:col-span-2 lg:py-2">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/[0.06]">
             {data.avatar_preview ? (
               <img src={data.avatar_preview} alt="Vista previa" className="h-full w-full object-cover" />
@@ -798,19 +931,21 @@ function StepContacto({
             )}
           </div>
         )}
-        <Input
-          label="Instagram u otra red"
-          value={data.instagram_link}
-          onChange={(v) => set({ instagram_link: v })}
-          placeholder="@tuusuario o link (instagram.com/tuusuario)"
-        />
+        {data.role !== 'embajador' && (
+          <Input
+            label="Instagram u otra red"
+            value={data.instagram_link}
+            onChange={(v) => set({ instagram_link: v })}
+            placeholder="@tuusuario o link (instagram.com/tuusuario)"
+          />
+        )}
         <Input
           label="Teléfono (opcional)"
           value={data.telefono}
           onChange={(v) => set({ telefono: v })}
           placeholder="+54 9 ..."
         />
-        <label className="flex cursor-pointer items-center gap-2.5 text-left text-sm text-white/75 select-none">
+        <label className="flex cursor-pointer items-center gap-2.5 text-left text-sm text-white/75 select-none lg:col-span-2">
           <input
             type="checkbox"
             checked={data.recordar}
@@ -868,7 +1003,7 @@ function StepEduArea({
         value={data.area}
         onChange={(v) => set({ area: v })}
       />
-      <div className="mx-auto mt-6 sm:mt-10 max-w-md space-y-4 sm:space-y-6">
+      <div className="mx-auto mt-6 max-w-md space-y-4 sm:mt-10 sm:space-y-6 lg:mt-4 lg:space-y-3">
         <SubGroup label="Año de cursada">
           <ChipGroup
             small
@@ -900,7 +1035,7 @@ function StepEmpBasic({
   return (
     <div>
       <Heading title="Contanos sobre tu empresa" />
-      <div className="mx-auto mb-6 sm:mb-8 max-w-md">
+      <div className="mx-auto mb-6 max-w-md sm:mb-8 lg:mb-4">
         <Input
           label="Empresa"
           value={data.empresa}
@@ -937,7 +1072,7 @@ function StepEmpDetail({
           onChange={(v) => set({ tamano: v })}
         />
       </SubGroup>
-      <div className="mx-auto mt-6 sm:mt-8 max-w-md">
+      <div className="mx-auto mt-6 max-w-md sm:mt-8 lg:mt-4">
         <Input
           label="Perfil que buscás (opcional)"
           value={data.perfil}
@@ -959,7 +1094,7 @@ function StepEmbBasic({
   return (
     <div>
       <Heading title="Contanos sobre tu comunidad" />
-      <div className="mx-auto mb-6 sm:mb-8 max-w-md">
+      <div className="mx-auto mb-6 max-w-md sm:mb-8 lg:mb-4">
         <Input
           label="Nombre de la comunidad"
           value={data.org_name}
@@ -989,7 +1124,7 @@ function StepEmbDetail({
   return (
     <div>
       <Heading title="Tu presencia en redes" />
-      <div className="mx-auto mb-6 sm:mb-8 max-w-md">
+      <div className="mx-auto mb-6 max-w-md sm:mb-8 lg:mb-4">
         <Input
           label="Instagram"
           value={data.instagram_link}
@@ -1040,7 +1175,7 @@ function StepMensaje({
   );
 }
 
-function Success({ role, onLogin }: { role: FormData['role']; onLogin: () => void }) {
+function Success({ role, googleAuth, onLogin }: { role: FormData['role']; googleAuth: boolean; onLogin: () => void }) {
   return (
     <div className="text-center">
       <motion.div
@@ -1055,18 +1190,22 @@ function Success({ role, onLogin }: { role: FormData['role']; onLogin: () => voi
         ¡Estás en la lista!
       </h2>
       <p className="mx-auto mt-5 max-w-md text-lg font-light text-white/65">
-        Tu cuenta quedó creada. En un momento te llevamos a iniciar sesión con tu email y contraseña
-        {role === 'empresa'
-          ? ' para empresas.'
-          : role === 'estudiante'
-            ? ' para estudiantes.'
-            : '.'}
+        {googleAuth
+          ? 'Tu cuenta y tu perfil quedaron listos. En un momento te llevamos al panel.'
+          : 'Tu cuenta quedó creada. En un momento te llevamos a iniciar sesión con tu email y contraseña'}
+        {!googleAuth && (
+          role === 'empresa'
+            ? ' para empresas.'
+            : role === 'estudiante'
+              ? ' para estudiantes.'
+              : '.'
+        )}
       </p>
       <button
         onClick={onLogin}
         className="mt-10 inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-brand-600 transition-colors hover:bg-brand-950 hover:text-white"
       >
-        Iniciar sesión ahora
+        {googleAuth ? 'Ir al panel' : 'Iniciar sesión ahora'}
       </button>
     </div>
   );
@@ -1075,7 +1214,7 @@ function Success({ role, onLogin }: { role: FormData['role']; onLogin: () => voi
 /* ------------------------------ UI atoms ------------------------------ */
 
 const inputCls =
-  'w-full rounded-2xl border border-white/15 bg-white/[0.06] px-5 py-3.5 text-[15px] text-white placeholder:text-white/35 outline-none transition-colors focus:border-white/40 focus:bg-white/[0.1]';
+  'w-full rounded-2xl border border-white/15 bg-white/[0.06] px-5 py-3.5 text-[15px] text-white placeholder:text-white/35 outline-none transition-colors focus:border-white/40 focus:bg-white/[0.1] lg:py-2.5';
 
 function Input({
   label,

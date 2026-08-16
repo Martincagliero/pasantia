@@ -15,7 +15,7 @@ export function Card({
 }) {
   return (
     <div
-      className={`glass rounded-2xl border border-white/12 p-3 sm:p-5 ${
+      className={`dash-card-accent glass relative rounded-2xl border border-white/12 p-3 sm:p-5 ${
         hover
           ? 'transition duration-200 hover:-translate-y-0.5 hover:border-white/25 hover:shadow-xl hover:shadow-brand-950/30'
           : ''

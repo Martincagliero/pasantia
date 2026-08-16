@@ -1,16 +1,17 @@
-// Página de ingreso (login) — con "P" 3D, campos con íconos y movimiento 3D (tilt/parallax).
+// Página de ingreso (login) — con "P" 3D, campos con íconos y movimiento tilt.
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useAuth } from '../AuthProvider';
+import { GoogleLogo } from '../GoogleLogo';
 import { isSupabaseConfigured } from '../../../lib/supabase';
 import { useEarlyAccess } from '../../../components/early-access/EarlyAccess';
 import loginLogo from '../../../assets/images/logoingresar.png';
 import logoP from '../../../assets/images/logo-p-blanco.png';
 
 export default function Login() {
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const { open: openEarlyAccess } = useEarlyAccess();
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,8 +38,6 @@ export default function Login() {
 
   const pRotateY = useTransform(sx, [-0.5, 0.5], [-26, 26]);
   const pRotateX = useTransform(sy, [-0.5, 0.5], [14, -14]);
-  const glowX = useTransform(sx, [-0.5, 0.5], [40, -40]);
-  const glowY = useTransform(sy, [-0.5, 0.5], [40, -40]);
 
   function handleMove(e: React.MouseEvent) {
     mx.set(e.clientX / window.innerWidth - 0.5);
@@ -65,25 +64,27 @@ export default function Login() {
     navigate(from, { replace: true });
   }
 
+  async function handleGoogleSignIn() {
+    setError(null);
+    setLoading(true);
+    const { error } = await signInWithGoogle();
+    if (error) {
+      setError(error);
+      setLoading(false);
+    }
+  }
+
   return (
     <div
       onMouseMove={handleMove}
-      className="relative min-h-screen overflow-hidden bg-[#05070E]"
+      className="relative h-[100dvh] overflow-hidden bg-brand-500"
       style={{ perspective: 1200 }}
     >
-      {/* Fondo decorativo con parallax */}
-      <motion.div style={{ x: glowX, y: glowY }} className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-brand-500/25 blur-[140px]" />
-        <div className="absolute -bottom-52 -right-32 h-[36rem] w-[36rem] rounded-full bg-brand-600/20 blur-[150px]" />
-        <span className="absolute right-[20%] top-[38%] h-1 w-1 rounded-full bg-brand-300/50" />
-        <span className="absolute left-[14%] bottom-[22%] h-1.5 w-1.5 rounded-full bg-white/15" />
-      </motion.div>
-
       {/* Logo 3D flotante (desktop) */}
       <motion.div
         aria-hidden
         style={{ rotateX: pRotateX, rotateY: pRotateY, transformStyle: 'preserve-3d' }}
-        className="pointer-events-none absolute left-[5%] top-1/2 hidden -translate-y-1/2 select-none lg:block"
+        className="pointer-events-none absolute bottom-[-5%] left-[2%] hidden select-none lg:block"
       >
         <motion.div
           animate={{ y: [0, -16, 0] }}
@@ -91,42 +92,34 @@ export default function Login() {
           className="relative"
           style={{ transformStyle: 'preserve-3d' }}
         >
-          <div className="absolute inset-6 -z-10 rounded-full bg-brand-500/25 blur-[90px]" />
           <img
             src={loginLogo}
             alt=""
-            className="h-[26rem] w-[26rem] object-contain drop-shadow-[0_30px_60px_rgba(20,45,130,0.5)]"
+            className="h-[min(48vw,27rem)] w-[min(48vw,27rem)] object-contain drop-shadow-[0_30px_60px_rgba(2,14,56,0.35)]"
             style={{ transform: 'translateZ(50px)' }}
           />
         </motion.div>
       </motion.div>
 
       {/* Contenido */}
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-5 py-6 sm:py-12">
-        <div className="w-full max-w-md">
+      <div className="relative z-10 flex h-full items-center justify-center px-4 py-[clamp(3.25rem,8vh,4.5rem)] sm:px-6">
+        <div className="w-full max-w-[28rem]">
           <Link
             to="/"
-            className="mb-4 inline-flex w-full items-center justify-center gap-1.5 text-sm text-white/45 transition hover:text-white/80 sm:mb-6"
+            aria-label="Volver al inicio"
+            className="absolute left-4 top-[max(1rem,env(safe-area-inset-top))] z-20 inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-white/80 transition hover:text-white sm:left-1/2 sm:-translate-x-1/2"
           >
-            <ArrowLeft className="h-4 w-4" /> Volver al inicio
+            <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Volver al inicio</span>
           </Link>
 
-          {/* Logo (mobile) */}
-          <img
-            src={loginLogo}
-            alt=""
-            aria-hidden
-            className="mx-auto mb-3 h-24 w-24 object-contain drop-shadow-[0_16px_30px_rgba(20,45,130,0.5)] lg:hidden"
-          />
-
-          <div className="rounded-2xl border border-white/10 bg-[#0B0F1A]/80 p-5 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.75)] ring-1 ring-inset ring-white/[0.05] backdrop-blur-xl sm:p-8">
+          <div className="rounded-2xl border border-white/25 bg-white/[0.10] p-[clamp(1rem,3vh,1.75rem)] shadow-[0_24px_70px_-24px_rgba(2,14,56,0.45)] backdrop-blur-xl">
             <div>
-              <img src={logoP} alt="PasantIA" className="mx-auto mb-5 hidden h-11 w-auto lg:block" />
+              <img src={logoP} alt="PasantIA" className="mx-auto mb-[clamp(.5rem,1.5vh,1rem)] h-[clamp(1.75rem,4vh,2.5rem)] w-auto" />
 
               <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
-                Bienvenido a <span className="text-brand-400">PasantIA</span>
+                Bienvenido a PasantIA
               </h1>
-              <p className="mt-1 text-sm text-white/50 sm:mt-1.5 sm:text-[15px]">
+              <p className="mt-1 text-sm text-white/75 sm:text-[15px]">
                 Accedé a tu panel y seguí gestionando oportunidades.
               </p>
 
@@ -137,14 +130,30 @@ export default function Login() {
                 </p>
               )}
 
-              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+                className="mt-[clamp(.75rem,2vh,1.25rem)] flex w-full items-center justify-center gap-3 rounded-xl border border-white bg-white px-4 py-[clamp(.625rem,1.5vh,.75rem)] text-[15px] font-semibold text-brand-900 transition hover:bg-white/90 disabled:opacity-60"
+              >
+                <GoogleLogo />
+                Continuar con Google
+              </button>
+
+              <div className="my-[clamp(.65rem,1.8vh,1rem)] flex items-center gap-3" aria-hidden>
+                <span className="h-px flex-1 bg-white/30" />
+                <span className="text-xs font-medium uppercase text-white/65">o con email</span>
+                <span className="h-px flex-1 bg-white/30" />
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-[clamp(.6rem,1.6vh,.9rem)]">
                 {/* Email */}
                 <div>
-                  <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-white/75">
+                  <label htmlFor="email" className="mb-1 block text-sm font-medium text-white">
                     Email
                   </label>
-                  <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-[#12151E] px-3.5 transition focus-within:border-brand-400/60">
-                    <Mail className="h-[18px] w-[18px] shrink-0 text-white/40" strokeWidth={1.75} />
+                  <div className="flex items-center gap-2.5 rounded-xl border border-white/30 bg-white/[0.12] px-3.5 transition focus-within:border-white focus-within:bg-white/[0.16]">
+                    <Mail className="h-[18px] w-[18px] shrink-0 text-white/75" strokeWidth={1.75} />
                     <input
                       id="email"
                       type="email"
@@ -153,18 +162,18 @@ export default function Login() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="tu@email.com"
-                      className="w-full bg-transparent py-3 text-[15px] text-white placeholder:text-white/35 outline-none"
+                      className="w-full bg-transparent py-[clamp(.6rem,1.5vh,.75rem)] text-[15px] text-white placeholder:text-white/55 outline-none"
                     />
                   </div>
                 </div>
 
                 {/* Password */}
                 <div>
-                  <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-white/75">
+                  <label htmlFor="password" className="mb-1 block text-sm font-medium text-white">
                     Contraseña
                   </label>
-                  <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-[#12151E] px-3.5 transition focus-within:border-brand-400/60">
-                    <Lock className="h-[18px] w-[18px] shrink-0 text-white/40" strokeWidth={1.75} />
+                  <div className="flex items-center gap-2.5 rounded-xl border border-white/30 bg-white/[0.12] px-3.5 transition focus-within:border-white focus-within:bg-white/[0.16]">
+                    <Lock className="h-[18px] w-[18px] shrink-0 text-white/75" strokeWidth={1.75} />
                     <input
                       id="password"
                       type={showPw ? 'text' : 'password'}
@@ -173,12 +182,12 @@ export default function Login() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full bg-transparent py-3 text-[15px] text-white placeholder:text-white/35 outline-none"
+                      className="w-full bg-transparent py-[clamp(.6rem,1.5vh,.75rem)] text-[15px] text-white placeholder:text-white/55 outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPw((v) => !v)}
-                      className="shrink-0 text-white/35 transition hover:text-white/70"
+                      className="shrink-0 text-white/70 transition hover:text-white"
                       aria-label={showPw ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                     >
                       {showPw ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
@@ -193,15 +202,20 @@ export default function Login() {
                 )}
 
                 {/* Recordar cuenta */}
-                <label className="flex cursor-pointer items-center gap-2.5 text-sm text-white/60 select-none">
-                  <input
-                    type="checkbox"
-                    checked={remember}
-                    onChange={(e) => setRemember(e.target.checked)}
-                    className="h-4 w-4 shrink-0 rounded border-white/20 bg-white/5 accent-brand-500"
-                  />
-                  Recordar mi cuenta en este dispositivo
-                </label>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <label className="flex cursor-pointer items-center gap-2.5 text-sm text-white/85 select-none">
+                    <input
+                      type="checkbox"
+                      checked={remember}
+                      onChange={(e) => setRemember(e.target.checked)}
+                      className="h-4 w-4 shrink-0 rounded border-white/50 bg-white/15 accent-white"
+                    />
+                    Recordar cuenta
+                  </label>
+                  <Link to="/recuperar-password" className="text-sm font-semibold text-white transition hover:text-white/75">
+                    Olvidé mi contraseña
+                  </Link>
+                </div>
 
                 <motion.button
                   type="submit"
@@ -209,7 +223,7 @@ export default function Login() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 22 }}
-                  className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-400 py-3.5 text-[15px] font-semibold text-white shadow-lg shadow-brand-900/40 transition hover:from-brand-500 hover:to-brand-300 disabled:opacity-60"
+                  className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-white py-[clamp(.65rem,1.6vh,.8rem)] text-[15px] font-semibold text-brand-700 shadow-lg shadow-brand-950/20 transition hover:bg-brand-50 disabled:opacity-60"
                 >
                   {loading ? 'Ingresando…' : (
                     <>
@@ -219,20 +233,14 @@ export default function Login() {
                 </motion.button>
               </form>
 
-              {/* Divisor con punto */}
-              <div className="relative my-6 flex items-center justify-center">
-                <div className="h-px w-full bg-white/10" />
-                <span className="absolute flex h-6 w-6 items-center justify-center rounded-full border border-white/12 bg-[#0a0c14]">
-                  <span className="h-1 w-1 rounded-full bg-white/40" />
-                </span>
-              </div>
+              <div className="my-[clamp(.65rem,1.8vh,1rem)] h-px w-full bg-white/30" />
 
-              <p className="text-center text-sm text-white/50">
+              <p className="text-center text-sm text-white/80">
                 ¿Todavía no te sumaste?{' '}
                 <button
                   type="button"
                   onClick={() => openEarlyAccess()}
-                  className="font-semibold text-brand-400 transition hover:text-brand-300"
+                  className="font-semibold text-white underline decoration-white/50 underline-offset-4 transition hover:text-white/75"
                 >
                   Creá tu cuenta
                 </button>

@@ -847,9 +847,9 @@ function StepContacto({
   return (
     <div className="mx-auto max-w-md">
       <Heading title="Empecemos por tus datos" />
-      <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-x-4 lg:gap-y-3 lg:space-y-0">
+      <div className="space-y-3 sm:space-y-4 lg:grid lg:grid-cols-2 lg:gap-x-4 lg:gap-y-3 lg:space-y-0">
         {googleAuth ? (
-          <div className="flex items-center gap-3 rounded-2xl border border-white/20 bg-white/[0.08] p-3 lg:col-span-2">
+          <div className="flex items-center gap-2.5 rounded-xl border border-white/20 bg-white/[0.08] p-2.5 sm:gap-3 sm:rounded-2xl sm:p-3 lg:col-span-2">
             <GoogleLogo className="h-6 w-6 shrink-0" />
             <div className="min-w-0 text-left">
               <p className="truncate text-sm font-semibold text-white">{data.nombre}</p>
@@ -863,7 +863,7 @@ function StepContacto({
               type="button"
               onClick={onGoogle}
               disabled={googleLoading}
-              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-brand-900 transition hover:bg-white/90 disabled:opacity-60 lg:col-span-2"
+              className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-white px-3.5 py-2.5 text-xs font-semibold text-brand-900 transition hover:bg-white/90 disabled:opacity-60 sm:gap-3 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm lg:col-span-2"
             >
               <GoogleLogo />
               {googleLoading ? 'Conectando…' : 'Registrarme con Google'}
@@ -898,8 +898,8 @@ function StepContacto({
             </div>
           </>
         )}
-        <div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/[0.04] p-3 lg:col-span-2 lg:py-2">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/[0.06]">
+        <div className="flex items-center gap-2.5 rounded-xl border border-white/15 bg-white/[0.04] p-2.5 sm:gap-3 sm:rounded-2xl sm:p-3 lg:col-span-2 lg:py-2">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/[0.06] sm:h-14 sm:w-14">
             {data.avatar_preview ? (
               <img src={data.avatar_preview} alt="Vista previa" className="h-full w-full object-cover" />
             ) : (
@@ -907,11 +907,11 @@ function StepContacto({
             )}
           </div>
           <div className="min-w-0 flex-1 text-left">
-            <p className="text-sm font-medium text-white">Foto de perfil <span className="font-normal text-white/45">(opcional)</span></p>
-            <p className="mt-0.5 text-xs text-white/45">JPG, PNG o WEBP · máximo 5 MB</p>
+            <p className="text-xs font-medium text-white sm:text-sm">Foto de perfil <span className="font-normal text-white/45">(opcional)</span></p>
+            <p className="mt-0.5 text-[10px] text-white/45 sm:text-xs">JPG, PNG o WEBP · máximo 5 MB</p>
             {avatarError && <p className="mt-1 text-xs text-red-200">{avatarError}</p>}
           </div>
-          <label className="shrink-0 cursor-pointer rounded-full border border-white/20 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10">
+          <label className="shrink-0 cursor-pointer rounded-full border border-white/20 px-2.5 py-1.5 text-[11px] font-semibold text-white transition hover:bg-white/10 sm:px-3 sm:py-2 sm:text-xs">
             {data.avatar_preview ? 'Cambiar' : 'Subir'}
             <input type="file" accept="image/*" onChange={handleAvatar} className="hidden" />
           </label>
@@ -969,7 +969,7 @@ function StepEduUni({
   return (
     <div className="mx-auto max-w-md">
       <Heading title="¿Dónde estudiás?" />
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         <Autocomplete
           label="Universidad / Instituto"
           value={data.universidad}
@@ -1157,7 +1157,7 @@ function StepMensaje({
     <div className="mx-auto max-w-md">
       <Heading title="¿Algo más que quieras contarnos?" subtitle="Opcional." />
       <textarea
-        rows={5}
+        rows={4}
         value={data.mensaje}
         onChange={(e) => set({ mensaje: e.target.value })}
         placeholder="Contanos qué estás buscando…"
@@ -1214,7 +1214,7 @@ function Success({ role, googleAuth, onLogin }: { role: FormData['role']; google
 /* ------------------------------ UI atoms ------------------------------ */
 
 const inputCls =
-  'w-full rounded-2xl border border-white/15 bg-white/[0.06] px-5 py-3.5 text-[15px] text-white placeholder:text-white/35 outline-none transition-colors focus:border-white/40 focus:bg-white/[0.1] lg:py-2.5';
+  'w-full rounded-xl border border-white/15 bg-white/[0.06] px-4 py-2.5 text-sm text-white placeholder:text-white/35 outline-none transition-colors focus:border-white/40 focus:bg-white/[0.1] sm:rounded-2xl sm:px-5 sm:py-3.5 sm:text-[15px] lg:py-2.5';
 
 function Input({
   label,
@@ -1233,7 +1233,7 @@ function Input({
 }) {
   return (
     <label className="block text-left">
-      <span className="mb-2 block text-sm font-medium text-white/75">{label}</span>
+      <span className="mb-1.5 block text-xs font-medium text-white/75 sm:mb-2 sm:text-sm">{label}</span>
       <PasswordAwareInput
         type={type}
         value={value}
@@ -1276,7 +1276,7 @@ function PasswordAwareInput({
         <button
           type="button"
           onClick={() => setShow((s) => !s)}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-white/45 transition hover:text-white"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-white/45 transition hover:text-white sm:right-4"
           aria-label={show ? 'Ocultar contraseña' : 'Mostrar contraseña'}
         >
           {show ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
@@ -1297,7 +1297,7 @@ function SubGroup({
 }) {
   return (
     <div className={center ? 'text-center' : 'text-left'}>
-      <span className="mb-3 block text-sm font-medium text-white/75">{label}</span>
+      <span className="mb-2 block text-xs font-medium text-white/75 sm:mb-3 sm:text-sm">{label}</span>
       {children}
     </div>
   );
@@ -1325,8 +1325,8 @@ function ChipGroup({
             onClick={() => onChange(o)}
             className={`rounded-full border transition-all duration-200 ${
               small
-                ? 'px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm'
-                : 'px-3 py-1.5 text-xs sm:px-5 sm:py-2.5 sm:text-[15px]'
+                ? 'px-2.5 py-1 text-[11px] sm:px-4 sm:py-2 sm:text-sm'
+                : 'px-2.5 py-1 text-[11px] sm:px-5 sm:py-2.5 sm:text-[15px]'
             } ${
               active
                 ? 'border-white bg-white text-brand-600'
@@ -1373,7 +1373,7 @@ function Autocomplete({
 
   return (
     <label className="relative block text-left" ref={ref}>
-      <span className="mb-2 block text-sm font-medium text-white/75">{label}</span>
+      <span className="mb-1.5 block text-xs font-medium text-white/75 sm:mb-2 sm:text-sm">{label}</span>
       <input
         value={value}
         onChange={(e) => {
@@ -1405,7 +1405,7 @@ function Autocomplete({
                       onChange(o);
                       setOpen(false);
                     }}
-                    className="block w-full rounded-xl px-4 py-2.5 text-left text-[15px] text-white/85 transition-colors hover:bg-white/10"
+                    className="block w-full rounded-xl px-3 py-2 text-left text-sm text-white/85 transition-colors hover:bg-white/10 sm:px-4 sm:py-2.5 sm:text-[15px]"
                   >
                     {o}
                   </button>

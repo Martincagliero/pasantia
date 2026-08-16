@@ -33,7 +33,7 @@ import {
   savePendingGoogleOnboarding,
 } from '../../features/auth/googleOnboarding';
 import estudianteImg from '../../assets/images/estudiante.webp';
-import logo from '../../assets/logo.png';
+import logo from '../../../logosinfobndo .png';
 
 type Role = 'estudiante' | 'empresa' | 'embajador';
 
@@ -139,6 +139,7 @@ export function EarlyAccessProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [presetRole, setPresetRole] = useState<Role | undefined>(undefined);
+  const wasGoogleRegistrationRef = useRef(false);
 
   const open = useCallback((role?: Role) => {
     setPresetRole(role);
@@ -156,14 +157,30 @@ export function EarlyAccessProvider({ children }: { children: ReactNode }) {
       const hasRef = !!(params.get('ref') || params.get('promo'));
       const isGoogleRegistration = params.get('registro') === 'google';
       const inAppArea = location.pathname.startsWith('/app');
+      const leftGoogleRegistration = wasGoogleRegistrationRef.current && !isGoogleRegistration;
+      wasGoogleRegistrationRef.current = isGoogleRegistration;
+
+      if (leftGoogleRegistration) {
+        clearPendingGoogleOnboarding();
+        void supabase.auth.getUser().then(({ data }) => {
+          const user = data.user;
+          if (user && user.user_metadata.pasantia_onboarding_completed !== true) {
+            void supabase.auth.signOut();
+          }
+        });
+      }
+
       if ((hasRef || isGoogleRegistration) && !inAppArea) {
         setPresetRole(undefined);
         setIsOpen(true);
+      } else {
+        setPresetRole(undefined);
+        setIsOpen(false);
       }
     } catch {
       /* ignore: si falla, se puede abrir manualmente */
     }
-  }, [location.pathname, location.search]);
+  }, [location.key, location.pathname, location.search]);
 
   return (
     <EarlyAccessContext.Provider value={value}>
@@ -607,8 +624,14 @@ function Onboarding({
           {/* Header */}
           <header className="flex shrink-0 items-center justify-between px-3 py-3 sm:px-10 sm:py-5 lg:py-3">
             <div className="flex items-center" aria-label="PasantIA">
-              <img src={logo} alt="" aria-hidden className="h-8 w-8 rounded-lg object-contain" />
-              <span className="-ml-1.5 text-lg font-semibold tracking-tight">asantIA</span>
+              <span className="relative h-8 w-6 shrink-0 overflow-hidden" aria-hidden>
+                <img
+                  src={logo}
+                  alt=""
+                  className="absolute -left-[19px] -top-[15px] h-[60px] w-[60px] max-w-none"
+                />
+              </span>
+              <span className="-ml-0.5 text-lg font-semibold tracking-tight">asantIA</span>
             </div>
             <div className="flex items-center gap-1.5">
               <button

@@ -3,6 +3,7 @@ import type { Role } from './database.types';
 type Loader = () => Promise<unknown>;
 
 const routeLoaders: Record<string, Loader> = {
+  '/app/inicio-estudiante': () => import('../features/student/StudentHome'),
   '/app/pasantias': () => import('../features/student/BrowseInternships'),
   '/app/postulaciones': () => import('../features/student/MyApplications'),
   '/app/guardadas': () => import('../features/student/SavedInternships'),
@@ -25,6 +26,7 @@ const routeLoaders: Record<string, Loader> = {
 
 const roleRoutes: Record<Role, string[]> = {
   estudiante: [
+    '/app/inicio-estudiante',
     '/app/pasantias',
     '/app/postulaciones',
     '/app/guardadas',

@@ -25,6 +25,7 @@ const RecoveryCallback = lazy(() => import('./features/auth/pages/RecoveryCallba
 const ForgotPassword = lazy(() => import('./features/auth/pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./features/auth/pages/ResetPassword'));
 const DashboardHome = lazy(() => import('./features/dashboard/DashboardHome'));
+const StudentHome = lazy(() => import('./features/student/StudentHome'));
 const BrowseInternships = lazy(() => import('./features/student/BrowseInternships'));
 const MyApplications = lazy(() => import('./features/student/MyApplications'));
 const SavedInternships = lazy(() => import('./features/student/SavedInternships'));
@@ -83,6 +84,14 @@ export default function App() {
           >
             <Route index element={<DashboardHome />} />
             {/* Estudiante */}
+            <Route
+              path="inicio-estudiante"
+              element={
+                <ProtectedRoute role="estudiante">
+                  <StudentHome />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="pasantias"
               element={

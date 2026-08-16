@@ -596,7 +596,7 @@ function Onboarding({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-[100] flex flex-col bg-brand-600"
+          className="early-access-onboarding fixed inset-0 z-[100] flex flex-col bg-brand-600"
           role="dialog"
           aria-modal="true"
           aria-label="Registro de acceso anticipado"
@@ -639,7 +639,7 @@ function Onboarding({
           </div>
 
           {/* Contenido */}
-          <div className="flex min-h-0 flex-1 overflow-y-auto px-0 py-2 sm:px-8 sm:py-6 lg:overflow-hidden lg:py-2">
+          <div className="flex min-h-0 flex-1 overflow-y-auto px-4 py-2 sm:px-8 sm:py-6 lg:overflow-hidden lg:py-2">
             {submitted ? (
               <div className="m-auto w-full max-w-md">
                 <Success

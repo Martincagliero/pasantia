@@ -104,6 +104,53 @@ input:-webkit-autofill:active {
   transition: background-color 9999s ease-in-out 0s;
 }
 
+/* El registro vive sobre azul de marca: sus campos autocompletados y la
+   selección de texto deben conservar esa superficie, nunca volverse negros. */
+.early-access-onboarding input:-webkit-autofill,
+.early-access-onboarding input:-webkit-autofill:hover,
+.early-access-onboarding input:-webkit-autofill:focus,
+.early-access-onboarding input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff;
+  -webkit-box-shadow: 0 0 0 1000px #1648d8 inset;
+  caret-color: #ffffff;
+}
+
+.early-access-onboarding input::selection,
+.early-access-onboarding textarea::selection {
+  background: rgb(255 255 255 / 0.28);
+  color: #ffffff;
+}
+
+/* El login usa el fondo azul de marca: Chrome no debe reemplazar los campos
+   recordados por el relleno negro definido para las pantallas oscuras. */
+.login-screen input:-webkit-autofill,
+.login-screen input:-webkit-autofill:hover,
+.login-screen input:-webkit-autofill:focus,
+.login-screen input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff;
+  -webkit-box-shadow: 0 0 0 1000px #2864ff inset;
+  caret-color: #ffffff;
+}
+
+.login-screen input::selection {
+  background: rgb(255 255 255 / 0.28);
+  color: #ffffff;
+}
+
+.auth-status-screen input:-webkit-autofill,
+.auth-status-screen input:-webkit-autofill:hover,
+.auth-status-screen input:-webkit-autofill:focus,
+.auth-status-screen input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff;
+  -webkit-box-shadow: 0 0 0 1000px #2864ff inset;
+  caret-color: #ffffff;
+}
+
+.auth-status-screen input::selection {
+  background: rgb(255 255 255 / 0.28);
+  color: #ffffff;
+}
+
 /* =============================================================================
    TEMA DEL DASHBOARD (claro / oscuro)
    El contenedor raíz del panel lleva class="dash-root" y data-theme="light|dark".

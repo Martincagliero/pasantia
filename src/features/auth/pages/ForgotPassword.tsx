@@ -26,7 +26,7 @@ export default function ForgotPassword() {
         title="Revisá tu email"
         message="Si existe una cuenta asociada, vas a recibir un enlace para crear una contraseña nueva. También revisá spam."
       >
-        <Link to="/ingresar" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-brand-300 hover:text-brand-200">
+        <Link to="/ingresar" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white hover:text-white/75">
           <ArrowLeft className="h-4 w-4" /> Volver a ingresar
         </Link>
       </AuthStatusCard>
@@ -37,8 +37,8 @@ export default function ForgotPassword() {
     <AuthStatusCard title="Recuperá tu cuenta" message="Ingresá tu email y te enviaremos un enlace de recuperación de un solo uso.">
       <form onSubmit={handleSubmit} className="mt-7 text-left">
         <label htmlFor="recovery-email" className="mb-1.5 block text-sm font-medium text-white/75">Email</label>
-        <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-[#12151E] px-3.5 focus-within:border-brand-400/60">
-          <Mail className="h-[18px] w-[18px] shrink-0 text-white/40" />
+        <div className="flex items-center gap-2.5 rounded-xl border border-white/30 bg-white/[0.12] px-3.5 transition focus-within:border-white focus-within:bg-white/[0.16]">
+          <Mail className="h-[18px] w-[18px] shrink-0 text-white/75" />
           <input
             id="recovery-email"
             type="email"
@@ -50,7 +50,7 @@ export default function ForgotPassword() {
             placeholder="tu@email.com"
           />
         </div>
-        <button type="submit" disabled={loading} className="mt-5 w-full rounded-xl bg-brand-500 py-3.5 text-[15px] font-semibold text-white hover:bg-brand-400 disabled:opacity-60">
+        <button type="submit" disabled={loading} className="mt-5 w-full rounded-xl bg-white py-3.5 text-[15px] font-semibold text-brand-700 hover:bg-brand-50 disabled:opacity-60">
           {loading ? 'Enviando…' : 'Enviar enlace seguro'}
         </button>
       </form>

@@ -77,7 +77,7 @@ export default function Login() {
   return (
     <div
       onMouseMove={handleMove}
-      className="relative h-[100dvh] overflow-hidden bg-brand-500"
+      className="login-screen relative h-[100dvh] overflow-hidden bg-brand-500"
       style={{ perspective: 1200 }}
     >
       {/* Logo 3D flotante (desktop) */}

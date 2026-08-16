@@ -41,7 +41,7 @@ export default function RecoveryCallback() {
       title={error ? 'No pudimos validar el enlace' : 'Validando recuperación'}
       message={error ?? 'Comprobando el enlace de un solo uso.'}
     >
-      {error && <Link to="/recuperar-password" className="mt-6 inline-flex rounded-xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-400">Solicitar otro enlace</Link>}
+      {error && <Link to="/recuperar-password" className="mt-6 inline-flex rounded-xl bg-white px-5 py-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">Solicitar otro enlace</Link>}
     </AuthStatusCard>
   );
 }

@@ -21,6 +21,7 @@ import {
   Rocket,
   Shield,
   CircleHelp,
+  House,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import logo from '../../assets/logo.png';
@@ -39,6 +40,7 @@ interface NavItem {
 }
 
 const studentNav: NavItem[] = [
+  { to: '/app/inicio-estudiante', label: 'Inicio', icon: House },
   { to: '/app/novedades', label: 'Novedades', icon: Newspaper },
   { to: '/app/pasantias', label: 'Buscar pasantías', icon: LayoutGrid },
   { to: '/app/explorar', label: 'Explorar perfiles', icon: Compass },
@@ -93,7 +95,9 @@ export function DashboardLayout() {
     role === 'estudiante' ? studentNav : role === 'empresa' ? companyNav : ambassadorNav;
   const perfilTo = role === 'embajador' ? '/app/embajador-perfil' : '/app/perfil';
   // En mobile el perfil se accede desde el avatar de arriba, no en la barra inferior.
-  const bottomNav = nav.filter((item) => item.to !== perfilTo);
+  const bottomNav = nav.filter(
+    (item) => item.to !== perfilTo && !(role === 'estudiante' && item.to === '/app/postulaciones')
+  );
 
   useEffect(() => {
     const warmRoutes = () => prefetchRoleRoutes(role, !!profile?.is_admin);
@@ -147,14 +151,14 @@ export function DashboardLayout() {
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
-  // Oculta la barra inferior (mobile) al scrollear hacia abajo, reaparece al subir.
-  const [hideBottomNav, setHideBottomNav] = useState(false);
+  // Compacta la barra inferior al bajar y recupera su tamaño al subir.
+  const [compactBottomNav, setCompactBottomNav] = useState(false);
   const lastScrollYRef = useRef(0);
   useEffect(() => {
     function onScroll() {
       const y = window.scrollY;
       const goingDown = y > lastScrollYRef.current;
-      setHideBottomNav(goingDown && y > 80);
+      setCompactBottomNav(goingDown && y > 80);
       lastScrollYRef.current = y;
     }
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -265,6 +269,17 @@ export function DashboardLayout() {
                     >
                       <UserRound className="h-[18px] w-[18px]" /> Mi perfil
                     </Link>
+                    {role === 'estudiante' && (
+                      <Link
+                        to="/app/postulaciones"
+                        onMouseEnter={() => prefetchAppRoute('/app/postulaciones')}
+                        onTouchStart={() => prefetchAppRoute('/app/postulaciones')}
+                        onClick={() => setAccountOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/[0.06] hover:text-white"
+                      >
+                        <Send className="h-[18px] w-[18px]" /> Mis postulaciones
+                      </Link>
+                    )}
                     {profile?.is_admin && (
                       <Link
                         to="/app/admin"
@@ -313,41 +328,41 @@ export function DashboardLayout() {
           <Outlet />
         </main>
 
-        {/* Barra de navegación inferior (mobile, estilo LinkedIn). Se oculta al scrollear hacia abajo. */}
+        {/* Barra inferior mobile: bloque flotante que se compacta al bajar. */}
         <nav
-          className={`dash-panel mobile-end-gradient fixed inset-x-0 bottom-0 z-40 border-t border-white/10 pb-[env(safe-area-inset-bottom)] transition-transform duration-300 lg:hidden ${
-            hideBottomNav ? 'translate-y-full' : 'translate-y-0'
+          className={`dash-panel mobile-end-gradient fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 mx-auto max-w-md overflow-hidden rounded-2xl border border-white/12 shadow-xl shadow-black/20 backdrop-blur-xl transition-all duration-300 ease-out lg:hidden ${
+            compactBottomNav ? 'scale-[0.92] opacity-90' : 'scale-100 opacity-100'
           }`}
         >
 
-          <div className="mx-auto flex max-w-7xl items-stretch">
+          <div
+            className={`mx-auto flex items-center justify-around transition-all duration-300 ${
+              compactBottomNav ? 'h-11 px-5' : 'h-14 px-2'
+            }`}
+          >
             {bottomNav.map(({ to, label, icon: Icon, end }) => (
               <NavLink
                 key={to}
                 to={to}
                 end={end}
                 title={label}
+                aria-label={label}
                 onMouseEnter={() => prefetchAppRoute(to)}
                 onFocus={() => prefetchAppRoute(to)}
                 onTouchStart={() => prefetchAppRoute(to)}
-                className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 pb-1.5 pt-2"
+                className={`flex shrink-0 items-center justify-center rounded-xl transition-all duration-300 active:scale-95 ${
+                  compactBottomNav ? 'h-9 w-9' : 'h-11 w-11'
+                }`}
               >
                 {({ isActive }) => (
-                  <>
-                    <Icon
-                      className={`h-[26px] w-[26px] shrink-0 transition-colors ${
-                        isActive ? 'text-brand-500' : 'text-white/55'
-                      }`}
-                      strokeWidth={isActive ? 2.5 : 1.9}
-                    />
-                    <span
-                      className={`w-full truncate text-center text-[11px] leading-tight transition-colors ${
-                        isActive ? 'font-semibold text-brand-500' : 'font-medium text-white/60'
-                      }`}
-                    >
-                      {label}
-                    </span>
-                  </>
+                  <Icon
+                    className={`shrink-0 transition-all duration-300 ${
+                      compactBottomNav ? 'h-5 w-5' : 'h-6 w-6'
+                    } ${
+                      isActive ? 'text-brand-500' : 'text-white/55'
+                    }`}
+                    strokeWidth={isActive ? 2.6 : 2}
+                  />
                 )}
               </NavLink>
             ))}

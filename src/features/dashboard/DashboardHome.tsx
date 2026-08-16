@@ -9,5 +9,5 @@ export default function DashboardHome() {
   if (profile?.is_admin) return <Navigate to="/app/admin" replace />;
   if (profile?.role === 'empresa') return <Navigate to="/app/inicio" replace />;
   if (profile?.role === 'embajador') return <Navigate to="/app/embajador" replace />;
-  return <Navigate to="/app/pasantias" replace />;
+  return <Navigate to="/app/inicio-estudiante" replace />;
 }

@@ -57,7 +57,7 @@ export default function AuthCallback() {
       message={error ?? 'Estamos comprobando el enlace de forma segura.'}
     >
       {error && (
-        <Link to="/ingresar" className="mt-6 inline-flex rounded-xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-400">
+        <Link to="/ingresar" className="mt-6 inline-flex rounded-xl bg-white px-5 py-3 text-sm font-semibold text-brand-700 hover:bg-brand-50">
           Volver a ingresar
         </Link>
       )}
@@ -77,12 +77,12 @@ export function AuthStatusCard({
   children?: React.ReactNode;
 }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#07132F] px-5 py-10">
-      <section className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0B1226] p-7 text-center shadow-[0_30px_80px_-20px_rgba(0,0,0,0.55)] sm:p-9">
+    <main className="auth-status-screen flex h-[100dvh] items-center justify-center overflow-hidden bg-brand-500 px-4 py-8 sm:px-5 sm:py-10">
+      <section className="w-full max-w-md rounded-2xl border border-white/25 bg-white/[0.10] p-6 text-center shadow-[0_24px_70px_-24px_rgba(2,14,56,0.45)] backdrop-blur-xl sm:p-9">
         <img src={logoP} alt="PasantIA" className="mx-auto mb-7 h-11 w-auto" />
-        {icon && <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-brand-500/15 text-brand-300">{icon}</div>}
+        {icon && <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/15 text-white">{icon}</div>}
         <h1 className="text-2xl font-bold text-white">{title}</h1>
-        <p className="mt-2 text-sm leading-6 text-white/55">{message}</p>
+        <p className="mt-2 text-sm leading-6 text-white/75">{message}</p>
         {children}
       </section>
     </main>

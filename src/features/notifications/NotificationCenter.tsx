@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bell, Briefcase, Check, MessageSquare, Newspaper, UserPlus } from 'lucide-react';
+import { Bell, Briefcase, Check, MessageSquare, Newspaper, ShieldCheck, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { useMessages } from '../messages/MessagesProvider';
 
-type NotificationKind = 'message' | 'internship' | 'post' | 'member' | 'connection';
+type NotificationKind = 'message' | 'internship' | 'post' | 'admin_post' | 'member' | 'connection';
 
 interface ActivityNotification {
   id: string;
@@ -21,6 +21,7 @@ const ICONS = {
   message: MessageSquare,
   internship: Briefcase,
   post: Newspaper,
+  admin_post: ShieldCheck,
   member: UserPlus,
   connection: UserPlus,
 };
@@ -74,7 +75,7 @@ export function NotificationCenter() {
           .limit(8),
         supabase
           .from('posts')
-          .select('id, title, author_name, created_at')
+          .select('id, title, author_name, created_at, author:profiles!author_id(is_admin)')
           .gte('created_at', since)
           .order('created_at', { ascending: false })
           .limit(8),
@@ -173,18 +174,23 @@ export function NotificationCenter() {
             : internship.title,
           createdAt: internship.created_at,
         })),
-        ...((postsResult.data ?? []) as {
+        ...((postsResult.data ?? []) as unknown as {
           id: string;
           title: string;
           author_name: string;
           created_at: string;
-        }[]).map((post) => ({
-          id: `post-${post.id}`,
-          kind: 'post' as const,
-          title: 'Nueva publicación en Novedades',
-          detail: `${post.author_name}: ${post.title}`,
-          createdAt: post.created_at,
-        })),
+          author: { is_admin: boolean } | { is_admin: boolean }[] | null;
+        }[]).map((post) => {
+          const author = Array.isArray(post.author) ? post.author[0] : post.author;
+          const isAdminPost = author?.is_admin === true;
+          return {
+            id: `post-${post.id}`,
+            kind: isAdminPost ? 'admin_post' as const : 'post' as const,
+            title: isAdminPost ? 'Aviso oficial de PasantIA' : 'Nueva publicación en Novedades',
+            detail: isAdminPost ? post.title : `${post.author_name}: ${post.title}`,
+            createdAt: post.created_at,
+          };
+        }),
         ...memberRows
           .filter((member) => member.id !== uid)
           .map((member) => ({
@@ -216,8 +222,17 @@ export function NotificationCenter() {
   useEffect(() => {
     load();
     const timer = window.setInterval(load, 30_000);
-    return () => window.clearInterval(timer);
-  }, [load]);
+    const postsChannel = supabase
+      .channel(`notification-posts-${uid}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () => {
+        void load();
+      })
+      .subscribe();
+    return () => {
+      window.clearInterval(timer);
+      void supabase.removeChannel(postsChannel);
+    };
+  }, [load, uid]);
 
   useEffect(() => {
     function closeOnOutsideClick(event: MouseEvent) {
@@ -254,6 +269,9 @@ export function NotificationCenter() {
       return;
     }
     if (item.kind === 'post') navigate('/app/novedades');
+    if (item.kind === 'admin_post') {
+      navigate(profile?.role === 'estudiante' ? '/app/inicio-estudiante' : '/app/novedades');
+    }
     if (item.kind === 'connection') navigate('/app/explorar?tab=red&requests=1');
     if (item.kind === 'member') navigate(`/app/explorar?u=${item.targetId}`);
     if (item.kind === 'internship') {

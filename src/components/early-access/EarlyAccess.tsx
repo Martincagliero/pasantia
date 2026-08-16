@@ -606,9 +606,9 @@ function Onboarding({
 
           {/* Header */}
           <header className="flex shrink-0 items-center justify-between px-3 py-3 sm:px-10 sm:py-5 lg:py-3">
-            <div className="flex items-center gap-2.5">
-              <img src={logo} alt="PasantIA" className="h-8 w-8 rounded-lg object-contain" />
-              <span className="text-lg font-semibold tracking-tight">PasantIA</span>
+            <div className="flex items-center" aria-label="PasantIA">
+              <img src={logo} alt="" aria-hidden className="h-8 w-8 rounded-lg object-contain" />
+              <span className="-ml-1.5 text-lg font-semibold tracking-tight">asantIA</span>
             </div>
             <div className="flex items-center gap-1.5">
               <button

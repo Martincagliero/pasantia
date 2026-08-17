@@ -2,7 +2,7 @@ import { motion, type HTMLMotionProps } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 
-type Variant = 'primary' | 'secondary' | 'ghost';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'landing';
 type Size = 'sm' | 'md' | 'lg';
 
 const base =
@@ -12,6 +12,9 @@ const variants: Record<Variant, string> = {
   // CTA primario: blanco → azul profundo al hover (cambio de color animado).
   primary:
     'bg-white text-brand-600 shadow-lg shadow-brand-950/30 hover:bg-brand-950 hover:text-white hover:shadow-xl hover:shadow-brand-950/50',
+  // CTA de marketing: blanco → azul con halo de marca, inspirado en la interacción de Marz.
+  landing:
+    'bg-white text-brand-700 shadow-[inset_0_0_20px_rgba(1,72,253,0.10),0_14px_28px_-12px_rgba(2,14,56,0.55)] hover:bg-brand-500 hover:text-white hover:shadow-[inset_0_0_20px_rgba(255,255,255,0.42),0_20px_38px_-12px_rgba(255,255,255,0.65)] active:bg-brand-500 active:text-white active:shadow-[inset_0_0_20px_rgba(255,255,255,0.42),0_16px_30px_-12px_rgba(2,32,126,0.72)]',
   // Secundario glass: transparente → blanco sólido al hover.
   secondary:
     'glass text-white hover:bg-white hover:text-brand-600 hover:border-white',
@@ -61,12 +64,27 @@ const interaction = {
 export function Button(props: ButtonProps) {
   const { variant = 'primary', size = 'md', className = '', children } = props;
   const classes = `${base} ${variants[variant]} ${sizes[size]} ${className}`;
+  const content = variant === 'landing' ? (
+    <span className="relative inline-flex overflow-hidden">
+      <span className="inline-flex items-center justify-center gap-2 transition-transform duration-500 ease-[cubic-bezier(.22,1,.36,1)] [@media(hover:hover)_and_(pointer:fine)]:group-hover:-translate-y-full group-active:-translate-y-full">
+        {children}
+      </span>
+      <span
+        aria-hidden
+        className="absolute left-0 top-full inline-flex h-full w-full items-center justify-center gap-2 transition-transform duration-500 ease-[cubic-bezier(.22,1,.36,1)] [@media(hover:hover)_and_(pointer:fine)]:group-hover:-translate-y-full group-active:-translate-y-full"
+      >
+        {children}
+      </span>
+    </span>
+  ) : (
+    <span className="inline-flex items-center justify-center gap-2">{children}</span>
+  );
 
   if (props.as === 'link') {
     return (
       <motion.div {...interaction} className="inline-flex">
         <Link to={props.to} className={classes}>
-          {children}
+          {content}
         </Link>
       </motion.div>
     );
@@ -82,7 +100,7 @@ export function Button(props: ButtonProps) {
         className={classes}
         {...interaction}
       >
-        {children}
+        {content}
       </motion.a>
     );
   }
@@ -90,7 +108,7 @@ export function Button(props: ButtonProps) {
   const { as: _as, variant: _v, size: _s, className: _c, children: _ch, ...rest } = props;
   return (
     <motion.button className={classes} {...interaction} {...rest}>
-      {children}
+      {content}
     </motion.button>
   );
 }

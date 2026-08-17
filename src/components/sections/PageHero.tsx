@@ -62,7 +62,7 @@ export function PageHero({
               transition={{ duration: 0.7, delay: 0.75 }}
               className="mt-8 flex flex-wrap gap-3"
             >
-              <Button onClick={() => open(role)} size="lg">
+              <Button onClick={() => open(role)} variant="landing" size="lg">
                 {ctaLabel}
               </Button>
               {demoHref && (

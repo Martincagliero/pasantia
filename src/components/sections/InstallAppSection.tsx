@@ -73,7 +73,7 @@ export function InstallAppSection() {
           </ol>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Button onClick={() => open('estudiante')}>Registrarme</Button>
+            <Button onClick={() => open()} variant="landing">Registrarme</Button>
             <span className="text-xs text-white/45">Instalable en Android y iPhone.</span>
           </div>
         </Reveal>

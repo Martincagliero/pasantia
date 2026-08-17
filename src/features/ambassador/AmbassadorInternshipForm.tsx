@@ -2,6 +2,7 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { X, Loader2, ImagePlus, Trash2, ChevronDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { sendPushEvent } from '../../lib/notify';
 import { useAuth } from '../auth/AuthProvider';
 import type { Modality } from '../../lib/database.types';
 import { Button } from '../../components/ui/Button';
@@ -123,6 +124,7 @@ export function AmbassadorInternshipForm({ onClose, onCreated }: AmbassadorInter
     // Publicar la pasantía cuenta como difusión: suma puntos al embajador.
     const created = result.data as { id: string } | null;
     if (created?.id) {
+      void sendPushEvent('internship', created.id);
       await supabase
         .from('internship_diffusions')
         .insert({ ambassador_id: session!.user.id, internship_id: created.id });

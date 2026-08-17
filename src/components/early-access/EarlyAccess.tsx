@@ -32,8 +32,9 @@ import {
   readPendingGoogleOnboarding,
   savePendingGoogleOnboarding,
 } from '../../features/auth/googleOnboarding';
+import { sendPushEvent } from '../../lib/notify';
 import estudianteImg from '../../assets/images/estudiante.webp';
-import logo from '../../../logosinfobndo .png';
+import logo from '../../assets/images/logosinfobndo-ui.png';
 
 type Role = 'estudiante' | 'empresa' | 'embajador';
 
@@ -503,6 +504,14 @@ function Onboarding({
                 },
               });
               if (metadataError) throw metadataError;
+              if (['estudiante', 'empresa'].includes(data.role)) {
+                const notified = await sendPushEvent('member', uid);
+                if (notified) {
+                  await supabase.auth.updateUser({
+                    data: { pasantia_member_notified: true },
+                  });
+                }
+              }
               await refreshProfile();
             }
           }

@@ -5,6 +5,7 @@ import type { EmailOtpType } from '@supabase/supabase-js';
 import { supabase } from '../../../lib/supabase';
 import logoP from '../../../assets/images/logo-p-blanco.png';
 import { readPendingGoogleOnboarding, savePendingGoogleOnboarding } from '../googleOnboarding';
+import { sendPushEvent } from '../../../lib/notify';
 
 export default function AuthCallback() {
   const navigate = useNavigate();
@@ -45,6 +46,16 @@ export default function AuthCallback() {
         if (!readPendingGoogleOnboarding()) savePendingGoogleOnboarding();
         navigate('/?registro=google', { replace: true });
         return;
+      }
+      const role = user?.user_metadata.role;
+      const memberNotified = user?.user_metadata.pasantia_member_notified === true;
+      if (user && !isGoogle && !memberNotified && ['estudiante', 'empresa'].includes(role)) {
+        const notified = await sendPushEvent('member', user.id);
+        if (notified) {
+          await supabase.auth.updateUser({
+            data: { ...user.user_metadata, pasantia_member_notified: true },
+          });
+        }
       }
       navigate('/app', { replace: true });
     });

@@ -9,6 +9,7 @@ import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { Card, PageHeader, PageLoader } from '../ui/primitives';
 import { useModalGuard } from '../ui/modalGuard';
 import { BadgeCheck, ChevronDown, X, ImagePlus, Trash2 } from 'lucide-react';
+import { sendPushEvent } from '../../lib/notify';
 
 const emptyForm = {
   title: '',
@@ -178,6 +179,9 @@ export default function InternshipForm({
 
     // Si hay embajadores seleccionados, crear internship_broadcasts
     const internshipId = editId || (result.data as any).id;
+    if (!editId && internshipId && form.is_active) {
+      void sendPushEvent('internship', internshipId);
+    }
     if (selectedAmbassadors.length > 0 && internshipId) {
       const broadcasts = selectedAmbassadors.map((ambId) => ({
         internship_id: internshipId,

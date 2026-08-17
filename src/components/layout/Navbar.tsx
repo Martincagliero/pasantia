@@ -147,7 +147,7 @@ export function Navbar() {
           <Button as="link" to="/ingresar" variant="secondary" size="sm">
             Ingresar
           </Button>
-          <Button onClick={() => open()} size="sm">
+          <Button onClick={() => open()} variant="landing" size="sm">
             Registrarse
           </Button>
         </div>
@@ -243,6 +243,7 @@ export function Navbar() {
                   setMenuOpen(false);
                   open();
                 }}
+                variant="landing"
                 size="lg"
                 className="flex-1 justify-center"
               >

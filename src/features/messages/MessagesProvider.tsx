@@ -13,7 +13,7 @@ import {
 import { MessageSquare, ChevronDown, ChevronUp, ArrowLeft, Send, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { sendPush } from '../../lib/notify';
+import { sendPushEvent } from '../../lib/notify';
 import { useAuth } from '../auth/AuthProvider';
 import { useAnyModalOpen } from '../ui/modalGuard';
 
@@ -340,19 +340,18 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     if (!text.trim() || !active || !uid) return;
     setSending(true);
     try {
-      const { error } = await supabase.from('messages').insert({
-        sender_id: uid,
-        recipient_id: active.id,
-        content: text.trim(),
-      });
-      if (error) throw error;
+      const { data: message, error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: uid,
+          recipient_id: active.id,
+          content: text.trim(),
+        })
+        .select('id')
+        .single();
+      if (error || !message) throw error ?? new Error('No se creó el mensaje');
       // Notificación push al destinatario (best-effort, no bloquea el envío).
-      sendPush({
-        userId: active.id,
-        title: profile?.full_name ? `Mensaje de ${profile.full_name}` : 'Nuevo mensaje',
-        body: text.trim().slice(0, 140),
-        url: '/app',
-      });
+      void sendPushEvent('message', message.id);
       setText('');
       await loadThread(active.id);
       loadConversations();

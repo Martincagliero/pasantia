@@ -13,6 +13,7 @@ import { PostInteractions } from '../ui/PostInteractions';
 import { EmojiText } from '../ui/EmojiText';
 import { useModalGuard } from '../ui/modalGuard';
 import { normalizeUrl } from '../../lib/url';
+import { sendPushEvent } from '../../lib/notify';
 
 const CATEGORIES: { value: PostCategory; label: string }[] = [
   { value: 'novedad', label: 'Novedad' },
@@ -246,6 +247,7 @@ function PostForm({
       setError('No se pudo publicar. Verificá que la tabla "posts" exista (migración).');
       return;
     }
+    void sendPushEvent('post', data.id);
     onCreated(data as unknown as PostWithAuthor);
   }
 

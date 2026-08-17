@@ -267,7 +267,8 @@ export default function Home() {
                   Ingresar
                 </Button>
                 <Button
-                  onClick={() => openEarlyAccess('estudiante')}
+                  onClick={() => openEarlyAccess()}
+                  variant="landing"
                   size="sm"
                   className="!h-9 justify-center px-4 text-xs"
                 >

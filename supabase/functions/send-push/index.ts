@@ -1,5 +1,7 @@
-// Edge Function: envía una notificación push a todas las suscripciones de un
-// usuario. Usa el service role para leer push_subscriptions (saltea RLS).
+// Edge Function: valida un evento real contra el usuario autenticado y envía
+// push directo o broadcast. El cliente nunca define destinatarios ni contenido.
+// Usa el service role solo dentro del servidor para resolver recursos y
+// suscripciones; esa clave nunca sale al frontend.
 //
 // Requiere estos SECRETS configurados en el proyecto de Supabase:
 //   supabase secrets set VAPID_PUBLIC_KEY=...  VAPID_PRIVATE_KEY=...  VAPID_SUBJECT=mailto:holapasantia@gmail.com
@@ -28,8 +30,13 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
   try {
-    const { user_id, title, body, url } = await req.json();
-    if (!user_id) return json({ error: 'user_id requerido' }, 400);
+    const authorization = req.headers.get('Authorization');
+    if (!authorization?.startsWith('Bearer ')) return json({ error: 'no autorizado' }, 401);
+
+    const { event_type, resource_id } = await req.json();
+    if (!event_type || !resource_id) {
+      return json({ error: 'event_type y resource_id son requeridos' }, 400);
+    }
 
     const VAPID_PUBLIC = Deno.env.get('VAPID_PUBLIC_KEY');
     const VAPID_PRIVATE = Deno.env.get('VAPID_PRIVATE_KEY');
@@ -44,15 +51,120 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const { data: subs } = await admin
+    const token = authorization.slice('Bearer '.length);
+    const { data: authData, error: authError } = await admin.auth.getUser(token);
+    const caller = authData.user;
+    if (authError || !caller) return json({ error: 'sesión inválida' }, 401);
+
+    let title = 'PasantIA';
+    let body = '';
+    let url = '/app';
+    let recipientIds: string[] | null = null;
+    let broadcast = false;
+
+    if (event_type === 'message') {
+      const { data: message } = await admin
+        .from('messages')
+        .select('sender_id, recipient_id, content')
+        .eq('id', resource_id)
+        .maybeSingle();
+      if (!message || message.sender_id !== caller.id) return json({ error: 'evento inválido' }, 403);
+      const { data: sender } = await admin
+        .from('profiles')
+        .select('full_name')
+        .eq('id', caller.id)
+        .maybeSingle();
+      title = sender?.full_name ? `Mensaje de ${sender.full_name}` : 'Nuevo mensaje';
+      body = String(message.content ?? '').slice(0, 140);
+      url = '/app';
+      recipientIds = [message.recipient_id];
+    } else if (event_type === 'connection_request' || event_type === 'connection_accepted') {
+      const { data: connection } = await admin
+        .from('connection_requests')
+        .select('requester_id, recipient_id, status')
+        .eq('id', resource_id)
+        .maybeSingle();
+      if (!connection) return json({ error: 'evento inválido' }, 404);
+      const requesting = event_type === 'connection_request';
+      const valid = requesting
+        ? connection.requester_id === caller.id && connection.status === 'pending'
+        : connection.recipient_id === caller.id && connection.status === 'accepted';
+      if (!valid) return json({ error: 'evento inválido' }, 403);
+      const { data: actor } = await admin
+        .from('profiles')
+        .select('full_name')
+        .eq('id', caller.id)
+        .maybeSingle();
+      title = requesting ? 'Nueva solicitud de conexión' : 'Conexión aceptada';
+      body = requesting
+        ? `${actor?.full_name || 'Un estudiante'} quiere conectar con vos.`
+        : `${actor?.full_name || 'Un estudiante'} aceptó tu solicitud de conexión.`;
+      url = requesting ? '/app/explorar?tab=red' : '/app/explorar?tab=red';
+      recipientIds = [requesting ? connection.recipient_id : connection.requester_id];
+    } else if (event_type === 'post') {
+      const { data: post } = await admin
+        .from('posts')
+        .select('author_id, author_name, title')
+        .eq('id', resource_id)
+        .maybeSingle();
+      if (!post || post.author_id !== caller.id) return json({ error: 'evento inválido' }, 403);
+      const { data: author } = await admin
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', caller.id)
+        .maybeSingle();
+      const official = author?.is_admin === true;
+      title = official ? 'Aviso oficial de PasantIA' : 'Nueva publicación en Novedades';
+      body = official ? post.title : `${post.author_name || 'Usuario'}: ${post.title}`;
+      url = official ? '/app/inicio-estudiante' : '/app/novedades';
+      broadcast = true;
+    } else if (event_type === 'internship') {
+      const { data: internship } = await admin
+        .from('internships')
+        .select('company_id, title, company_name, is_active')
+        .eq('id', resource_id)
+        .maybeSingle();
+      if (!internship || internship.company_id !== caller.id || !internship.is_active) {
+        return json({ error: 'evento inválido' }, 403);
+      }
+      title = 'Nueva pasantía publicada';
+      body = internship.company_name
+        ? `${internship.title} · ${internship.company_name}`
+        : internship.title;
+      url = '/app/pasantias';
+      broadcast = true;
+    } else if (event_type === 'member') {
+      const { data: member } = await admin
+        .from('profiles')
+        .select('id, full_name, role')
+        .eq('id', resource_id)
+        .maybeSingle();
+      if (!member || member.id !== caller.id || !['estudiante', 'empresa'].includes(member.role)) {
+        return json({ error: 'evento inválido' }, 403);
+      }
+      title = member.role === 'empresa' ? 'Nueva empresa en PasantIA' : 'Nuevo estudiante en PasantIA';
+      body = `${member.full_name || 'Un nuevo usuario'} se sumó a la plataforma.`;
+      url = `/app/explorar?u=${member.id}`;
+      broadcast = true;
+    } else {
+      return json({ error: 'tipo de evento no soportado' }, 400);
+    }
+
+    let subscriptionsQuery = admin
       .from('push_subscriptions')
-      .select('endpoint, p256dh, auth')
-      .eq('user_id', user_id);
+      .select('endpoint, p256dh, auth, user_id');
+    if (broadcast) {
+      subscriptionsQuery = subscriptionsQuery.neq('user_id', caller.id);
+    } else {
+      subscriptionsQuery = subscriptionsQuery.in('user_id', recipientIds ?? []);
+    }
+    const { data: subs, error: subscriptionsError } = await subscriptionsQuery;
+    if (subscriptionsError) return json({ error: subscriptionsError.message }, 500);
 
     const payload = JSON.stringify({
-      title: title ?? 'PasantIA',
-      body: body ?? '',
-      url: url ?? '/app',
+      title,
+      body,
+      url,
     });
 
     let sent = 0;
@@ -72,7 +184,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return json({ sent });
+    return json({ sent, event_type, broadcast });
   } catch (e) {
     return json({ error: String(e) }, 500);
   }

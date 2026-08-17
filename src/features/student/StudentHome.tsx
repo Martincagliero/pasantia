@@ -8,7 +8,7 @@ import { EmojiText } from '../ui/EmojiText';
 import { PostInteractions } from '../ui/PostInteractions';
 import { useAuth } from '../auth/AuthProvider';
 import { LinkPreview } from '../ui/LinkPreview';
-import { sendPush } from '../../lib/notify';
+import { sendPushEvent } from '../../lib/notify';
 
 interface HomePost extends Post {
   author: { is_admin: boolean } | null;
@@ -176,12 +176,7 @@ export default function StudentHome() {
         if (error) throw error;
         setConnectionRequests((current) => current.filter((row) => row.id !== existing.id));
         setFollowingIds((current) => new Set(current).add(targetId));
-        sendPush({
-          userId: targetId,
-          title: 'Conexión aceptada',
-          body: `${profile.full_name || 'Un estudiante'} aceptó tu solicitud de conexión.`,
-          url: '/app/explorar?tab=red',
-        });
+        void sendPushEvent('connection_accepted', existing.id);
         return;
       }
       if (state === 'sent' && existing) {
@@ -203,12 +198,7 @@ export default function StudentHome() {
           updated_at: new Date().toISOString(),
         },
       ]);
-      sendPush({
-        userId: targetId,
-        title: 'Nueva solicitud de conexión',
-        body: `${profile.full_name || 'Un estudiante'} quiere conectar con vos.`,
-        url: '/app/explorar?tab=red',
-      });
+      void sendPushEvent('connection_request', String(data));
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
       alert(

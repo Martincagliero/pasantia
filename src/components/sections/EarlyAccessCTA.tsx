@@ -41,7 +41,7 @@ export function EarlyAccessCTA({
             {subheading}
           </p>
           <div className="mt-10 flex justify-center">
-            <Button onClick={() => open(role)} size="lg">
+            <Button onClick={() => open(role)} variant="landing" size="lg">
               {buttonLabel}
             </Button>
           </div>

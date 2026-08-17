@@ -30,7 +30,7 @@ import type {
   ConnectionRequest,
   Post,
 } from '../../lib/database.types';
-import { sendPush } from '../../lib/notify';
+import { sendPushEvent } from '../../lib/notify';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
 import { TextField } from '../ui/Field';
 import { useModalGuard } from '../ui/modalGuard';
@@ -225,12 +225,7 @@ export default function Explore() {
     setConnectionRequests((current) => current.filter((row) => row.id !== request.id));
     if (accept) {
       setFollowingIds((current) => new Set(current).add(request.requester_id));
-      sendPush({
-        userId: request.requester_id,
-        title: 'Conexión aceptada',
-        body: `${viewer?.full_name || 'Un estudiante'} aceptó tu solicitud de conexión.`,
-        url: '/app/explorar?tab=red',
-      });
+      void sendPushEvent('connection_accepted', request.id);
     }
   }
 
@@ -274,12 +269,7 @@ export default function Explore() {
         updated_at: new Date().toISOString(),
       },
     ]);
-    sendPush({
-      userId: targetId,
-      title: 'Nueva solicitud de conexión',
-      body: `${viewer?.full_name || 'Un estudiante'} quiere conectar con vos.`,
-      url: '/app/explorar?tab=red',
-    });
+    void sendPushEvent('connection_request', String(data));
   }
 
 

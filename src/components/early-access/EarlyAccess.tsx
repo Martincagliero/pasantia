@@ -30,7 +30,6 @@ import { GoogleLogo } from '../../features/auth/GoogleLogo';
 import {
   clearPendingGoogleOnboarding,
   readPendingGoogleOnboarding,
-  savePendingGoogleOnboarding,
 } from '../../features/auth/googleOnboarding';
 import { sendPushEvent } from '../../lib/notify';
 import estudianteImg from '../../assets/images/estudiante.webp';
@@ -202,7 +201,7 @@ function Onboarding({
   presetRole?: Role;
   onClose: () => void;
 }) {
-  const { signUp, signOut, signInWithGoogle, refreshProfile } = useAuth();
+  const { signUp, signOut, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [data, setData] = useState<FormData>(EMPTY);
@@ -320,19 +319,6 @@ function Onboarding({
     }
     onClose();
     if (goToLogin || googleAuth) navigate('/ingresar');
-  }
-
-  async function startGoogleRegistration() {
-    if (!data.role) return;
-    savePendingGoogleOnboarding(data.role);
-    setSubmitting(true);
-    setError(null);
-    const result = await signInWithGoogle();
-    if (result.error) {
-      clearPendingGoogleOnboarding();
-      setError(result.error);
-      setSubmitting(false);
-    }
   }
 
   // Cerrar con Escape; avanzar con Enter (si es válido y no estamos en textarea).
@@ -708,8 +694,6 @@ function Onboarding({
                       data={data}
                       set={set}
                       googleAuth={googleAuth}
-                      googleLoading={submitting}
-                      onGoogle={startGoogleRegistration}
                     />
                   )}
                   {current === 'eduUni' && <StepEduUni data={data} set={set} />}
@@ -847,14 +831,10 @@ function StepContacto({
   data,
   set,
   googleAuth,
-  googleLoading,
-  onGoogle,
 }: {
   data: FormData;
   set: (p: Partial<FormData>) => void;
   googleAuth: boolean;
-  googleLoading: boolean;
-  onGoogle: () => void;
 }) {
   const [avatarError, setAvatarError] = useState<string | null>(null);
 
@@ -891,20 +871,6 @@ function StepContacto({
           </div>
         ) : (
           <>
-            <button
-              type="button"
-              onClick={onGoogle}
-              disabled={googleLoading}
-              className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-white px-3.5 py-2.5 text-xs font-semibold text-brand-900 transition hover:bg-white/90 disabled:opacity-60 sm:gap-3 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm lg:col-span-2"
-            >
-              <GoogleLogo />
-              {googleLoading ? 'Conectando…' : 'Registrarme con Google'}
-            </button>
-            <div className="flex items-center gap-3 lg:col-span-2" aria-hidden>
-              <span className="h-px flex-1 bg-white/15" />
-              <span className="text-[11px] font-medium uppercase text-white/45">o con email</span>
-              <span className="h-px flex-1 bg-white/15" />
-            </div>
             <Input
               label="Nombre y apellido"
               value={data.nombre}

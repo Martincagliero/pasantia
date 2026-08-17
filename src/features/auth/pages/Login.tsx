@@ -4,14 +4,13 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useAuth } from '../AuthProvider';
-import { GoogleLogo } from '../GoogleLogo';
 import { isSupabaseConfigured } from '../../../lib/supabase';
 import { useEarlyAccess } from '../../../components/early-access/EarlyAccess';
 import loginLogo from '../../../assets/images/logoingresar.png';
 import logoP from '../../../assets/images/logo-p-blanco.png';
 
 export default function Login() {
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn } = useAuth();
   const { open: openEarlyAccess } = useEarlyAccess();
   const navigate = useNavigate();
   const location = useLocation();
@@ -62,16 +61,6 @@ export default function Login() {
       /* ignore */
     }
     navigate(from, { replace: true });
-  }
-
-  async function handleGoogleSignIn() {
-    setError(null);
-    setLoading(true);
-    const { error } = await signInWithGoogle();
-    if (error) {
-      setError(error);
-      setLoading(false);
-    }
   }
 
   return (
@@ -130,23 +119,7 @@ export default function Login() {
                 </p>
               )}
 
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={loading}
-                className="mt-[clamp(.75rem,2vh,1.25rem)] flex w-full items-center justify-center gap-3 rounded-xl border border-white bg-white px-4 py-[clamp(.625rem,1.5vh,.75rem)] text-[15px] font-semibold text-brand-900 transition hover:bg-white/90 disabled:opacity-60"
-              >
-                <GoogleLogo />
-                Continuar con Google
-              </button>
-
-              <div className="my-[clamp(.65rem,1.8vh,1rem)] flex items-center gap-3" aria-hidden>
-                <span className="h-px flex-1 bg-white/30" />
-                <span className="text-xs font-medium uppercase text-white/65">o con email</span>
-                <span className="h-px flex-1 bg-white/30" />
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-[clamp(.6rem,1.6vh,.9rem)]">
+              <form onSubmit={handleSubmit} className="mt-[clamp(.75rem,2vh,1.25rem)] space-y-[clamp(.6rem,1.6vh,.9rem)]">
                 {/* Email */}
                 <div>
                   <label htmlFor="email" className="mb-1 block text-sm font-medium text-white">

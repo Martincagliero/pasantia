@@ -3,7 +3,9 @@
 // Ver .env.example para el formato.
 import { createClient } from '@supabase/supabase-js';
 
-const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const projectUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const customUrl = import.meta.env.VITE_SUPABASE_CUSTOM_URL as string | undefined;
+const url = customUrl || projectUrl;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 /** True cuando hay credenciales configuradas. Permite mostrar avisos claros en vez de romper. */
@@ -13,7 +15,7 @@ if (!isSupabaseConfigured) {
   // No lanzamos error para que la landing siga funcionando sin credenciales,
   // pero avisamos en consola para el desarrollador.
   console.warn(
-    '[Supabase] Faltan VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY. ' +
+    '[Supabase] Faltan VITE_SUPABASE_URL (o VITE_SUPABASE_CUSTOM_URL) / VITE_SUPABASE_ANON_KEY. ' +
       'Copiá .env.example a .env.local y completá tus credenciales.'
   );
 }

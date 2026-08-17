@@ -23,6 +23,7 @@ import {
   Users,
   Camera,
   Check,
+  Trash2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
@@ -110,6 +111,13 @@ interface GroupMessage {
   content: string;
   created_at: string;
   senderName?: string;
+}
+
+interface GroupMember {
+  id: string;
+  name: string;
+  avatar: string | null;
+  isAdmin: boolean;
 }
 
 type ComposerMode = 'menu' | 'contact' | 'group' | null;
@@ -219,6 +227,12 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [groupError, setGroupError] = useState<string | null>(null);
+  const [groupSettingsOpen, setGroupSettingsOpen] = useState(false);
+  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
+  const [loadingGroupMembers, setLoadingGroupMembers] = useState(false);
+  const [groupAdminError, setGroupAdminError] = useState<string | null>(null);
+  const [updatingGroupAvatar, setUpdatingGroupAvatar] = useState(false);
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
   const [mobileViewport, setMobileViewport] = useState<{ height: number; top: number } | null>(null);
   const threadRef = useRef<HTMLDivElement>(null);
   const suggestionsLoadedRef = useRef(false);
@@ -460,6 +474,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     (userId: string, name: string, avatar: string | null = null) => {
       if (userId === uid) return;
       setActiveGroup(null);
+      setGroupSettingsOpen(false);
       setActive({ id: userId, name, avatar });
       setOpen(true);
       loadThread(userId);
@@ -476,10 +491,107 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const openGroup = useCallback((group: MessageGroup) => {
     setActive(null);
     setActiveGroup(group);
+    setGroupSettingsOpen(false);
     setComposerMode(null);
     setOpen(true);
     void loadGroupThread(group.id);
   }, [loadGroupThread]);
+
+  const loadGroupMembers = useCallback(async (groupId: string) => {
+    setLoadingGroupMembers(true);
+    setGroupAdminError(null);
+    try {
+      const { data: memberships, error } = await supabase
+        .from('message_group_members')
+        .select('user_id, is_admin')
+        .eq('group_id', groupId);
+      if (error) throw error;
+      const rows = (memberships ?? []) as Array<{ user_id: string; is_admin: boolean }>;
+      const memberIds = rows.map((row) => row.user_id);
+      if (memberIds.length === 0) {
+        setGroupMembers([]);
+        return;
+      }
+      const [{ data: profiles }, { data: students }, { data: companies }, { data: ambassadors }] = await Promise.all([
+        supabase.from('profiles').select('id, full_name').in('id', memberIds),
+        supabase.from('student_profiles').select('id, avatar_url').in('id', memberIds),
+        supabase.from('company_profiles').select('id, avatar_url').in('id', memberIds),
+        supabase.from('ambassador_profiles').select('id, logo_url').in('id', memberIds),
+      ]);
+      const names = new Map((profiles ?? []).map((item) => [item.id, item.full_name || 'Usuario']));
+      const avatars = new Map<string, string>();
+      for (const item of [...(students ?? []), ...(companies ?? [])] as Array<{ id: string; avatar_url: string | null }>) {
+        if (item.avatar_url) avatars.set(item.id, item.avatar_url);
+      }
+      for (const item of (ambassadors ?? []) as Array<{ id: string; logo_url: string | null }>) {
+        if (item.logo_url) avatars.set(item.id, item.logo_url);
+      }
+      setGroupMembers(rows.map((row) => ({
+        id: row.user_id,
+        name: names.get(row.user_id) || 'Usuario',
+        avatar: avatars.get(row.user_id) ?? null,
+        isAdmin: row.is_admin,
+      })));
+    } catch {
+      setGroupAdminError('No se pudieron cargar los integrantes.');
+    } finally {
+      setLoadingGroupMembers(false);
+    }
+  }, []);
+
+  function openGroupSettings() {
+    if (!activeGroup) return;
+    setGroupSettingsOpen(true);
+    void loadGroupMembers(activeGroup.id);
+  }
+
+  async function changeGroupAvatar(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || !activeGroup || !uid || updatingGroupAvatar) return;
+    if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
+      setGroupAdminError('Elegí una imagen JPG, PNG o WEBP de hasta 5 MB.');
+      return;
+    }
+    setUpdatingGroupAvatar(true);
+    setGroupAdminError(null);
+    try {
+      const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const path = `message-groups/${uid}-${Date.now()}.${extension}`;
+      const { error: uploadError } = await supabase.storage.from('cvs').upload(path, file);
+      if (uploadError) throw uploadError;
+      const avatarUrl = supabase.storage.from('cvs').getPublicUrl(path).data.publicUrl;
+      const { error } = await supabase.rpc('update_message_group_avatar', {
+        p_group_id: activeGroup.id,
+        p_avatar_url: avatarUrl,
+      });
+      if (error) throw error;
+      setActiveGroup((current) => current ? { ...current, avatar_url: avatarUrl } : current);
+      setGroupConvos((current) => current.map((group) => group.id === activeGroup.id ? { ...group, avatar_url: avatarUrl } : group));
+    } catch {
+      setGroupAdminError('No se pudo cambiar la imagen del grupo.');
+    } finally {
+      setUpdatingGroupAvatar(false);
+    }
+  }
+
+  async function removeGroupMember(memberId: string) {
+    if (!activeGroup || removingMemberId) return;
+    setRemovingMemberId(memberId);
+    setGroupAdminError(null);
+    const { error } = await supabase.rpc('remove_message_group_member', {
+      p_group_id: activeGroup.id,
+      p_member_id: memberId,
+    });
+    if (error) {
+      setGroupAdminError(error.message.includes('dos integrantes')
+        ? 'El grupo debe conservar al menos dos integrantes.'
+        : 'No se pudo quitar al integrante.');
+    } else {
+      setGroupMembers((current) => current.filter((member) => member.id !== memberId));
+    }
+    setRemovingMemberId(null);
+  }
 
   function resetComposer() {
     setComposerMode(null);
@@ -682,6 +794,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     [openChatWith, openMessages, unreadTotal]
   );
   const modalOpen = useAnyModalOpen();
+  const activeGroupAdmin = groupMembers.some((member) => member.id === uid && member.isAdmin);
 
   return (
     <MessagesContext.Provider value={value}>
@@ -729,10 +842,10 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                   type="button"
                   onClick={() => setComposerMode((mode) => mode ? null : 'menu')}
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/65 transition hover:bg-white/10 hover:text-white"
-                  aria-label="Nueva conversación"
-                  title="Nueva conversación"
+                  aria-label={composerMode ? 'Cerrar nueva conversación' : 'Nueva conversación'}
+                  title={composerMode ? 'Cerrar' : 'Nueva conversación'}
                 >
-                  <Plus className="h-[18px] w-[18px]" />
+                  {composerMode ? <X className="h-[18px] w-[18px]" /> : <Plus className="h-[18px] w-[18px]" />}
                 </button>
               )}
             </div>
@@ -745,6 +858,10 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                     <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
                       <button
                         onClick={() => {
+                          if (groupSettingsOpen) {
+                            setGroupSettingsOpen(false);
+                            return;
+                          }
                           setActive(null);
                           setActiveGroup(null);
                           setText('');
@@ -764,15 +881,21 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                           <span className="truncate text-sm font-semibold text-white">{active.name}</span>
                         </button>
                       ) : activeGroup ? (
-                        <div className="flex min-w-0 items-center gap-2 px-1 py-0.5">
+                        <button
+                          type="button"
+                          onClick={openGroupSettings}
+                          className="flex min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 transition hover:bg-white/10"
+                          title="Información del grupo"
+                        >
                           <ChatAvatar url={activeGroup.avatar_url} name={activeGroup.name} className="h-7 w-7" />
                           <span className="truncate text-sm font-semibold text-white">{activeGroup.name}</span>
-                        </div>
+                        </button>
                       ) : null}
                       <button
                         onClick={() => {
                           setActive(null);
                           setActiveGroup(null);
+                          setGroupSettingsOpen(false);
                         }}
                         className="ml-auto rounded-lg p-1 text-white/50 hover:bg-white/10 hover:text-white"
                         aria-label="Cerrar chat"
@@ -781,6 +904,66 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                       </button>
                     </div>
 
+                    {activeGroup && groupSettingsOpen ? (
+                      <div className="flex-1 overflow-y-auto px-3 py-4">
+                        <div className="text-center">
+                          <div className="relative mx-auto h-20 w-20">
+                            <ChatAvatar url={activeGroup.avatar_url} name={activeGroup.name} className="h-20 w-20" />
+                            {activeGroupAdmin && (
+                              <label
+                                className="absolute -bottom-1 -right-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white/15 bg-brand-500 text-white shadow-lg"
+                                title="Cambiar imagen"
+                              >
+                                <Camera className="h-4 w-4" />
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={changeGroupAvatar}
+                                  disabled={updatingGroupAvatar}
+                                  className="hidden"
+                                />
+                              </label>
+                            )}
+                          </div>
+                          <h3 className="mt-3 text-base font-semibold text-white">{activeGroup.name}</h3>
+                          <p className="mt-0.5 text-xs text-white/45">
+                            {loadingGroupMembers ? 'Cargando integrantes…' : `${groupMembers.length} integrantes`}
+                          </p>
+                          {updatingGroupAvatar && <p className="mt-1 text-xs text-brand-300">Actualizando imagen…</p>}
+                        </div>
+
+                        <div className="mt-5 border-t border-white/10 pt-3">
+                          <p className="mb-2 px-1 text-xs font-semibold uppercase text-white/40">Integrantes</p>
+                          <div className="space-y-1">
+                            {groupMembers.map((member) => (
+                              <div key={member.id} className="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-white/[0.04]">
+                                <ChatAvatar url={member.avatar} name={member.name} />
+                                <span className="min-w-0 flex-1">
+                                  <span className="block truncate text-sm font-medium text-white">
+                                    {member.name}{member.id === uid ? ' (vos)' : ''}
+                                  </span>
+                                  {member.isAdmin && <span className="block text-[11px] text-brand-300">Administrador</span>}
+                                </span>
+                                {activeGroupAdmin && member.id !== uid && member.id !== activeGroup.created_by && (
+                                  <button
+                                    type="button"
+                                    onClick={() => void removeGroupMember(member.id)}
+                                    disabled={removingMemberId === member.id}
+                                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-red-300 transition hover:bg-red-400/10 disabled:opacity-40"
+                                    title={`Quitar a ${member.name}`}
+                                    aria-label={`Quitar a ${member.name}`}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          {groupAdminError && <p className="mt-3 rounded-xl bg-red-400/10 px-3 py-2 text-xs text-red-300">{groupAdminError}</p>}
+                        </div>
+                      </div>
+                    ) : (
+                    <>
                     <div ref={threadRef} className="flex-1 space-y-2 overflow-y-auto px-3 py-3">
                       {(activeGroup ? groupThread : thread).length === 0 ? (
                         <p className="mt-6 text-center text-xs text-white/45">
@@ -841,6 +1024,8 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                         <Send className="h-4 w-4" />
                       </button>
                     </div>
+                    </>
+                    )}
                   </div>
                 ) : (
                   /* ── Lista de conversaciones ── */

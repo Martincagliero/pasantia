@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Bookmark, BriefcaseBusiness, Building2, Check, Clock3, Hand, House, MessageSquare, Newspaper, ShieldCheck, UserCheck, UserPlus } from 'lucide-react';
+import { ArrowRight, Bookmark, BriefcaseBusiness, Building2, Check, Clock3, House, MessageSquare, Newspaper, ShieldCheck, UserCheck, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import type { ConnectionRequest, InternshipWithCompany, Post, Profile } from '../../lib/database.types';
@@ -64,8 +64,6 @@ export default function StudentHome() {
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [connectionRequests, setConnectionRequests] = useState<ConnectionRequest[]>([]);
   const [connectingId, setConnectingId] = useState<string | null>(null);
-  const [welcomedIds, setWelcomedIds] = useState<Set<string>>(new Set());
-  const [welcomingId, setWelcomingId] = useState<string | null>(null);
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<InternshipWithCompany | null>(null);
@@ -75,7 +73,7 @@ export default function StudentHome() {
   useEffect(() => {
     let active = true;
     void (async () => {
-      const [postsResult, internshipsResult, membersResult, followsResult, requestsResult, applicationsResult, savedResult, welcomesResult] = await Promise.all([
+      const [postsResult, internshipsResult, membersResult, followsResult, requestsResult, applicationsResult, savedResult] = await Promise.all([
         supabase
           .from('posts')
           .select('*, author:profiles!author_id(is_admin)')
@@ -105,7 +103,6 @@ export default function StudentHome() {
           : Promise.resolve({ data: [] }),
         supabase.from('applications').select('internship_id').eq('student_id', profile?.id ?? ''),
         supabase.from('saved_internships').select('internship_id').eq('student_id', profile?.id ?? ''),
-        supabase.from('profile_welcomes').select('recipient_id').eq('sender_id', profile?.id ?? ''),
       ]);
       if (!active) return;
       const memberRows = (membersResult.data as Omit<HomeMember, 'avatarUrl'>[] | null) ?? [];
@@ -144,7 +141,6 @@ export default function StudentHome() {
       setConnectionRequests((requestsResult.data as ConnectionRequest[] | null) ?? []);
       setAppliedIds(new Set((applicationsResult.data ?? []).map((row) => row.internship_id)));
       setSavedIds(new Set((savedResult.data ?? []).map((row) => row.internship_id)));
-      setWelcomedIds(new Set((welcomesResult.data ?? []).map((row) => row.recipient_id)));
       setLoading(false);
     })();
     return () => {
@@ -239,21 +235,6 @@ export default function StudentHome() {
     }
   }
 
-  async function giveWelcome(targetId: string) {
-    if (!profile?.id || welcomedIds.has(targetId) || welcomingId) return;
-    setWelcomingId(targetId);
-    const { data, error } = await supabase
-      .from('profile_welcomes')
-      .insert({ sender_id: profile.id, recipient_id: targetId })
-      .select('id')
-      .single();
-    if (!error && data) {
-      setWelcomedIds((current) => new Set(current).add(targetId));
-      void sendPushEvent('welcome', data.id);
-    }
-    setWelcomingId(null);
-  }
-
   async function toggleSave(internshipId: string) {
     if (!profile?.id) return;
     const saved = savedIds.has(internshipId);
@@ -322,12 +303,6 @@ export default function StudentHome() {
                         onClick={() => void toggleConnection(member.id)}
                       />
                     )}
-                    <WelcomeButton
-                      compact
-                      welcomed={welcomedIds.has(member.id)}
-                      loading={welcomingId === member.id}
-                      onClick={() => void giveWelcome(member.id)}
-                    />
                   </div>
                 );
               })}
@@ -495,11 +470,6 @@ export default function StudentHome() {
                         onClick={() => void toggleConnection(member.id)}
                       />
                     )}
-                    <WelcomeButton
-                      welcomed={welcomedIds.has(member.id)}
-                      loading={welcomingId === member.id}
-                      onClick={() => void giveWelcome(member.id)}
-                    />
                   </div>
                 );
               })}
@@ -555,33 +525,6 @@ export default function StudentHome() {
         />
       )}
     </div>
-  );
-}
-
-function WelcomeButton({
-  welcomed,
-  loading,
-  compact = false,
-  onClick,
-}: {
-  welcomed: boolean;
-  loading: boolean;
-  compact?: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={welcomed || loading}
-      title={welcomed ? 'Ya le diste la bienvenida' : 'Dar la bienvenida'}
-      className={compact
-        ? `flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition ${welcomed ? 'border-amber-400/30 bg-amber-400/10 text-amber-300' : 'border-white/15 text-white/65 hover:bg-white/8'}`
-        : `mt-2 flex w-full items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${welcomed ? 'border-amber-400/30 bg-amber-400/10 text-amber-300' : 'border-white/15 text-white/70 hover:bg-white/8'}`}
-    >
-      <Hand className="h-3.5 w-3.5" />
-      {!compact && (loading ? 'Enviando' : welcomed ? 'Bienvenida enviada' : 'Dar la bienvenida')}
-    </button>
   );
 }
 

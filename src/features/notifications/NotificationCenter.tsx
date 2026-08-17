@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bell, Briefcase, Check, Hand, MessageSquare, Newspaper, ShieldCheck, UserPlus } from 'lucide-react';
+import { Bell, Briefcase, Check, MessageSquare, Newspaper, ShieldCheck, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { useMessages } from '../messages/MessagesProvider';
 
-type NotificationKind = 'message' | 'internship' | 'post' | 'admin_post' | 'member' | 'connection' | 'welcome';
+type NotificationKind = 'message' | 'internship' | 'post' | 'admin_post' | 'member' | 'connection';
 
 interface ActivityNotification {
   id: string;
@@ -24,7 +24,6 @@ const ICONS = {
   admin_post: ShieldCheck,
   member: UserPlus,
   connection: UserPlus,
-  welcome: Hand,
 };
 
 function relativeTime(value: string): string {
@@ -59,7 +58,7 @@ export function NotificationCenter() {
     setLoading(true);
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     try {
-      const [messagesResult, internshipsResult, postsResult, membersResult, connectionsResult, welcomesResult] = await Promise.all([
+      const [messagesResult, internshipsResult, postsResult, membersResult, connectionsResult] = await Promise.all([
         supabase
           .from('messages')
           .select('id, sender_id, content, created_at')
@@ -92,13 +91,6 @@ export function NotificationCenter() {
           .select('id, requester_id, created_at')
           .eq('recipient_id', uid)
           .eq('status', 'pending')
-          .order('created_at', { ascending: false })
-          .limit(8),
-        supabase
-          .from('profile_welcomes')
-          .select('id, sender_id, created_at, sender:profiles!sender_id(full_name)')
-          .eq('recipient_id', uid)
-          .gte('created_at', since)
           .order('created_at', { ascending: false })
           .limit(8),
       ]);
@@ -219,22 +211,6 @@ export function NotificationCenter() {
           targetId: request.requester_id,
           avatarUrl: requesterAvatars.get(request.requester_id) ?? null,
         })),
-        ...((welcomesResult.data ?? []) as unknown as Array<{
-          id: string;
-          sender_id: string;
-          created_at: string;
-          sender: { full_name: string } | { full_name: string }[] | null;
-        }>).map((welcome) => {
-          const sender = Array.isArray(welcome.sender) ? welcome.sender[0] : welcome.sender;
-          return {
-            id: `welcome-${welcome.id}`,
-            kind: 'welcome' as const,
-            title: 'Te dieron la bienvenida',
-            detail: `${sender?.full_name || 'Un usuario'} te dio la bienvenida a PasantIA`,
-            createdAt: welcome.created_at,
-            targetId: welcome.sender_id,
-          };
-        }),
       ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setItems(next.slice(0, 6));
@@ -298,7 +274,6 @@ export function NotificationCenter() {
     }
     if (item.kind === 'connection') navigate('/app/explorar?tab=red&requests=1');
     if (item.kind === 'member') navigate(`/app/explorar?u=${item.targetId}`);
-    if (item.kind === 'welcome') navigate(`/app/explorar?u=${item.targetId}`);
     if (item.kind === 'internship') {
       navigate(
         profile?.role === 'estudiante'

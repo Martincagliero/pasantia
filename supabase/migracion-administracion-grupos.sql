@@ -27,6 +27,35 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.update_message_group_name(
+  p_group_id UUID,
+  p_name TEXT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT public.is_message_group_admin(p_group_id) THEN
+    RAISE EXCEPTION 'solo un administrador puede cambiar el nombre';
+  END IF;
+  IF char_length(trim(COALESCE(p_name, ''))) < 2
+     OR char_length(trim(COALESCE(p_name, ''))) > 80 THEN
+    RAISE EXCEPTION 'el nombre debe tener entre 2 y 80 caracteres';
+  END IF;
+
+  UPDATE public.message_groups
+  SET name = trim(p_name),
+      updated_at = now()
+  WHERE id = p_group_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'grupo inexistente';
+  END IF;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.remove_message_group_member(
   p_group_id UUID,
   p_member_id UUID
@@ -73,6 +102,8 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.update_message_group_avatar(UUID, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.update_message_group_name(UUID, TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.remove_message_group_member(UUID, UUID) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.update_message_group_avatar(UUID, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_message_group_name(UUID, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.remove_message_group_member(UUID, UUID) TO authenticated;

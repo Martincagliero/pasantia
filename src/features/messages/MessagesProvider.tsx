@@ -23,6 +23,7 @@ import {
   Users,
   Camera,
   Check,
+  Pencil,
   Trash2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -232,6 +233,9 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const [loadingGroupMembers, setLoadingGroupMembers] = useState(false);
   const [groupAdminError, setGroupAdminError] = useState<string | null>(null);
   const [updatingGroupAvatar, setUpdatingGroupAvatar] = useState(false);
+  const [editingGroupName, setEditingGroupName] = useState(false);
+  const [groupNameDraft, setGroupNameDraft] = useState('');
+  const [updatingGroupName, setUpdatingGroupName] = useState(false);
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
   const [mobileViewport, setMobileViewport] = useState<{ height: number; top: number } | null>(null);
   const threadRef = useRef<HTMLDivElement>(null);
@@ -542,7 +546,37 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   function openGroupSettings() {
     if (!activeGroup) return;
     setGroupSettingsOpen(true);
+    setEditingGroupName(false);
+    setGroupNameDraft(activeGroup.name);
     void loadGroupMembers(activeGroup.id);
+  }
+
+  async function saveGroupName() {
+    const nextName = groupNameDraft.trim();
+    if (!activeGroup || updatingGroupName) return;
+    if (nextName.length < 2 || nextName.length > 80) {
+      setGroupAdminError('El nombre debe tener entre 2 y 80 caracteres.');
+      return;
+    }
+    if (nextName === activeGroup.name) {
+      setEditingGroupName(false);
+      return;
+    }
+    setUpdatingGroupName(true);
+    setGroupAdminError(null);
+    const groupId = activeGroup.id;
+    const { error } = await supabase.rpc('update_message_group_name', {
+      p_group_id: groupId,
+      p_name: nextName,
+    });
+    if (error) {
+      setGroupAdminError('No se pudo cambiar el nombre del grupo.');
+    } else {
+      setActiveGroup((current) => current ? { ...current, name: nextName } : current);
+      setGroupConvos((current) => current.map((group) => group.id === groupId ? { ...group, name: nextName } : group));
+      setEditingGroupName(false);
+    }
+    setUpdatingGroupName(false);
   }
 
   async function changeGroupAvatar(event: React.ChangeEvent<HTMLInputElement>) {
@@ -925,7 +959,59 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                               </label>
                             )}
                           </div>
-                          <h3 className="mt-3 text-base font-semibold text-white">{activeGroup.name}</h3>
+                          {editingGroupName ? (
+                            <div className="mx-auto mt-3 max-w-[15rem]">
+                              <input
+                                value={groupNameDraft}
+                                onChange={(event) => setGroupNameDraft(event.target.value)}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter') void saveGroupName();
+                                  if (event.key === 'Escape') setEditingGroupName(false);
+                                }}
+                                maxLength={80}
+                                autoFocus
+                                className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-center text-base font-semibold text-white outline-none focus:border-brand-400/60"
+                                aria-label="Nombre del grupo"
+                              />
+                              <div className="mt-2 flex justify-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingGroupName(false)}
+                                  disabled={updatingGroupName}
+                                  className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white/60 hover:bg-white/8"
+                                >
+                                  Cancelar
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void saveGroupName()}
+                                  disabled={updatingGroupName || groupNameDraft.trim().length < 2}
+                                  className="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+                                >
+                                  {updatingGroupName ? 'Guardando…' : 'Guardar'}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="mt-3 flex items-center justify-center gap-1">
+                              <h3 className="min-w-0 truncate text-base font-semibold text-white">{activeGroup.name}</h3>
+                              {activeGroupAdmin && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setGroupNameDraft(activeGroup.name);
+                                    setEditingGroupName(true);
+                                    setGroupAdminError(null);
+                                  }}
+                                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white/55 transition hover:bg-white/10 hover:text-white"
+                                  title="Cambiar nombre"
+                                  aria-label="Cambiar nombre del grupo"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          )}
                           <p className="mt-0.5 text-xs text-white/45">
                             {loadingGroupMembers ? 'Cargando integrantes…' : `${groupMembers.length} integrantes`}
                           </p>

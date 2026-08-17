@@ -78,6 +78,27 @@ Deno.serve(async (req) => {
       body = String(message.content ?? '').slice(0, 140);
       url = '/app';
       recipientIds = [message.recipient_id];
+    } else if (event_type === 'group_message') {
+      const { data: message } = await admin
+        .from('group_messages')
+        .select('group_id, sender_id, content')
+        .eq('id', resource_id)
+        .maybeSingle();
+      if (!message || message.sender_id !== caller.id) return json({ error: 'evento inválido' }, 403);
+      const [{ data: group }, { data: sender }, { data: members }] = await Promise.all([
+        admin.from('message_groups').select('name').eq('id', message.group_id).maybeSingle(),
+        admin.from('profiles').select('full_name').eq('id', caller.id).maybeSingle(),
+        admin.from('message_group_members').select('user_id').eq('group_id', message.group_id),
+      ]);
+      if (!group || !(members ?? []).some((member) => member.user_id === caller.id)) {
+        return json({ error: 'evento inválido' }, 403);
+      }
+      title = group.name;
+      body = `${sender?.full_name || 'Usuario'}: ${String(message.content ?? '').slice(0, 120)}`;
+      url = '/app';
+      recipientIds = (members ?? [])
+        .map((member) => member.user_id)
+        .filter((memberId) => memberId !== caller.id);
     } else if (event_type === 'connection_request' || event_type === 'connection_accepted') {
       const { data: connection } = await admin
         .from('connection_requests')

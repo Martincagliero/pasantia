@@ -6,6 +6,7 @@ export type PushEventType =
   | 'message'
   | 'connection_request'
   | 'connection_accepted'
+  | 'group_message'
   | 'post'
   | 'internship'
   | 'member';

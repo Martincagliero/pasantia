@@ -10,7 +10,20 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { MessageSquare, ChevronDown, ChevronUp, ArrowLeft, Send, X } from 'lucide-react';
+import {
+  MessageSquare,
+  ChevronDown,
+  ChevronUp,
+  ArrowLeft,
+  Send,
+  X,
+  Plus,
+  Search,
+  UserPlus,
+  Users,
+  Camera,
+  Check,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { sendPushEvent } from '../../lib/notify';
@@ -76,6 +89,31 @@ interface SuggestedContact {
   role: 'estudiante' | 'empresa' | 'embajador';
 }
 
+interface MessageGroup {
+  id: string;
+  name: string;
+  avatar_url: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+interface GroupConversation extends MessageGroup {
+  last: string;
+  lastAt: string;
+  unread: number;
+}
+
+interface GroupMessage {
+  id: string;
+  group_id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+  senderName?: string;
+}
+
+type ComposerMode = 'menu' | 'contact' | 'group' | null;
+
 const suggestedRoleLabel: Record<SuggestedContact['role'], string> = {
   estudiante: 'Estudiante',
   empresa: 'Empresa',
@@ -126,6 +164,38 @@ function timeShort(d: string): string {
   }
 }
 
+function ContactList({
+  contacts,
+  loading,
+  onPick,
+}: {
+  contacts: SuggestedContact[];
+  loading: boolean;
+  onPick: (contact: SuggestedContact) => void;
+}) {
+  if (loading) return <p className="py-6 text-center text-xs text-white/40">Buscando perfiles…</p>;
+  if (contacts.length === 0) return <p className="py-6 text-center text-xs text-white/45">No encontramos contactos.</p>;
+  return (
+    <div className="max-h-64 space-y-1 overflow-y-auto">
+      {contacts.map((contact) => (
+        <button
+          key={contact.id}
+          type="button"
+          onClick={() => onPick(contact)}
+          className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition hover:bg-white/[0.06]"
+        >
+          <ChatAvatar url={contact.avatar} name={contact.name} />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-medium text-white">{contact.name}</span>
+            <span className="block text-[11px] text-white/45">{suggestedRoleLabel[contact.role]}</span>
+          </span>
+          <MessageSquare className="h-4 w-4 shrink-0 text-brand-500" />
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function MessagesProvider({ children }: { children: ReactNode }) {
   const { session, profile } = useAuth();
   const uid = session?.user.id;
@@ -133,12 +203,23 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<{ id: string; name: string; avatar: string | null } | null>(null);
+  const [activeGroup, setActiveGroup] = useState<MessageGroup | null>(null);
   const [convos, setConvos] = useState<Conversation[]>([]);
+  const [groupConvos, setGroupConvos] = useState<GroupConversation[]>([]);
   const [thread, setThread] = useState<Message[]>([]);
+  const [groupThread, setGroupThread] = useState<GroupMessage[]>([]);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [suggestions, setSuggestions] = useState<SuggestedContact[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [composerMode, setComposerMode] = useState<ComposerMode>(null);
+  const [contactQuery, setContactQuery] = useState('');
+  const [groupName, setGroupName] = useState('');
+  const [groupAvatarFile, setGroupAvatarFile] = useState<File | null>(null);
+  const [groupAvatarPreview, setGroupAvatarPreview] = useState('');
+  const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
+  const [creatingGroup, setCreatingGroup] = useState(false);
+  const [groupError, setGroupError] = useState<string | null>(null);
   const threadRef = useRef<HTMLDivElement>(null);
   const suggestionsLoadedRef = useRef(false);
 
@@ -152,15 +233,15 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
           .from('student_profiles')
           .select('id, avatar_url, profile:profiles(full_name)')
           .eq('is_public', true)
-          .limit(6),
+          .limit(100),
         supabase
           .from('company_profiles')
           .select('id, avatar_url, company_name, profile:profiles(full_name)')
-          .limit(6),
+          .limit(100),
         supabase
           .from('ambassador_profiles')
           .select('id, logo_url, org_name, profile:profiles(full_name)')
-          .limit(6),
+          .limit(100),
       ]);
 
       const contacts: SuggestedContact[] = [];
@@ -219,9 +300,9 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
         (a, b) => priority[a] - priority[b]
       );
       const balanced = roleOrder.flatMap((role) =>
-        contacts.filter((contact) => contact.role === role).slice(0, 2)
+        contacts.filter((contact) => contact.role === role)
       );
-      setSuggestions(balanced.slice(0, 4));
+      setSuggestions(balanced);
     } catch {
       setSuggestions([]);
     } finally {
@@ -289,6 +370,55 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     }
   }, [uid]);
 
+  const loadGroups = useCallback(async () => {
+    if (!uid) return;
+    try {
+      const { data: memberships, error } = await supabase
+        .from('message_group_members')
+        .select('group_id, last_read_at, group:message_groups(id, name, avatar_url, created_by, created_at)')
+        .eq('user_id', uid);
+      if (error) {
+        if (/does not exist|schema cache|relation/i.test(error.message)) setGroupConvos([]);
+        return;
+      }
+      const rows = (memberships ?? []) as unknown as Array<{
+        group_id: string;
+        last_read_at: string;
+        group: MessageGroup | MessageGroup[] | null;
+      }>;
+      const groupIds = rows.map((row) => row.group_id);
+      if (groupIds.length === 0) {
+        setGroupConvos([]);
+        return;
+      }
+      const { data: messages } = await supabase
+        .from('group_messages')
+        .select('id, group_id, sender_id, content, created_at')
+        .in('group_id', groupIds)
+        .order('created_at', { ascending: false })
+        .limit(500);
+      const messageRows = (messages as GroupMessage[] | null) ?? [];
+      const next = rows.flatMap((row) => {
+        const group = Array.isArray(row.group) ? row.group[0] : row.group;
+        if (!group) return [];
+        const groupMessages = messageRows.filter((message) => message.group_id === row.group_id);
+        const last = groupMessages[0];
+        const lastRead = new Date(row.last_read_at).getTime();
+        return [{
+          ...group,
+          last: last?.content ?? 'Grupo creado',
+          lastAt: last?.created_at ?? group.created_at,
+          unread: groupMessages.filter(
+            (message) => message.sender_id !== uid && new Date(message.created_at).getTime() > lastRead
+          ).length,
+        }];
+      });
+      setGroupConvos(next.sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime()));
+    } catch {
+      setGroupConvos([]);
+    }
+  }, [uid]);
+
   const loadThread = useCallback(
     async (otherId: string) => {
       if (!uid) return;
@@ -316,9 +446,42 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     [uid]
   );
 
+  const loadGroupThread = useCallback(
+    async (groupId: string) => {
+      if (!uid) return;
+      try {
+        const { data } = await supabase
+          .from('group_messages')
+          .select('id, group_id, sender_id, content, created_at')
+          .eq('group_id', groupId)
+          .order('created_at', { ascending: true })
+          .limit(500);
+        const rows = (data as GroupMessage[] | null) ?? [];
+        const senderIds = [...new Set(rows.map((row) => row.sender_id))];
+        const names = new Map<string, string>();
+        if (senderIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', senderIds);
+          for (const sender of (profiles ?? []) as { id: string; full_name: string }[]) {
+            names.set(sender.id, sender.full_name || 'Usuario');
+          }
+        }
+        setGroupThread(rows.map((row) => ({ ...row, senderName: names.get(row.sender_id) || 'Usuario' })));
+        await supabase.rpc('mark_message_group_read', { p_group_id: groupId });
+        setGroupConvos((current) => current.map((group) => group.id === groupId ? { ...group, unread: 0 } : group));
+      } catch {
+        setGroupThread([]);
+      }
+    },
+    [uid]
+  );
+
   const openChatWith = useCallback(
     (userId: string, name: string, avatar: string | null = null) => {
       if (userId === uid) return;
+      setActiveGroup(null);
       setActive({ id: userId, name, avatar });
       setOpen(true);
       loadThread(userId);
@@ -329,7 +492,82 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const openMessages = useCallback(() => {
     setOpen(true);
     loadConversations();
-  }, [loadConversations]);
+    loadGroups();
+  }, [loadConversations, loadGroups]);
+
+  const openGroup = useCallback((group: MessageGroup) => {
+    setActive(null);
+    setActiveGroup(group);
+    setComposerMode(null);
+    setOpen(true);
+    void loadGroupThread(group.id);
+  }, [loadGroupThread]);
+
+  function resetComposer() {
+    setComposerMode(null);
+    setContactQuery('');
+    setGroupName('');
+    setGroupAvatarFile(null);
+    setGroupAvatarPreview('');
+    setSelectedMemberIds(new Set());
+    setGroupError(null);
+  }
+
+  function handleGroupAvatar(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
+      setGroupError('Elegí una imagen JPG, PNG o WEBP de hasta 5 MB.');
+      return;
+    }
+    setGroupAvatarFile(file);
+    setGroupError(null);
+    const reader = new FileReader();
+    reader.onload = () => setGroupAvatarPreview(String(reader.result ?? ''));
+    reader.readAsDataURL(file);
+  }
+
+  async function createGroup() {
+    if (!uid || groupName.trim().length < 2 || selectedMemberIds.size < 1 || creatingGroup) return;
+    setCreatingGroup(true);
+    setGroupError(null);
+    try {
+      let avatarUrl: string | null = null;
+      if (groupAvatarFile) {
+        const ext = groupAvatarFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const path = `message-groups/${uid}-${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage.from('cvs').upload(path, groupAvatarFile);
+        if (uploadError) throw uploadError;
+        avatarUrl = supabase.storage.from('cvs').getPublicUrl(path).data.publicUrl;
+      }
+      const { data: groupId, error } = await supabase.rpc('create_message_group', {
+        p_name: groupName.trim(),
+        p_avatar_url: avatarUrl,
+        p_member_ids: [...selectedMemberIds],
+      });
+      if (error || !groupId) throw error ?? new Error('No se creó el grupo');
+      const group: MessageGroup = {
+        id: String(groupId),
+        name: groupName.trim(),
+        avatar_url: avatarUrl,
+        created_by: uid,
+        created_at: new Date().toISOString(),
+      };
+      resetComposer();
+      await loadGroups();
+      openGroup(group);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      setGroupError(
+        /does not exist|schema cache|function|relation/i.test(message)
+          ? 'Falta ejecutar la migración de grupos en Supabase.'
+          : 'No se pudo crear el grupo. Intentá nuevamente.'
+      );
+    } finally {
+      setCreatingGroup(false);
+    }
+  }
 
   function goToProfile(userId: string) {
     navigate(`/app/explorar?u=${encodeURIComponent(userId)}`);
@@ -337,14 +575,27 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   }
 
   async function handleSend() {
-    if (!text.trim() || !active || !uid) return;
+    if (!text.trim() || (!active && !activeGroup) || !uid) return;
     setSending(true);
     try {
+      if (activeGroup) {
+        const { data: message, error } = await supabase
+          .from('group_messages')
+          .insert({ group_id: activeGroup.id, sender_id: uid, content: text.trim() })
+          .select('id')
+          .single();
+        if (error || !message) throw error ?? new Error('No se creó el mensaje');
+        void sendPushEvent('group_message', message.id);
+        setText('');
+        await loadGroupThread(activeGroup.id);
+        void loadGroups();
+        return;
+      }
       const { data: message, error } = await supabase
         .from('messages')
         .insert({
           sender_id: uid,
-          recipient_id: active.id,
+          recipient_id: active!.id,
           content: text.trim(),
         })
         .select('id')
@@ -353,11 +604,13 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       // Notificación push al destinatario (best-effort, no bloquea el envío).
       void sendPushEvent('message', message.id);
       setText('');
-      await loadThread(active.id);
+      await loadThread(active!.id);
       loadConversations();
     } catch (err: any) {
       const msg = err?.message ?? '';
-      if (/messages|does not exist|relation|schema cache/i.test(msg)) {
+      if (activeGroup && /group_messages|message_group|does not exist|relation|schema cache|function/i.test(msg)) {
+        alert('Falta crear las tablas de grupos. Ejecutá supabase/migracion-mensajes-grupos.sql en Supabase.');
+      } else if (/messages|does not exist|relation|schema cache/i.test(msg)) {
         alert(
           'Falta crear la tabla de mensajes.\nEjecutá supabase/migracion-mensajes.sql en el SQL Editor de Supabase.'
         );
@@ -373,9 +626,13 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!uid) return;
     loadConversations();
-    const t = setInterval(loadConversations, 8000);
+    loadGroups();
+    const t = setInterval(() => {
+      void loadConversations();
+      void loadGroups();
+    }, 8000);
     return () => clearInterval(t);
-  }, [uid, loadConversations]);
+  }, [uid, loadConversations, loadGroups]);
 
   useEffect(() => {
     suggestionsLoadedRef.current = false;
@@ -383,8 +640,8 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   }, [uid]);
 
   useEffect(() => {
-    if (open && !active && convos.length === 0) loadSuggestions();
-  }, [open, active, convos.length, loadSuggestions]);
+    if (open && !active && !activeGroup) loadSuggestions();
+  }, [open, active, activeGroup, loadSuggestions]);
 
   // Polling del hilo abierto.
   useEffect(() => {
@@ -393,12 +650,33 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(t);
   }, [open, active, loadThread]);
 
+  useEffect(() => {
+    if (!open || !activeGroup) return;
+    const t = setInterval(() => loadGroupThread(activeGroup.id), 5000);
+    return () => clearInterval(t);
+  }, [open, activeGroup, loadGroupThread]);
+
   // Auto-scroll al final del hilo.
   useEffect(() => {
     if (threadRef.current) threadRef.current.scrollTop = threadRef.current.scrollHeight;
-  }, [thread, active, open]);
+  }, [thread, groupThread, active, activeGroup, open]);
 
-  const unreadTotal = useMemo(() => convos.reduce((s, c) => s + c.unread, 0), [convos]);
+  const unreadTotal = useMemo(
+    () => convos.reduce((sum, conversation) => sum + conversation.unread, 0) +
+      groupConvos.reduce((sum, group) => sum + group.unread, 0),
+    [convos, groupConvos]
+  );
+  const filteredContacts = useMemo(() => {
+    const query = contactQuery.trim().toLowerCase();
+    return suggestions.filter((contact) => !query || contact.name.toLowerCase().includes(query));
+  }, [suggestions, contactQuery]);
+  const combinedConversations = useMemo(
+    () => [
+      ...convos.map((conversation) => ({ kind: 'direct' as const, item: conversation, at: conversation.lastAt })),
+      ...groupConvos.map((group) => ({ kind: 'group' as const, item: group, at: group.lastAt })),
+    ].sort((left, right) => new Date(right.at).getTime() - new Date(left.at).getTime()),
+    [convos, groupConvos]
+  );
   const value = useMemo(
     () => ({ openChatWith, openMessages, unreadTotal }),
     [openChatWith, openMessages, unreadTotal]
@@ -419,13 +697,17 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
         >
           <div className="dash-panel flex h-full min-h-0 flex-col overflow-hidden rounded-none border-x-0 border-t border-white/12 pt-[env(safe-area-inset-top)] shadow-2xl shadow-black/40 lg:h-auto lg:rounded-t-2xl lg:border-x lg:border-b-0 lg:pt-0">
             {/* Header */}
-            <button
-              onClick={() => {
-                setOpen((v) => !v);
-                if (!open) loadConversations();
-              }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left sm:gap-2.5 sm:px-4 sm:py-3"
-            >
+            <div className="flex w-full items-center gap-2 px-3 py-2 sm:gap-2.5 sm:px-4 sm:py-3">
+              <button
+                onClick={() => {
+                  setOpen((value) => !value);
+                  if (!open) {
+                    void loadConversations();
+                    void loadGroups();
+                  }
+                }}
+                className="flex min-w-0 flex-1 items-center gap-2 text-left sm:gap-2.5"
+              >
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-500/15 text-brand-300 sm:h-8 sm:w-8">
                 <MessageSquare className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
               </span>
@@ -440,31 +722,57 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
               ) : (
                 <ChevronUp className="h-4 w-4 text-white/50" />
               )}
-            </button>
+              </button>
+              {open && !active && !activeGroup && (
+                <button
+                  type="button"
+                  onClick={() => setComposerMode((mode) => mode ? null : 'menu')}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/65 transition hover:bg-white/10 hover:text-white"
+                  aria-label="Nueva conversación"
+                  title="Nueva conversación"
+                >
+                  <Plus className="h-[18px] w-[18px]" />
+                </button>
+              )}
+            </div>
 
             {open && (
               <div className="flex min-h-0 flex-1 flex-col border-t border-white/10 lg:block lg:flex-none">
-                {active ? (
+                {active || activeGroup ? (
                   /* ── Hilo ── */
                   <div className="flex h-full min-h-0 flex-col lg:h-[380px]">
                     <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
                       <button
-                        onClick={() => setActive(null)}
+                        onClick={() => {
+                          setActive(null);
+                          setActiveGroup(null);
+                          setText('');
+                        }}
                         className="rounded-lg p-1 text-white/60 hover:bg-white/10 hover:text-white"
                         aria-label="Volver"
                       >
                         <ArrowLeft className="h-4 w-4" />
                       </button>
+                      {active ? (
+                        <button
+                          onClick={() => goToProfile(active.id)}
+                          className="flex min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 transition hover:bg-white/10"
+                          title={`Ver perfil de ${active.name}`}
+                        >
+                          <ChatAvatar url={active.avatar} name={active.name} className="h-7 w-7" />
+                          <span className="truncate text-sm font-semibold text-white">{active.name}</span>
+                        </button>
+                      ) : activeGroup ? (
+                        <div className="flex min-w-0 items-center gap-2 px-1 py-0.5">
+                          <ChatAvatar url={activeGroup.avatar_url} name={activeGroup.name} className="h-7 w-7" />
+                          <span className="truncate text-sm font-semibold text-white">{activeGroup.name}</span>
+                        </div>
+                      ) : null}
                       <button
-                        onClick={() => goToProfile(active.id)}
-                        className="flex min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 transition hover:bg-white/10"
-                        title={`Ver perfil de ${active.name}`}
-                      >
-                        <ChatAvatar url={active.avatar} name={active.name} className="h-7 w-7" />
-                        <span className="truncate text-sm font-semibold text-white">{active.name}</span>
-                      </button>
-                      <button
-                        onClick={() => setActive(null)}
+                        onClick={() => {
+                          setActive(null);
+                          setActiveGroup(null);
+                        }}
                         className="ml-auto rounded-lg p-1 text-white/50 hover:bg-white/10 hover:text-white"
                         aria-label="Cerrar chat"
                       >
@@ -473,12 +781,12 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                     </div>
 
                     <div ref={threadRef} className="flex-1 space-y-2 overflow-y-auto px-3 py-3">
-                      {thread.length === 0 ? (
+                      {(activeGroup ? groupThread : thread).length === 0 ? (
                         <p className="mt-6 text-center text-xs text-white/45">
                           No hay mensajes todavía. ¡Escribí el primero!
                         </p>
                       ) : (
-                        thread.map((m) => {
+                        (activeGroup ? groupThread : thread).map((m) => {
                           const mine = m.sender_id === uid;
                           return (
                             <div
@@ -492,6 +800,11 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                                     : 'bg-white/10 text-white'
                                 }`}
                               >
+                                {activeGroup && !mine && 'senderName' in m && (
+                                  <p className="mb-0.5 text-[10px] font-semibold text-brand-300">
+                                    {m.senderName}
+                                  </p>
+                                )}
                                 <p className="whitespace-pre-wrap break-words">{m.content}</p>
                                 <p
                                   className={`mt-0.5 text-[10px] ${mine ? '!text-white/70' : 'text-white/45'}`}
@@ -531,7 +844,126 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                 ) : (
                   /* ── Lista de conversaciones ── */
                   <div className="h-full overflow-y-auto lg:h-auto lg:max-h-[380px]">
-                    {convos.length === 0 ? (
+                    {composerMode === 'menu' ? (
+                      <div className="p-3">
+                        <p className="px-1 pb-2 text-xs font-semibold uppercase text-white/40">Nueva conversación</p>
+                        <button
+                          type="button"
+                          onClick={() => setComposerMode('group')}
+                          className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-left transition hover:bg-white/[0.06]"
+                        >
+                          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-white">
+                            <Users className="h-5 w-5" />
+                          </span>
+                          <span className="text-sm font-semibold text-white">Nuevo grupo</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setComposerMode('contact')}
+                          className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-left transition hover:bg-white/[0.06]"
+                        >
+                          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-white">
+                            <UserPlus className="h-5 w-5" />
+                          </span>
+                          <span className="text-sm font-semibold text-white">Nuevo contacto</span>
+                        </button>
+                      </div>
+                    ) : composerMode === 'contact' ? (
+                      <div className="p-3">
+                        <div className="mb-3 flex items-center gap-2">
+                          <button onClick={() => setComposerMode('menu')} className="rounded-lg p-1.5 text-white/60 hover:bg-white/10" aria-label="Volver">
+                            <ArrowLeft className="h-4 w-4" />
+                          </button>
+                          <p className="text-sm font-semibold text-white">Nuevo contacto</p>
+                        </div>
+                        <div className="relative mb-3">
+                          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
+                          <input
+                            value={contactQuery}
+                            onChange={(event) => setContactQuery(event.target.value)}
+                            placeholder="Buscar por nombre"
+                            autoFocus
+                            className="w-full rounded-xl border border-white/12 bg-white/5 py-2 pl-9 pr-3 text-base text-white outline-none placeholder:text-white/35 lg:text-sm"
+                          />
+                        </div>
+                        <ContactList
+                          contacts={filteredContacts}
+                          loading={loadingSuggestions}
+                          onPick={(contact) => {
+                            resetComposer();
+                            openChatWith(contact.id, contact.name, contact.avatar);
+                          }}
+                        />
+                      </div>
+                    ) : composerMode === 'group' ? (
+                      <div className="p-3">
+                        <div className="mb-3 flex items-center gap-2">
+                          <button onClick={() => setComposerMode('menu')} className="rounded-lg p-1.5 text-white/60 hover:bg-white/10" aria-label="Volver">
+                            <ArrowLeft className="h-4 w-4" />
+                          </button>
+                          <p className="text-sm font-semibold text-white">Nuevo grupo</p>
+                        </div>
+                        <div className="mb-3 flex items-center gap-3">
+                          <label className="relative flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/5">
+                            {groupAvatarPreview ? (
+                              <img src={groupAvatarPreview} alt="Foto del grupo" className="h-full w-full object-cover" />
+                            ) : (
+                              <Camera className="h-5 w-5 text-white/45" />
+                            )}
+                            <input type="file" accept="image/*" onChange={handleGroupAvatar} className="hidden" />
+                          </label>
+                          <input
+                            value={groupName}
+                            onChange={(event) => setGroupName(event.target.value)}
+                            placeholder="Nombre del grupo"
+                            maxLength={80}
+                            className="min-w-0 flex-1 rounded-xl border border-white/12 bg-white/5 px-3 py-2 text-base text-white outline-none placeholder:text-white/35 lg:text-sm"
+                          />
+                        </div>
+                        <div className="relative mb-3">
+                          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
+                          <input
+                            value={contactQuery}
+                            onChange={(event) => setContactQuery(event.target.value)}
+                            placeholder="Buscar integrantes"
+                            className="w-full rounded-xl border border-white/12 bg-white/5 py-2 pl-9 pr-3 text-base text-white outline-none placeholder:text-white/35 lg:text-sm"
+                          />
+                        </div>
+                        <div className="max-h-48 overflow-y-auto">
+                          {filteredContacts.map((contact) => {
+                            const selected = selectedMemberIds.has(contact.id);
+                            return (
+                              <button
+                                key={contact.id}
+                                type="button"
+                                onClick={() => setSelectedMemberIds((current) => {
+                                  const next = new Set(current);
+                                  if (selected) next.delete(contact.id);
+                                  else next.add(contact.id);
+                                  return next;
+                                })}
+                                className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-white/[0.06]"
+                              >
+                                <ChatAvatar url={contact.avatar} name={contact.name} />
+                                <span className="min-w-0 flex-1 truncate text-sm text-white">{contact.name}</span>
+                                <span className={`flex h-5 w-5 items-center justify-center rounded-full border ${selected ? 'border-brand-500 bg-brand-500 text-white' : 'border-white/20'}`}>
+                                  {selected && <Check className="h-3 w-3" />}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {groupError && <p className="mt-2 text-xs text-red-300">{groupError}</p>}
+                        <button
+                          type="button"
+                          onClick={() => void createGroup()}
+                          disabled={creatingGroup || groupName.trim().length < 2 || selectedMemberIds.size < 1}
+                          className="mt-3 w-full rounded-xl bg-brand-500 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+                        >
+                          {creatingGroup ? 'Creando…' : `Crear grupo (${selectedMemberIds.size + 1})`}
+                        </button>
+                      </div>
+                    ) : combinedConversations.length === 0 ? (
                       <div className="px-3 py-5">
                         <div className="px-1 text-center">
                           <p className="text-sm font-semibold text-white">Empezá una conversación</p>
@@ -541,7 +973,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                           <p className="py-6 text-center text-xs text-white/40">Buscando perfiles…</p>
                         ) : suggestions.length > 0 ? (
                           <div className="mt-4 space-y-1">
-                            {suggestions.map((contact) => (
+                            {suggestions.slice(0, 4).map((contact) => (
                               <button
                                 key={contact.id}
                                 type="button"
@@ -575,27 +1007,32 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                         )}
                       </div>
                     ) : (
-                      convos.map((c) => (
-                        <button
-                          key={c.otherId}
-                          onClick={() => openChatWith(c.otherId, c.name, c.avatar)}
-                          className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-white/[0.06]"
-                        >
-                          <ChatAvatar url={c.avatar} name={c.name} />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="truncate text-sm font-medium text-white">{c.name}</span>
-                              <span className="ml-auto shrink-0 text-[10px] text-white/40">
-                                {timeShort(c.lastAt)}
-                              </span>
+                      combinedConversations.map(({ kind, item }) => {
+                        const isGroup = kind === 'group';
+                        const id = isGroup ? (item as GroupConversation).id : (item as Conversation).otherId;
+                        const name = item.name;
+                        const avatar = isGroup ? (item as GroupConversation).avatar_url : (item as Conversation).avatar;
+                        return (
+                          <button
+                            key={`${kind}-${id}`}
+                            onClick={() => isGroup
+                              ? openGroup(item as GroupConversation)
+                              : openChatWith(id, name, avatar)}
+                            className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-white/[0.06]"
+                          >
+                            <ChatAvatar url={avatar} name={name} />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="truncate text-sm font-medium text-white">{name}</span>
+                                {isGroup && <Users className="h-3 w-3 shrink-0 text-white/35" />}
+                                <span className="ml-auto shrink-0 text-[10px] text-white/40">{timeShort(item.lastAt)}</span>
+                              </div>
+                              <p className="truncate text-xs text-white/55">{item.last}</p>
                             </div>
-                            <p className="truncate text-xs text-white/55">{c.last}</p>
-                          </div>
-                          {c.unread > 0 && (
-                            <span className="h-2 w-2 shrink-0 rounded-full bg-brand-400" />
-                          )}
-                        </button>
-                      ))
+                            {item.unread > 0 && <span className="h-2 w-2 shrink-0 rounded-full bg-brand-400" />}
+                          </button>
+                        );
+                      })
                     )}
                   </div>
                 )}

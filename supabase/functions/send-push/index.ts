@@ -62,7 +62,13 @@ Deno.serve(async (req) => {
     let recipientIds: string[] | null = null;
     let broadcast = false;
 
-    if (event_type === 'message') {
+    if (event_type === 'push_test') {
+      if (resource_id !== caller.id) return json({ error: 'evento inválido' }, 403);
+      title = 'Notificaciones activadas';
+      body = 'Tu dispositivo ya puede recibir novedades de PasantIA.';
+      url = '/app';
+      recipientIds = [caller.id];
+    } else if (event_type === 'message') {
       const { data: message } = await admin
         .from('messages')
         .select('sender_id, recipient_id, content')

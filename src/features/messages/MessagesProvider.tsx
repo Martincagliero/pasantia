@@ -220,6 +220,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [groupError, setGroupError] = useState<string | null>(null);
+  const [mobileViewport, setMobileViewport] = useState<{ height: number; top: number } | null>(null);
   const threadRef = useRef<HTMLDivElement>(null);
   const suggestionsLoadedRef = useRef(false);
 
@@ -640,6 +641,28 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   }, [uid]);
 
   useEffect(() => {
+    if (!open || !window.visualViewport) {
+      setMobileViewport(null);
+      return;
+    }
+    const viewport = window.visualViewport;
+    const syncViewport = () => {
+      if (window.matchMedia('(min-width: 1024px)').matches) {
+        setMobileViewport(null);
+        return;
+      }
+      setMobileViewport({ height: Math.round(viewport.height), top: Math.round(viewport.offsetTop) });
+    };
+    syncViewport();
+    viewport.addEventListener('resize', syncViewport);
+    viewport.addEventListener('scroll', syncViewport);
+    return () => {
+      viewport.removeEventListener('resize', syncViewport);
+      viewport.removeEventListener('scroll', syncViewport);
+    };
+  }, [open]);
+
+  useEffect(() => {
     if (open && !active && !activeGroup) loadSuggestions();
   }, [open, active, activeGroup, loadSuggestions]);
 
@@ -689,9 +712,10 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
       {uid && !modalOpen && (
         <div
+          style={mobileViewport ? { height: mobileViewport.height, top: mobileViewport.top } : undefined}
           className={
             open
-              ? 'fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col lg:inset-auto lg:bottom-0 lg:right-4 lg:block lg:h-auto lg:w-[320px]'
+              ? 'fixed left-0 top-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[var(--dash-panel)] lg:inset-auto lg:bottom-0 lg:right-4 lg:block lg:h-auto lg:w-[320px] lg:bg-transparent'
               : 'hidden lg:fixed lg:bottom-0 lg:right-4 lg:z-50 lg:block lg:w-[320px]'
           }
         >
@@ -818,7 +842,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                       )}
                     </div>
 
-                    <div className="mobile-end-gradient flex shrink-0 items-center gap-2 border-t border-white/10 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
+                    <div className="dash-panel relative z-10 flex shrink-0 items-center gap-2 border-t border-white/10 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
                       <input
                         value={text}
                         onChange={(e) => setText(e.target.value)}

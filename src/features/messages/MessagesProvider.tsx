@@ -86,7 +86,7 @@ interface SuggestedContact {
   id: string;
   name: string;
   avatar: string | null;
-  role: 'estudiante' | 'empresa' | 'embajador';
+  role: 'estudiante' | 'empresa';
 }
 
 interface MessageGroup {
@@ -117,7 +117,6 @@ type ComposerMode = 'menu' | 'contact' | 'group' | null;
 const suggestedRoleLabel: Record<SuggestedContact['role'], string> = {
   estudiante: 'Estudiante',
   empresa: 'Empresa',
-  embajador: 'Comunidad',
 };
 
 type EmbeddedProfile = { full_name: string } | Array<{ full_name: string }> | null;
@@ -229,7 +228,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     suggestionsLoadedRef.current = true;
     setLoadingSuggestions(true);
     try {
-      const [{ data: students }, { data: companies }, { data: ambassadors }] = await Promise.all([
+      const [{ data: students }, { data: companies }] = await Promise.all([
         supabase
           .from('student_profiles')
           .select('id, avatar_url, profile:profiles(full_name)')
@@ -238,10 +237,6 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
         supabase
           .from('company_profiles')
           .select('id, avatar_url, company_name, profile:profiles(full_name)')
-          .limit(100),
-        supabase
-          .from('ambassador_profiles')
-          .select('id, logo_url, org_name, profile:profiles(full_name)')
           .limit(100),
       ]);
 
@@ -275,28 +270,10 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
           });
         }
       }
-      for (const row of (ambassadors as unknown as Array<{
-        id: string;
-        logo_url: string | null;
-        org_name: string | null;
-        profile: EmbeddedProfile;
-      }>) ?? []) {
-        if (row.id !== uid) {
-          contacts.push({
-            id: row.id,
-            name: row.org_name || embeddedProfileName(row.profile) || 'Comunidad',
-            avatar: row.logo_url,
-            role: 'embajador',
-          });
-        }
-      }
-
       const priority: Record<SuggestedContact['role'], number> =
         profile?.role === 'empresa'
-          ? { estudiante: 0, embajador: 1, empresa: 2 }
-          : profile?.role === 'embajador'
-            ? { estudiante: 0, empresa: 1, embajador: 2 }
-            : { empresa: 0, embajador: 1, estudiante: 2 };
+          ? { estudiante: 0, empresa: 1 }
+          : { empresa: 0, estudiante: 1 };
       const roleOrder = (Object.keys(priority) as SuggestedContact['role'][]).sort(
         (a, b) => priority[a] - priority[b]
       );
@@ -889,7 +866,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-white">
                             <UserPlus className="h-5 w-5" />
                           </span>
-                          <span className="text-sm font-semibold text-white">Nuevo contacto</span>
+                          <span className="text-sm font-semibold text-white">Nuevo chat</span>
                         </button>
                       </div>
                     ) : composerMode === 'contact' ? (
@@ -898,7 +875,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                           <button onClick={() => setComposerMode('menu')} className="rounded-lg p-1.5 text-white/60 hover:bg-white/10" aria-label="Volver">
                             <ArrowLeft className="h-4 w-4" />
                           </button>
-                          <p className="text-sm font-semibold text-white">Nuevo contacto</p>
+                          <p className="text-sm font-semibold text-white">Nuevo chat</p>
                         </div>
                         <div className="relative mb-3">
                           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />

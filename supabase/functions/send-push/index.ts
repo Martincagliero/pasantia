@@ -105,6 +105,22 @@ Deno.serve(async (req) => {
       recipientIds = (members ?? [])
         .map((member) => member.user_id)
         .filter((memberId) => memberId !== caller.id);
+    } else if (event_type === 'welcome') {
+      const { data: welcome } = await admin
+        .from('profile_welcomes')
+        .select('sender_id, recipient_id')
+        .eq('id', resource_id)
+        .maybeSingle();
+      if (!welcome || welcome.sender_id !== caller.id) return json({ error: 'evento inválido' }, 403);
+      const { data: sender } = await admin
+        .from('profiles')
+        .select('full_name')
+        .eq('id', caller.id)
+        .maybeSingle();
+      title = 'Te dieron la bienvenida';
+      body = `${sender?.full_name || 'Un usuario'} te dio la bienvenida a PasantIA.`;
+      url = `/app/explorar?u=${welcome.sender_id}`;
+      recipientIds = [welcome.recipient_id];
     } else if (event_type === 'connection_request' || event_type === 'connection_accepted') {
       const { data: connection } = await admin
         .from('connection_requests')

@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, BriefcaseBusiness, Building2, Clock3, House, Newspaper, ShieldCheck, UserCheck, UserPlus } from 'lucide-react';
+import { ArrowRight, Bookmark, BriefcaseBusiness, Building2, Check, Clock3, Hand, House, MessageSquare, Newspaper, ShieldCheck, UserCheck, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import type { ConnectionRequest, Internship, Post, Profile } from '../../lib/database.types';
+import type { ConnectionRequest, InternshipWithCompany, Post, Profile } from '../../lib/database.types';
 import { Card, EmptyState, PageLoader } from '../ui/primitives';
 import { EmojiText } from '../ui/EmojiText';
 import { PostInteractions } from '../ui/PostInteractions';
 import { useAuth } from '../auth/AuthProvider';
 import { LinkPreview } from '../ui/LinkPreview';
 import { sendPushEvent } from '../../lib/notify';
+import { InternshipDetailModal } from '../ui/InternshipDetailModal';
+import { useMessages } from '../messages/MessagesProvider';
+import { ApplyModal } from './BrowseInternships';
 
 interface HomePost extends Post {
   author: { is_admin: boolean } | null;
@@ -22,7 +25,7 @@ type ConnectionState = 'none' | 'sent' | 'received' | 'connected';
 
 type FeedItem =
   | { kind: 'post'; createdAt: string; post: HomePost }
-  | { kind: 'internship'; createdAt: string; internship: Internship };
+  | { kind: 'internship'; createdAt: string; internship: InternshipWithCompany };
 
 const roleLabel: Record<Profile['role'], string> = {
   estudiante: 'estudiante',
@@ -53,19 +56,26 @@ function initials(name: string): string {
 }
 
 export default function StudentHome() {
-  const { profile } = useAuth();
+  const { session, profile } = useAuth();
+  const { openChatWith } = useMessages();
   const [posts, setPosts] = useState<HomePost[]>([]);
-  const [internships, setInternships] = useState<Internship[]>([]);
+  const [internships, setInternships] = useState<InternshipWithCompany[]>([]);
   const [members, setMembers] = useState<HomeMember[]>([]);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [connectionRequests, setConnectionRequests] = useState<ConnectionRequest[]>([]);
   const [connectingId, setConnectingId] = useState<string | null>(null);
+  const [welcomedIds, setWelcomedIds] = useState<Set<string>>(new Set());
+  const [welcomingId, setWelcomingId] = useState<string | null>(null);
+  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<InternshipWithCompany | null>(null);
+  const [detail, setDetail] = useState<InternshipWithCompany | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
     void (async () => {
-      const [postsResult, internshipsResult, membersResult, followsResult, requestsResult] = await Promise.all([
+      const [postsResult, internshipsResult, membersResult, followsResult, requestsResult, applicationsResult, savedResult, welcomesResult] = await Promise.all([
         supabase
           .from('posts')
           .select('*, author:profiles!author_id(is_admin)')
@@ -93,11 +103,26 @@ export default function StudentHome() {
               .or(`requester_id.eq.${profile.id},recipient_id.eq.${profile.id}`)
               .in('status', ['pending', 'accepted'])
           : Promise.resolve({ data: [] }),
+        supabase.from('applications').select('internship_id').eq('student_id', profile?.id ?? ''),
+        supabase.from('saved_internships').select('internship_id').eq('student_id', profile?.id ?? ''),
+        supabase.from('profile_welcomes').select('recipient_id').eq('sender_id', profile?.id ?? ''),
       ]);
       if (!active) return;
       const memberRows = (membersResult.data as Omit<HomeMember, 'avatarUrl'>[] | null) ?? [];
       const memberIds = memberRows.map((member) => member.id);
       const avatarById = new Map<string, string>();
+      const internshipRows = (internshipsResult.data as InternshipWithCompany[] | null) ?? [];
+      const companyIds = Array.from(new Set(internshipRows.map((internship) => internship.company_id)));
+      const companyById = new Map<string, { company_name: string; industry: string | null }>();
+      if (companyIds.length > 0) {
+        const { data: internshipCompanies } = await supabase
+          .from('company_profiles')
+          .select('id, company_name, industry')
+          .in('id', companyIds);
+        for (const company of internshipCompanies ?? []) {
+          companyById.set(company.id, { company_name: company.company_name, industry: company.industry });
+        }
+      }
       if (memberIds.length > 0) {
         const [{ data: students }, { data: companies }, { data: ambassadors }] = await Promise.all([
           supabase.from('student_profiles').select('id, avatar_url').in('id', memberIds),
@@ -113,10 +138,13 @@ export default function StudentHome() {
       }
       if (!active) return;
       setPosts((postsResult.data as unknown as HomePost[] | null) ?? []);
-      setInternships((internshipsResult.data as Internship[] | null) ?? []);
+      setInternships(internshipRows.map((internship) => ({ ...internship, company: companyById.get(internship.company_id) ?? null })));
       setMembers(memberRows.map((member) => ({ ...member, avatarUrl: avatarById.get(member.id) ?? null })));
       setFollowingIds(new Set((followsResult.data ?? []).map((row) => (row as { following_id: string }).following_id)));
       setConnectionRequests((requestsResult.data as ConnectionRequest[] | null) ?? []);
+      setAppliedIds(new Set((applicationsResult.data ?? []).map((row) => row.internship_id)));
+      setSavedIds(new Set((savedResult.data ?? []).map((row) => row.internship_id)));
+      setWelcomedIds(new Set((welcomesResult.data ?? []).map((row) => row.recipient_id)));
       setLoading(false);
     })();
     return () => {
@@ -211,6 +239,37 @@ export default function StudentHome() {
     }
   }
 
+  async function giveWelcome(targetId: string) {
+    if (!profile?.id || welcomedIds.has(targetId) || welcomingId) return;
+    setWelcomingId(targetId);
+    const { data, error } = await supabase
+      .from('profile_welcomes')
+      .insert({ sender_id: profile.id, recipient_id: targetId })
+      .select('id')
+      .single();
+    if (!error && data) {
+      setWelcomedIds((current) => new Set(current).add(targetId));
+      void sendPushEvent('welcome', data.id);
+    }
+    setWelcomingId(null);
+  }
+
+  async function toggleSave(internshipId: string) {
+    if (!profile?.id) return;
+    const saved = savedIds.has(internshipId);
+    setSavedIds((current) => {
+      const next = new Set(current);
+      if (saved) next.delete(internshipId);
+      else next.add(internshipId);
+      return next;
+    });
+    if (saved) {
+      await supabase.from('saved_internships').delete().eq('student_id', profile.id).eq('internship_id', internshipId);
+    } else {
+      await supabase.from('saved_internships').insert({ student_id: profile.id, internship_id: internshipId });
+    }
+  }
+
   return (
     <div className="-mx-4 max-w-5xl sm:mx-auto">
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
@@ -263,6 +322,12 @@ export default function StudentHome() {
                         onClick={() => void toggleConnection(member.id)}
                       />
                     )}
+                    <WelcomeButton
+                      compact
+                      welcomed={welcomedIds.has(member.id)}
+                      loading={welcomingId === member.id}
+                      onClick={() => void giveWelcome(member.id)}
+                    />
                   </div>
                 );
               })}
@@ -348,9 +413,45 @@ export default function StudentHome() {
                     <span className="rounded-full border border-white/10 px-2.5 py-1">{item.internship.area}</span>
                     <span className="rounded-full border border-white/10 px-2.5 py-1 capitalize">{item.internship.modality}</span>
                   </div>
-                  <Link to="/app/pasantias" className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-500 hover:underline">
-                    Ver oportunidad <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDetail(item.internship)}
+                      className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/75 transition hover:bg-white/8"
+                    >
+                      Ver detalle
+                    </button>
+                    {appliedIds.has(item.internship.id) ? (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 px-3 py-1.5 text-xs font-semibold text-emerald-400">
+                        <Check className="h-3.5 w-3.5" /> Ya postulaste
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setSelected(item.internship)}
+                        className="rounded-full bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-400"
+                      >
+                        Postularme
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => void toggleSave(item.internship.id)}
+                      className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition ${savedIds.has(item.internship.id) ? 'border-brand-500/35 bg-brand-500/10 text-brand-500' : 'border-white/15 text-white/65 hover:bg-white/8'}`}
+                      title={savedIds.has(item.internship.id) ? 'Quitar de guardadas' : 'Guardar pasantía'}
+                      aria-label={savedIds.has(item.internship.id) ? 'Quitar de guardadas' : 'Guardar pasantía'}
+                    >
+                      <Bookmark className={`h-3.5 w-3.5 ${savedIds.has(item.internship.id) ? 'fill-current' : ''}`} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openChatWith(item.internship.company_id, item.internship.company_name || item.internship.company?.company_name || 'Empresa')}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/75 transition hover:bg-white/8"
+                    >
+                      <MessageSquare className="h-3.5 w-3.5" /> Mensaje
+                    </button>
+                  </div>
+                  <PostInteractions targetType="internship" targetId={item.internship.id} />
                   </div>
                 </Card>
               );
@@ -394,6 +495,11 @@ export default function StudentHome() {
                         onClick={() => void toggleConnection(member.id)}
                       />
                     )}
+                    <WelcomeButton
+                      welcomed={welcomedIds.has(member.id)}
+                      loading={welcomingId === member.id}
+                      onClick={() => void giveWelcome(member.id)}
+                    />
                   </div>
                 );
               })}
@@ -415,7 +521,67 @@ export default function StudentHome() {
           </Card>
         </aside>
       </div>
+      {selected && (
+        <ApplyModal
+          internship={selected}
+          studentId={session!.user.id}
+          onClose={() => setSelected(null)}
+          onApplied={() => {
+            setAppliedIds((current) => new Set(current).add(selected.id));
+            setSelected(null);
+          }}
+        />
+      )}
+      {detail && (
+        <InternshipDetailModal
+          internship={detail}
+          onClose={() => setDetail(null)}
+          actions={
+            appliedIds.has(detail.id) ? (
+              <span className="rounded-full border border-emerald-500/25 px-4 py-2 text-sm font-semibold text-emerald-400">Ya postulaste</span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelected(detail);
+                  setDetail(null);
+                }}
+                className="rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white"
+              >
+                Postularme
+              </button>
+            )
+          }
+        />
+      )}
     </div>
+  );
+}
+
+function WelcomeButton({
+  welcomed,
+  loading,
+  compact = false,
+  onClick,
+}: {
+  welcomed: boolean;
+  loading: boolean;
+  compact?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={welcomed || loading}
+      title={welcomed ? 'Ya le diste la bienvenida' : 'Dar la bienvenida'}
+      className={compact
+        ? `flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition ${welcomed ? 'border-amber-400/30 bg-amber-400/10 text-amber-300' : 'border-white/15 text-white/65 hover:bg-white/8'}`
+        : `mt-2 flex w-full items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${welcomed ? 'border-amber-400/30 bg-amber-400/10 text-amber-300' : 'border-white/15 text-white/70 hover:bg-white/8'}`}
+    >
+      <Hand className="h-3.5 w-3.5" />
+      {!compact && (loading ? 'Enviando' : welcomed ? 'Bienvenida enviada' : 'Dar la bienvenida')}
+    </button>
   );
 }
 

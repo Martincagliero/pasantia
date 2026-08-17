@@ -31,34 +31,45 @@ export default function AuthCallback() {
     const verification = tokenHash && emailType
       ? supabase.auth.verifyOtp({ token_hash: tokenHash, type: emailType })
       : supabase.auth.exchangeCodeForSession(code as string);
-    void verification.then(async ({ error: exchangeError }) => {
-      if (exchangeError) {
-        setError('El enlace venció o ya fue utilizado. Volvé a iniciar el proceso.');
-        return;
-      }
-
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData.user;
-      const isGoogle = user?.app_metadata.provider === 'google' ||
-        user?.identities?.some((identity) => identity.provider === 'google');
-      const onboardingComplete = user?.user_metadata.pasantia_onboarding_completed === true;
-      if (isGoogle && !onboardingComplete) {
-        if (!readPendingGoogleOnboarding()) savePendingGoogleOnboarding();
-        navigate('/?registro=google', { replace: true });
-        return;
-      }
-      const role = user?.user_metadata.role;
-      const memberNotified = user?.user_metadata.pasantia_member_notified === true;
-      if (user && !isGoogle && !memberNotified && ['estudiante', 'empresa'].includes(role)) {
-        const notified = await sendPushEvent('member', user.id);
-        if (notified) {
-          await supabase.auth.updateUser({
-            data: { ...user.user_metadata, pasantia_member_notified: true },
-          });
+    // try/catch: si algo falla acá (red, perfil, push) el usuario NO debe
+    // quedar trabado para siempre en "Validando tu acceso".
+    void verification
+      .then(async ({ error: exchangeError }) => {
+        if (exchangeError) {
+          setError('El enlace venció o ya fue utilizado. Volvé a iniciar el proceso.');
+          return;
         }
-      }
-      navigate('/app', { replace: true });
-    });
+
+        const { data: userData } = await supabase.auth.getUser();
+        const user = userData.user;
+        const isGoogle = user?.app_metadata.provider === 'google' ||
+          user?.identities?.some((identity) => identity.provider === 'google');
+        const onboardingComplete = user?.user_metadata.pasantia_onboarding_completed === true;
+        if (isGoogle && !onboardingComplete) {
+          if (!readPendingGoogleOnboarding()) savePendingGoogleOnboarding();
+          navigate('/?registro=google', { replace: true });
+          return;
+        }
+        const role = user?.user_metadata.role;
+        const memberNotified = user?.user_metadata.pasantia_member_notified === true;
+        if (user && !isGoogle && !memberNotified && ['estudiante', 'empresa'].includes(role)) {
+          try {
+            const notified = await sendPushEvent('member', user.id);
+            if (notified) {
+              await supabase.auth.updateUser({
+                data: { ...user.user_metadata, pasantia_member_notified: true },
+              });
+            }
+          } catch {
+            /* la notificación es best-effort: no debe bloquear el ingreso */
+          }
+        }
+        navigate('/app', { replace: true });
+      })
+      .catch((err) => {
+        console.warn('[AuthCallback] Falló la validación del enlace:', err);
+        setError('No pudimos validar el enlace. Probá de nuevo o volvé a ingresar.');
+      });
   }, [navigate, searchParams]);
 
   return (

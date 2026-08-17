@@ -73,33 +73,41 @@ async function ensureProfile(user: User): Promise<Profile | null> {
   const metaRole = VALID_ROLES.includes(meta.role as Role) ? (meta.role as Role) : null;
   const metaName = (meta.full_name ?? meta.name ?? '').trim();
 
-  let prof: Profile | null = null;
-  {
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
-    prof = (data as Profile) ?? null;
-  }
+  // Envuelto en try/catch: un error de red/RLS acá NO debe tirar abajo el login
+  // (antes dejaba el spinner de carga girando para siempre). Ante falla,
+  // devolvemos null y se reintenta en el próximo refreshProfile/re-login.
+  try {
+    let prof: Profile | null = null;
+    {
+      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+      prof = (data as Profile) ?? null;
+    }
 
-  if (!prof) {
-    await supabase.from('profiles').insert({
-      id: user.id,
-      role: metaRole ?? 'estudiante',
-      full_name: metaName,
-      email: user.email ?? '',
-    });
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
-    prof = (data as Profile) ?? null;
-  } else if (metaName && !prof.full_name) {
-    // Solo completamos el nombre si está vacío. NO tocamos el rol de un perfil
-    // que ya existe (respetamos lo que haya en la base / correcciones manuales).
-    await supabase.from('profiles').update({ full_name: metaName }).eq('id', user.id);
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
-    prof = (data as Profile) ?? null;
-  }
+    if (!prof) {
+      await supabase.from('profiles').insert({
+        id: user.id,
+        role: metaRole ?? 'estudiante',
+        full_name: metaName,
+        email: user.email ?? '',
+      });
+      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+      prof = (data as Profile) ?? null;
+    } else if (metaName && !prof.full_name) {
+      // Solo completamos el nombre si está vacío. NO tocamos el rol de un perfil
+      // que ya existe (respetamos lo que haya en la base / correcciones manuales).
+      await supabase.from('profiles').update({ full_name: metaName }).eq('id', user.id);
+      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+      prof = (data as Profile) ?? null;
+    }
 
-  if (prof) {
-    await ensureSubtable(prof.role, user.id, metaName || prof.full_name);
+    if (prof) {
+      await ensureSubtable(prof.role, user.id, metaName || prof.full_name);
+    }
+    return prof;
+  } catch (err) {
+    console.warn('[Auth] No se pudo cargar/crear el perfil:', err);
+    return null;
   }
-  return prof;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -129,26 +137,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
 
-    // Sesión inicial
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!active) return;
-      setSession(data.session);
-      if (data.session?.user) {
-        await loadProfile(data.session.user);
-      } else {
-        clearProfile();
-      }
-      setLoading(false);
-    });
+    // Sesión inicial. try/finally: si algo falla (red, Supabase caído), igual
+    // se apaga el loading en vez de dejar el spinner girando para siempre.
+    supabase.auth
+      .getSession()
+      .then(async ({ data }) => {
+        if (!active) return;
+        setSession(data.session);
+        if (data.session?.user) {
+          await loadProfile(data.session.user);
+        } else {
+          clearProfile();
+        }
+      })
+      .catch((err) => {
+        console.warn('[Auth] No se pudo obtener la sesión inicial:', err);
+        if (active) clearProfile();
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
 
     // Cambios de sesión (login/logout/refresh)
     const { data: sub } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       if (!active) return;
       setSession(newSession);
-      if (newSession?.user) {
-        await loadProfile(newSession.user);
-      } else {
-        clearProfile();
+      try {
+        if (newSession?.user) {
+          await loadProfile(newSession.user);
+        } else {
+          clearProfile();
+        }
+      } catch (err) {
+        console.warn('[Auth] No se pudo procesar el cambio de sesión:', err);
       }
     });
 

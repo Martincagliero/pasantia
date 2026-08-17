@@ -3,6 +3,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Menu, X } from 'lucide-react';
 import { useScrolled } from '../../hooks/useScrolled';
+import { useScrollDirection } from '../../hooks/useScrollDirection';
 import { NAV_LINKS, HASH_LINKS } from '../../lib/constants';
 import { Button } from '../ui/Button';
 import { useEarlyAccess } from '../early-access/EarlyAccess';
@@ -13,6 +14,9 @@ import ambassadorPhoto from '../../assets/images/mockup/comunidad-sistemas.webp'
 
 export function Navbar() {
   const scrolled = useScrolled(20);
+  const scrollDirection = useScrollDirection();
+  // Colapsa el wordmark (queda solo el isotipo) al bajar, como en anthropic.com.
+  const collapseWordmark = scrolled && scrollDirection === 'down';
   const [menuOpen, setMenuOpen] = useState(false);
   const { open } = useEarlyAccess();
   const desktopLinks = NAV_LINKS.filter((link) => link.to === '/');
@@ -64,14 +68,25 @@ export function Navbar() {
             : 'border border-transparent bg-transparent'
         }`}
       >
-        {/* Logo + marca */}
-        <Link to="/" className="flex items-center gap-1" aria-label="PasantIA — Inicio">
+        {/* Logo + marca: el wordmark se colapsa al bajar y reaparece al subir */}
+        <Link to="/" className="flex items-center" aria-label="PasantIA — Inicio">
           <img
             src={logo}
             alt="PasantIA"
-            className="h-9 w-9 rounded-lg object-contain"
+            className="h-9 w-9 shrink-0 rounded-lg object-contain"
           />
-          <span className="text-lg font-semibold tracking-tight">asantIA</span>
+          <motion.span
+            initial={false}
+            animate={{
+              width: collapseWordmark ? 0 : 'auto',
+              opacity: collapseWordmark ? 0 : 1,
+              marginLeft: collapseWordmark ? 0 : 4,
+            }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden whitespace-nowrap text-lg font-semibold tracking-tight"
+          >
+            asantIA
+          </motion.span>
         </Link>
 
         {/* Links desktop */}

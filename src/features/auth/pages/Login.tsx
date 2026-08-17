@@ -47,20 +47,27 @@ export default function Login() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const { error } = await signIn(email.trim(), password);
-    setLoading(false);
-    if (error) {
-      setError(error);
-      return;
-    }
-    // Recordar (o olvidar) la cuenta en este dispositivo.
+    // try/finally: si signIn tira una excepción inesperada (red caída, etc.)
+    // el botón no debe quedar trabado en "Ingresando…" para siempre.
     try {
-      if (remember) localStorage.setItem(REMEMBER_KEY, email.trim());
-      else localStorage.removeItem(REMEMBER_KEY);
+      const { error } = await signIn(email.trim(), password);
+      if (error) {
+        setError(error);
+        return;
+      }
+      // Recordar (o olvidar) la cuenta en este dispositivo.
+      try {
+        if (remember) localStorage.setItem(REMEMBER_KEY, email.trim());
+        else localStorage.removeItem(REMEMBER_KEY);
+      } catch {
+        /* ignore */
+      }
+      navigate(from, { replace: true });
     } catch {
-      /* ignore */
+      setError('No pudimos conectar. Revisá tu internet e intentá de nuevo.');
+    } finally {
+      setLoading(false);
     }
-    navigate(from, { replace: true });
   }
 
   return (

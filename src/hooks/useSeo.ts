@@ -9,7 +9,7 @@ interface SeoOptions {
 }
 
 const SITE_NAME = 'PasantIA';
-const BASE_URL = 'https://pasantia.com'; // TODO: reemplazar por el dominio real al publicar.
+const BASE_URL = 'https://pasantia.com.ar';
 
 /**
  * Hook nativo de SEO: setea <title>, meta description y tags Open Graph
@@ -21,7 +21,7 @@ export function useSeo({ title, description, path = '/', image }: SeoOptions): v
     document.title = fullTitle;
 
     const url = `${BASE_URL}${path}`;
-    const ogImage = image ?? `${BASE_URL}/og-image.jpg`;
+    const ogImage = image ?? `${BASE_URL}/og.jpg`;
 
     const meta: Array<[string, string, 'name' | 'property']> = [
       ['description', description, 'name'],

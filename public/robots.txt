@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /ingresar
+Disallow: /auth
+Disallow: /recuperar-password
+Disallow: /restablecer-password
+
+Sitemap: https://pasantia.com.ar/sitemap.xml

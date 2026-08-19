@@ -111,8 +111,9 @@ function OnboardingModal({
 
   const steps = useMemo(() => {
     const list: ('welcome' | 'notifications' | 'install')[] = ['welcome'];
-    if (pushSupported) list.push('notifications');
+    // Primero anclar la app al inicio (en iOS las notificaciones sólo andan ya instalada).
     if (!standalone) list.push('install');
+    if (pushSupported) list.push('notifications');
     return list;
   }, [pushSupported, standalone]);
 
@@ -257,7 +258,7 @@ function OnboardingModal({
                       <p className="flex items-center justify-center gap-2 py-1 text-sm font-medium text-white/80">
                         <Check className="h-[18px] w-[18px]" strokeWidth={1.5} /> App agregada
                       </p>
-                      <PrimaryButton onClick={onFinish}>Listo</PrimaryButton>
+                      <PrimaryButton onClick={next}>Continuar</PrimaryButton>
                     </>
                   ) : ios ? (
                     <>
@@ -272,7 +273,7 @@ function OnboardingModal({
                           Confirmá y abrí PasantIA desde el ícono nuevo.
                         </IosStep>
                       </ol>
-                      <PrimaryButton onClick={onFinish}>Entendido</PrimaryButton>
+                      <PrimaryButton onClick={next}>Entendido</PrimaryButton>
                     </>
                   ) : installReady ? (
                     <>
@@ -284,7 +285,7 @@ function OnboardingModal({
                         )}
                         Instalar app
                       </PrimaryButton>
-                      <GhostButton onClick={onFinish}>Ahora no</GhostButton>
+                      <GhostButton onClick={next}>Ahora no</GhostButton>
                     </>
                   ) : (
                     <>
@@ -296,7 +297,7 @@ function OnboardingModal({
                           <b className="font-semibold text-white">“Agregar a pantalla principal”</b>.
                         </span>
                       </div>
-                      <PrimaryButton onClick={onFinish}>Entendido</PrimaryButton>
+                      <PrimaryButton onClick={next}>Entendido</PrimaryButton>
                     </>
                   )}
                 </StepShell>

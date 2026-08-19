@@ -4,12 +4,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, Check, Loader2, Share2, Plus, Smartphone, X, MoreVertical, Download } from 'lucide-react';
+import { Bell, Check, Loader2, Share2, Plus, Smartphone, X, MoreVertical, Download, UserRound } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../../lib/supabase';
 import { useModalGuard } from '../ui/modalGuard';
-import { isPushSupported, isSubscribed, enablePush } from '../../lib/push';
-import { sendPushEvent } from '../../lib/notify';
+import { isPushSupported } from '../../lib/push';
 import {
   canInstall,
   promptInstall,
@@ -92,7 +91,7 @@ export function WelcomeOnboarding() {
   if (!uid || !open) return null;
 
   return createPortal(
-    <OnboardingModal step={step} setStep={setStep} onFinish={finish} userId={uid} />,
+    <OnboardingModal step={step} setStep={setStep} onFinish={finish} />,
     document.body
   );
 }
@@ -101,12 +100,10 @@ function OnboardingModal({
   step,
   setStep,
   onFinish,
-  userId,
 }: {
   step: number;
   setStep: (n: number) => void;
   onFinish: () => void;
-  userId: string;
 }) {
   const { profile } = useAuth();
   const pushSupported = useMemo(() => isPushSupported(), []);
@@ -114,16 +111,9 @@ function OnboardingModal({
   const standalone = useMemo(() => isRunningStandalone(), []);
   useModalGuard(true);
 
-  const [subscribed, setSubscribed] = useState(false);
-  const [notifBusy, setNotifBusy] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
   const [installReady, setInstallReady] = useState(() => canInstall());
   const [installing, setInstalling] = useState(false);
   const [installedNow, setInstalledNow] = useState(false);
-
-  useEffect(() => {
-    if (pushSupported) void isSubscribed().then(setSubscribed);
-  }, [pushSupported]);
 
   useEffect(() => onInstallAvailabilityChange(() => setInstallReady(canInstall())), []);
 
@@ -131,10 +121,9 @@ function OnboardingModal({
     const list: ('welcome' | 'notifications' | 'install')[] = ['welcome'];
     // Primero anclar la app al inicio (en iOS las notificaciones sólo andan ya instalada).
     if (!standalone) list.push('install');
-    // No ofrecer notificaciones si el navegador ya las tiene bloqueadas
-    // (en ese caso el botón siempre falla y molesta con el aviso de permisos).
-    const denied = typeof Notification !== 'undefined' && Notification.permission === 'denied';
-    if (pushSupported && !denied) list.push('notifications');
+    // Guía para activar notificaciones: SOLO instrucciones (dónde tocar), sin botón
+    // que dispare el permiso del navegador. El permiso se pide desde el perfil.
+    if (pushSupported) list.push('notifications');
     return list;
   }, [pushSupported, standalone]);
 
@@ -144,28 +133,6 @@ function OnboardingModal({
   function next() {
     if (isLast) onFinish();
     else setStep(step + 1);
-  }
-
-  async function activateNotifications() {
-    if (notifBusy) return;
-    setNotifBusy(true);
-    setNotice(null);
-    try {
-      const res = await enablePush(userId);
-      if (res === 'granted') {
-        setSubscribed(true);
-        void sendPushEvent('push_test', userId);
-        setTimeout(next, 500);
-      } else if (res === 'denied') {
-        setNotice('Bloqueaste las notificaciones. Podés activarlas después desde los permisos del navegador.');
-      } else if (res === 'no-key') {
-        setNotice('Las notificaciones todavía no están disponibles. Probá más tarde.');
-      } else if (res === 'error') {
-        setNotice('No se pudieron activar. Probá de nuevo o más tarde desde tu perfil.');
-      }
-    } finally {
-      setNotifBusy(false);
-    }
   }
 
   async function installApp() {
@@ -228,7 +195,7 @@ function OnboardingModal({
                 <StepShell
                   icon={<img src={logo} alt="PasantIA" className="h-9 w-9 rounded-xl" />}
                   title={`¡Hola${firstName(profile?.full_name ?? '')}! Bienvenido a PasantIA`}
-                  text="En 10 segundos te dejamos todo listo para que no te pierdas ninguna oportunidad: activá las notificaciones y sumá la app a tu celular."
+                  text="En unos segundos te mostramos cómo dejar todo listo: primero sumá la app a tu inicio y después activá las notificaciones desde tu perfil."
                 >
                   <PrimaryButton onClick={next}>Empezar</PrimaryButton>
                 </StepShell>
@@ -237,30 +204,18 @@ function OnboardingModal({
               {current === 'notifications' && (
                 <StepShell
                   icon={<Bell className="h-8 w-8 text-white/80" strokeWidth={1.5} />}
-                  title="Activá las notificaciones"
-                  text="Te avisamos al instante cuando recibís un mensaje, una solicitud de conexión o novedades en tus postulaciones."
+                  title="Después, activá las notificaciones"
+                  text="Cuando quieras, activalas para enterarte al instante de mensajes, solicitudes de conexión y novedades en tus postulaciones."
                 >
-                  {subscribed ? (
-                    <>
-                      <p className="flex items-center justify-center gap-2 py-1 text-sm font-medium text-white/80">
-                        <Check className="h-[18px] w-[18px]" strokeWidth={1.5} /> Notificaciones activadas
-                      </p>
-                      <PrimaryButton onClick={next}>Continuar</PrimaryButton>
-                    </>
-                  ) : (
-                    <>
-                      <PrimaryButton onClick={() => void activateNotifications()} disabled={notifBusy}>
-                        {notifBusy ? (
-                          <Loader2 className="h-[18px] w-[18px] animate-spin" />
-                        ) : (
-                          <Bell className="h-[18px] w-[18px]" strokeWidth={1.5} />
-                        )}
-                        Activar notificaciones
-                      </PrimaryButton>
-                      {notice && <p className="text-xs leading-relaxed text-white/50">{notice}</p>}
-                      <GhostButton onClick={next}>Ahora no</GhostButton>
-                    </>
-                  )}
+                  <ol className="space-y-2.5 rounded-2xl border border-white/10 p-4 text-left text-sm text-white/70">
+                    <IosStep n={1} icon={<UserRound className="h-4 w-4 text-white/60" strokeWidth={1.5} />}>
+                      Tocá tu <b className="font-semibold text-white">foto de perfil</b> arriba a la derecha.
+                    </IosStep>
+                    <IosStep n={2} icon={<Bell className="h-4 w-4 text-white/60" strokeWidth={1.5} />}>
+                      Elegí <b className="font-semibold text-white">“Activar notificaciones”</b> en el menú.
+                    </IosStep>
+                  </ol>
+                  <PrimaryButton onClick={next}>Entendido</PrimaryButton>
                 </StepShell>
               )}
 

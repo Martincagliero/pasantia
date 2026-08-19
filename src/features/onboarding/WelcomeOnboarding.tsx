@@ -30,13 +30,24 @@ function localDone(uid: string): boolean {
   }
 }
 
-function markDone(uid: string) {
+function setLocalDone(uid: string) {
   try {
     localStorage.setItem(storageKey(uid), '1');
   } catch {
     /* ignore */
   }
-  // Persistencia por cuenta (best-effort; ignora si la columna no existe aún).
+}
+
+// Marca la cuenta como "ya vio el anuncio" de forma PERMANENTE y CROSS-DEVICE.
+// Guarda el flag en 3 lados (best-effort): localStorage (este equipo), el
+// user_metadata de la cuenta (viaja con el usuario a cualquier dispositivo, sin
+// migración) y la columna profiles.onboarded (si existe). Así aparece una única
+// vez para siempre en cada cuenta.
+function markDone(uid: string) {
+  setLocalDone(uid);
+  void supabase.auth
+    .updateUser({ data: { pasantia_onboarded: true } })
+    .then(undefined, () => undefined);
   void supabase
     .from('profiles')
     .update({ onboarded: true })
@@ -45,26 +56,33 @@ function markDone(uid: string) {
 }
 
 export function WelcomeOnboarding() {
-  const { profile } = useAuth();
+  const { profile, session } = useAuth();
   const uid = profile?.id;
 
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
 
-  // Decide si mostrar el onboarding (solo una vez por cuenta, solo en mobile).
+  // Decide si mostrar el onboarding (una única vez por cuenta, para siempre, solo mobile).
   useEffect(() => {
     if (!uid) return;
     // El onboarding (agregar app a inicio + notificaciones) es solo para celulares.
     if (!isMobileDevice()) return;
     if (localDone(uid)) return;
-    // Si el perfil ya viene marcado como onboarded en la DB, respetarlo.
-    if ((profile as { onboarded?: boolean } | null)?.onboarded) {
-      markDone(uid);
+    // ¿Ya lo vio en este u otro dispositivo? (flag en la cuenta o en profiles)
+    const metaDone =
+      (session?.user?.user_metadata as { pasantia_onboarded?: boolean } | undefined)
+        ?.pasantia_onboarded === true;
+    const dbDone = (profile as { onboarded?: boolean } | null)?.onboarded === true;
+    if (metaDone || dbDone) {
+      setLocalDone(uid);
       return;
     }
     setStep(0);
     setOpen(true);
-  }, [uid, profile]);
+    // Se marca como visto APENAS se muestra: garantiza que aparezca una sola vez
+    // para siempre, aunque cierre o recargue sin completar los pasos.
+    markDone(uid);
+  }, [uid, profile, session]);
 
   const finish = useCallback(() => {
     if (uid) markDone(uid);

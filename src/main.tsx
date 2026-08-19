@@ -5,6 +5,8 @@ import './index.css'
 import App from './App.tsx'
 import { AuthProvider } from './features/auth/AuthProvider'
 import { captureReferral } from './lib/referral'
+// Empieza a capturar el evento de instalación PWA lo antes posible.
+import './lib/pwaInstall'
 
 // Guardar el código de promotor (?ref=) apenas carga, antes de renderizar.
 captureReferral()

@@ -29,6 +29,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { MessagesProvider, MessagesButton } from '../messages/MessagesProvider';
 import { NotificationsButton } from '../notifications/NotificationsButton';
 import { NotificationCenter } from '../notifications/NotificationCenter';
+import { WelcomeOnboarding } from '../onboarding/WelcomeOnboarding';
 import { supabase } from '../../lib/supabase';
 import { prefetchAppRoute, prefetchRoleRoutes } from '../../lib/prefetchApp';
 
@@ -179,6 +180,7 @@ export function DashboardLayout() {
   return (
     <div className="dash-root min-h-screen" data-theme={theme}>
       <MessagesProvider>
+        <WelcomeOnboarding />
         <header className="dash-panel sticky top-0 z-[45] border-b border-white/10 pt-[env(safe-area-inset-top)]">
           <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-4">
             <Link to="/" className="shrink-0">

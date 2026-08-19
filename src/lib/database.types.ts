@@ -22,6 +22,7 @@ export interface Profile {
   email: string;
   created_at: string;
   is_admin?: boolean;
+  onboarded?: boolean;
 }
 
 export interface StudentProfile {

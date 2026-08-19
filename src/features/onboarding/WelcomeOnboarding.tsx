@@ -19,7 +19,11 @@ import {
 } from '../../lib/pwaInstall';
 import logo from '../../assets/logo.png';
 
-const storageKey = (uid: string) => `pasantia_onboarded_${uid}`;
+// Versión del onboarding. Al subirla, quienes ya lo vieron (incluidos los
+// usuarios ya logueados) lo vuelven a ver UNA vez con la nueva guía.
+const ONBOARDING_VERSION = 'v2';
+const META_FLAG = `pasantia_onboarded_${ONBOARDING_VERSION}`;
+const storageKey = (uid: string) => `pasantia_onboarded_${ONBOARDING_VERSION}_${uid}`;
 
 function localDone(uid: string): boolean {
   try {
@@ -38,19 +42,13 @@ function setLocalDone(uid: string) {
 }
 
 // Marca la cuenta como "ya vio el anuncio" de forma PERMANENTE y CROSS-DEVICE.
-// Guarda el flag en 3 lados (best-effort): localStorage (este equipo), el
-// user_metadata de la cuenta (viaja con el usuario a cualquier dispositivo, sin
-// migración) y la columna profiles.onboarded (si existe). Así aparece una única
-// vez para siempre en cada cuenta.
+// Guarda el flag (versionado) en localStorage (este equipo) y en el user_metadata
+// de la cuenta (viaja con el usuario a cualquier dispositivo, sin migración).
+// Así aparece una única vez por versión en cada cuenta.
 function markDone(uid: string) {
   setLocalDone(uid);
   void supabase.auth
-    .updateUser({ data: { pasantia_onboarded: true } })
-    .then(undefined, () => undefined);
-  void supabase
-    .from('profiles')
-    .update({ onboarded: true })
-    .eq('id', uid)
+    .updateUser({ data: { [META_FLAG]: true } })
     .then(undefined, () => undefined);
 }
 
@@ -67,12 +65,10 @@ export function WelcomeOnboarding() {
     // El onboarding (agregar app a inicio + notificaciones) es solo para celulares.
     if (!isMobileDevice()) return;
     if (localDone(uid)) return;
-    // ¿Ya lo vio en este u otro dispositivo? (flag en la cuenta o en profiles)
+    // ¿Ya vio ESTA versión en este u otro dispositivo? (flag versionado en la cuenta)
     const metaDone =
-      (session?.user?.user_metadata as { pasantia_onboarded?: boolean } | undefined)
-        ?.pasantia_onboarded === true;
-    const dbDone = (profile as { onboarded?: boolean } | null)?.onboarded === true;
-    if (metaDone || dbDone) {
+      (session?.user?.user_metadata as Record<string, unknown> | undefined)?.[META_FLAG] === true;
+    if (metaDone) {
       setLocalDone(uid);
       return;
     }

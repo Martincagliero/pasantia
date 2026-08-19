@@ -161,11 +161,20 @@ export function EarlyAccessProvider({ children }: { children: ReactNode }) {
       const leftGoogleRegistration = wasGoogleRegistrationRef.current && !isGoogleRegistration;
       wasGoogleRegistrationRef.current = isGoogleRegistration;
 
-      if (leftGoogleRegistration) {
+      if (leftGoogleRegistration && !inAppArea) {
+        // Sólo cerramos sesión si la persona ABANDONÓ el registro con Google
+        // sin completarlo (salió a la landing/login). Si entró al panel (/app)
+        // NO tocamos nada: significa que completó y no hay que echarla.
         clearPendingGoogleOnboarding();
         void supabase.auth.getUser().then(({ data }) => {
           const user = data.user;
-          if (user && user.user_metadata.pasantia_onboarding_completed !== true) {
+          if (!user) return;
+          // Blindaje: nunca desloguear cuentas de email; sólo cuentas de Google
+          // que quedaron a medio registrar (sin el flag de onboarding completo).
+          const isGoogleUser =
+            user.app_metadata?.provider === 'google' ||
+            user.identities?.some((identity) => identity.provider === 'google');
+          if (isGoogleUser && user.user_metadata.pasantia_onboarding_completed !== true) {
             void supabase.auth.signOut();
           }
         });
@@ -210,6 +219,8 @@ function Onboarding({
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [googleAuth, setGoogleAuth] = useState(false);
+  // true cuando el registro dejó una sesión activa y entramos directo al panel.
+  const [enteredApp, setEnteredApp] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -222,6 +233,7 @@ function Onboarding({
       setError(null);
       setSubmitting(false);
       setGoogleAuth(isGoogleReturn);
+      setEnteredApp(false);
       document.body.style.overflow = 'hidden';
 
       if (isGoogleReturn) {
@@ -257,10 +269,10 @@ function Onboarding({
     if (!submitted) return;
     const timer = window.setTimeout(() => {
       onClose();
-      navigate(googleAuth ? '/app' : '/ingresar');
+      navigate(googleAuth || enteredApp ? '/app' : '/ingresar');
     }, 2500);
     return () => window.clearTimeout(timer);
-  }, [submitted, googleAuth, navigate, onClose]);
+  }, [submitted, googleAuth, enteredApp, navigate, onClose]);
 
   const set = (patch: Partial<FormData>) => setData((d) => ({ ...d, ...patch }));
 
@@ -520,14 +532,26 @@ function Onboarding({
           /* si falla, el perfil se crea igual al iniciar sesión */
         }
 
-        // Best-effort: si signUp no llegó a crear sesión (cuenta ya existía,
-        // error de cupo/rate-limit, etc.) signOut() puede tirar "Auth session
-        // missing". No dejamos que eso corte el registro.
+        // Registro con email: si quedó una sesión activa (Supabase sin
+        // confirmación de email), entra DIRECTO al panel (auto-login) en vez de
+        // mandarlo a iniciar sesión otra vez. Si no hay sesión (requiere
+        // confirmar email o falló el signUp), lo dejamos en la pantalla de
+        // ingreso. signOut sin sesión puede tirar "Auth session missing": lo
+        // envolvemos para que no corte el registro.
         if (!googleAuth) {
-          try {
-            await signOut();
-          } catch {
-            /* ignore */
+          if (uid) {
+            setEnteredApp(true);
+            try {
+              await refreshProfile();
+            } catch {
+              /* ignore */
+            }
+          } else {
+            try {
+              await signOut();
+            } catch {
+              /* ignore */
+            }
           }
         }
       }
@@ -676,10 +700,10 @@ function Onboarding({
               <div className="m-auto w-full max-w-md">
                 <Success
                   role={data.role}
-                  googleAuth={googleAuth}
+                  entered={googleAuth || enteredApp}
                   onLogin={() => {
                     onClose();
-                    navigate(googleAuth ? '/app' : '/ingresar');
+                    navigate(googleAuth || enteredApp ? '/app' : '/ingresar');
                   }}
                 />
               </div>
@@ -1207,7 +1231,7 @@ function StepMensaje({
   );
 }
 
-function Success({ role, googleAuth, onLogin }: { role: FormData['role']; googleAuth: boolean; onLogin: () => void }) {
+function Success({ role, entered, onLogin }: { role: FormData['role']; entered: boolean; onLogin: () => void }) {
   return (
     <div className="text-center">
       <motion.div
@@ -1219,13 +1243,13 @@ function Success({ role, googleAuth, onLogin }: { role: FormData['role']; google
         <Check size={38} />
       </motion.div>
       <h2 className="mt-8 text-3xl font-semibold tracking-tighter xs:text-4xl sm:text-5xl">
-        ¡Estás en la lista!
+        {entered ? '¡Bienvenido a PasantIA!' : '¡Estás en la lista!'}
       </h2>
       <p className="mx-auto mt-5 max-w-md text-lg font-light text-white/65">
-        {googleAuth
+        {entered
           ? 'Tu cuenta y tu perfil quedaron listos. En un momento te llevamos al panel.'
           : 'Tu cuenta quedó creada. En un momento te llevamos a iniciar sesión con tu email y contraseña'}
-        {!googleAuth && (
+        {!entered && (
           role === 'empresa'
             ? ' para empresas.'
             : role === 'estudiante'
@@ -1237,7 +1261,7 @@ function Success({ role, googleAuth, onLogin }: { role: FormData['role']; google
         onClick={onLogin}
         className="mt-10 inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-brand-600 transition-colors hover:bg-brand-950 hover:text-white"
       >
-        {googleAuth ? 'Ir al panel' : 'Iniciar sesión ahora'}
+        {entered ? 'Ir al panel' : 'Iniciar sesión ahora'}
       </button>
     </div>
   );

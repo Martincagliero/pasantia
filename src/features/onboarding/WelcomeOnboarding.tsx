@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, Check, Loader2, Share2, Plus, Smartphone, Sparkles, X, MoreVertical, Download } from 'lucide-react';
+import { Bell, Check, Loader2, Share2, Plus, Smartphone, X, MoreVertical, Download } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../../lib/supabase';
 import { useModalGuard } from '../ui/modalGuard';
@@ -98,6 +98,7 @@ function OnboardingModal({
 
   const [subscribed, setSubscribed] = useState(false);
   const [notifBusy, setNotifBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [installReady, setInstallReady] = useState(() => canInstall());
   const [installing, setInstalling] = useState(false);
   const [installedNow, setInstalledNow] = useState(false);
@@ -126,6 +127,7 @@ function OnboardingModal({
   async function activateNotifications() {
     if (notifBusy) return;
     setNotifBusy(true);
+    setNotice(null);
     try {
       const res = await enablePush(userId);
       if (res === 'granted') {
@@ -133,11 +135,11 @@ function OnboardingModal({
         void sendPushEvent('push_test', userId);
         setTimeout(next, 500);
       } else if (res === 'denied') {
-        alert('Bloqueaste las notificaciones. Podés activarlas después desde los permisos del navegador.');
+        setNotice('Bloqueaste las notificaciones. Podés activarlas después desde los permisos del navegador.');
       } else if (res === 'no-key') {
-        alert('Las notificaciones todavía no están configuradas. Probá más tarde.');
+        setNotice('Las notificaciones todavía no están disponibles. Probá más tarde.');
       } else if (res === 'error') {
-        alert('No se pudieron activar. Probá de nuevo o más tarde desde tu perfil.');
+        setNotice('No se pudieron activar. Probá de nuevo o más tarde desde tu perfil.');
       }
     } finally {
       setNotifBusy(false);
@@ -206,23 +208,21 @@ function OnboardingModal({
                   title={`¡Hola${firstName(profile?.full_name ?? '')}! Bienvenido a PasantIA`}
                   text="En 10 segundos te dejamos todo listo para que no te pierdas ninguna oportunidad: activá las notificaciones y sumá la app a tu celular."
                 >
-                  <PrimaryButton onClick={next}>
-                    <Sparkles className="h-[18px] w-[18px]" /> Empezar
-                  </PrimaryButton>
+                  <PrimaryButton onClick={next}>Empezar</PrimaryButton>
                 </StepShell>
               )}
 
               {current === 'notifications' && (
                 <StepShell
-                  icon={<Bell className="h-7 w-7 text-brand-500" />}
+                  icon={<Bell className="h-8 w-8 text-white/80" strokeWidth={1.5} />}
                   title="Activá las notificaciones"
                   text="Te avisamos al instante cuando recibís un mensaje, una solicitud de conexión o novedades en tus postulaciones."
                 >
                   {subscribed ? (
                     <>
-                      <div className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500/15 px-4 py-3 text-sm font-semibold text-emerald-400">
-                        <Check className="h-[18px] w-[18px]" /> ¡Notificaciones activadas!
-                      </div>
+                      <p className="flex items-center justify-center gap-2 py-1 text-sm font-medium text-white/80">
+                        <Check className="h-[18px] w-[18px]" strokeWidth={1.5} /> Notificaciones activadas
+                      </p>
                       <PrimaryButton onClick={next}>Continuar</PrimaryButton>
                     </>
                   ) : (
@@ -231,10 +231,11 @@ function OnboardingModal({
                         {notifBusy ? (
                           <Loader2 className="h-[18px] w-[18px] animate-spin" />
                         ) : (
-                          <Bell className="h-[18px] w-[18px]" />
+                          <Bell className="h-[18px] w-[18px]" strokeWidth={1.5} />
                         )}
                         Activar notificaciones
                       </PrimaryButton>
+                      {notice && <p className="text-xs leading-relaxed text-white/50">{notice}</p>}
                       <GhostButton onClick={next}>Ahora no</GhostButton>
                     </>
                   )}
@@ -243,7 +244,7 @@ function OnboardingModal({
 
               {current === 'install' && (
                 <StepShell
-                  icon={<Smartphone className="h-7 w-7 text-brand-500" />}
+                  icon={<Smartphone className="h-8 w-8 text-white/80" strokeWidth={1.5} />}
                   title="Sumá PasantIA a tu inicio"
                   text={
                     ios
@@ -253,21 +254,21 @@ function OnboardingModal({
                 >
                   {installedNow ? (
                     <>
-                      <div className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500/15 px-4 py-3 text-sm font-semibold text-emerald-400">
-                        <Check className="h-[18px] w-[18px]" /> ¡App agregada!
-                      </div>
+                      <p className="flex items-center justify-center gap-2 py-1 text-sm font-medium text-white/80">
+                        <Check className="h-[18px] w-[18px]" strokeWidth={1.5} /> App agregada
+                      </p>
                       <PrimaryButton onClick={onFinish}>Listo</PrimaryButton>
                     </>
                   ) : ios ? (
                     <>
-                      <ol className="space-y-2 rounded-2xl bg-white/5 p-4 text-left text-sm text-white/75">
-                        <IosStep n={1} icon={<Share2 className="h-4 w-4 text-brand-500" />}>
-                          Tocá <b className="text-white">Compartir</b> en la barra de Safari.
+                      <ol className="space-y-2.5 rounded-2xl border border-white/10 p-4 text-left text-sm text-white/70">
+                        <IosStep n={1} icon={<Share2 className="h-4 w-4 text-white/60" strokeWidth={1.5} />}>
+                          Tocá <b className="font-semibold text-white">Compartir</b> en la barra de Safari.
                         </IosStep>
-                        <IosStep n={2} icon={<Plus className="h-4 w-4 text-brand-500" />}>
-                          Elegí <b className="text-white">“Agregar a inicio”</b>.
+                        <IosStep n={2} icon={<Plus className="h-4 w-4 text-white/60" strokeWidth={1.5} />}>
+                          Elegí <b className="font-semibold text-white">“Agregar a inicio”</b>.
                         </IosStep>
-                        <IosStep n={3} icon={<Check className="h-4 w-4 text-brand-500" />}>
+                        <IosStep n={3} icon={<Check className="h-4 w-4 text-white/60" strokeWidth={1.5} />}>
                           Confirmá y abrí PasantIA desde el ícono nuevo.
                         </IosStep>
                       </ol>
@@ -279,7 +280,7 @@ function OnboardingModal({
                         {installing ? (
                           <Loader2 className="h-[18px] w-[18px] animate-spin" />
                         ) : (
-                          <Download className="h-[18px] w-[18px]" />
+                          <Download className="h-[18px] w-[18px]" strokeWidth={1.5} />
                         )}
                         Instalar app
                       </PrimaryButton>
@@ -287,12 +288,12 @@ function OnboardingModal({
                     </>
                   ) : (
                     <>
-                      <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-4 text-left text-sm text-white/75">
-                        <MoreVertical className="mt-0.5 h-5 w-5 shrink-0 text-brand-500" />
+                      <div className="flex items-start gap-3 rounded-2xl border border-white/10 p-4 text-left text-sm text-white/70">
+                        <MoreVertical className="mt-0.5 h-5 w-5 shrink-0 text-white/60" strokeWidth={1.5} />
                         <span>
                           Abrí el menú del navegador (⋮) y elegí{' '}
-                          <b className="text-white">“Instalar app”</b> o{' '}
-                          <b className="text-white">“Agregar a pantalla principal”</b>.
+                          <b className="font-semibold text-white">“Instalar app”</b> o{' '}
+                          <b className="font-semibold text-white">“Agregar a pantalla principal”</b>.
                         </span>
                       </div>
                       <PrimaryButton onClick={onFinish}>Entendido</PrimaryButton>
@@ -326,11 +327,9 @@ function StepShell({
 }) {
   return (
     <div className="text-center">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500/12">
-        {icon}
-      </div>
-      <h2 className="mt-4 text-xl font-bold tracking-tight text-white">{title}</h2>
-      <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-white/65">{text}</p>
+      <div className="mx-auto flex h-14 w-14 items-center justify-center">{icon}</div>
+      <h2 className="mt-3 text-xl font-bold tracking-tight text-white">{title}</h2>
+      <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-white/60">{text}</p>
       <div className="mt-6 space-y-2.5">{children}</div>
     </div>
   );
@@ -372,7 +371,7 @@ function GhostButton({ onClick, children }: { onClick: () => void; children: Rea
 function IosStep({ n, icon, children }: { n: number; icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <li className="flex items-center gap-3">
-      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-500 text-xs font-bold !text-white">
+      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-white/20 text-xs font-semibold text-white/70">
         {n}
       </span>
       <span className="flex items-center gap-1.5">

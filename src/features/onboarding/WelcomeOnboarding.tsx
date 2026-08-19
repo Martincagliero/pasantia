@@ -113,7 +113,10 @@ function OnboardingModal({
     const list: ('welcome' | 'notifications' | 'install')[] = ['welcome'];
     // Primero anclar la app al inicio (en iOS las notificaciones sólo andan ya instalada).
     if (!standalone) list.push('install');
-    if (pushSupported) list.push('notifications');
+    // No ofrecer notificaciones si el navegador ya las tiene bloqueadas
+    // (en ese caso el botón siempre falla y molesta con el aviso de permisos).
+    const denied = typeof Notification !== 'undefined' && Notification.permission === 'denied';
+    if (pushSupported && !denied) list.push('notifications');
     return list;
   }, [pushSupported, standalone]);
 

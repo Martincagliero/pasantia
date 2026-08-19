@@ -270,12 +270,18 @@ function OnboardingModal({
                           Tocá <b className="font-semibold text-white">Compartir</b> en la barra de Safari.
                         </IosStep>
                         <IosStep n={2} icon={<Plus className="h-4 w-4 text-white/60" strokeWidth={1.5} />}>
-                          Elegí <b className="font-semibold text-white">“Agregar a inicio”</b>.
+                          Deslizá y elegí <b className="font-semibold text-white">“Agregar a inicio”</b>.
                         </IosStep>
                         <IosStep n={3} icon={<Check className="h-4 w-4 text-white/60" strokeWidth={1.5} />}>
-                          Confirmá y abrí PasantIA desde el ícono nuevo.
+                          Tocá <b className="font-semibold text-white">Agregar</b> y abrí PasantIA desde el ícono nuevo.
+                        </IosStep>
+                        <IosStep n={4} icon={<Bell className="h-4 w-4 text-white/60" strokeWidth={1.5} />}>
+                          Ya en la app, activá las <b className="font-semibold text-white">notificaciones</b> desde tu perfil.
                         </IosStep>
                       </ol>
+                      <p className="text-xs leading-relaxed text-white/45">
+                        En iPhone las notificaciones sólo funcionan con la app agregada al inicio.
+                      </p>
                       <PrimaryButton onClick={next}>Entendido</PrimaryButton>
                     </>
                   ) : installReady ? (

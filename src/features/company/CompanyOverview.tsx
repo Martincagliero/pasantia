@@ -98,16 +98,17 @@ export default function CompanyOverview() {
           <Link
             key={label}
             to={to}
-            className="glass group rounded-2xl border border-white/12 p-3.5 transition duration-200 hover:-translate-y-0.5 hover:border-white/25 hover:shadow-xl hover:shadow-brand-950/30 sm:p-4"
+            className="glass group relative overflow-hidden rounded-2xl border border-white/12 p-3.5 transition duration-200 hover:-translate-y-0.5 hover:border-white/25 hover:shadow-xl hover:shadow-brand-950/30 sm:p-4"
           >
-            <div className="flex items-center justify-between">
+            <div className="pointer-events-none absolute -bottom-8 left-1/2 h-16 w-3/4 -translate-x-1/2 rounded-full bg-brand-500/30 blur-2xl transition-opacity duration-200 group-hover:opacity-90" />
+            <div className="relative flex items-center justify-between">
               <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${chip}`}>
                 <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
               </span>
               <ArrowRight className="h-4 w-4 text-white/30 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100" />
             </div>
-            <p className="mt-3 text-2xl font-bold tracking-tight text-white">{value}</p>
-            <p className="mt-0.5 text-xs text-white/55 sm:text-sm">{label}</p>
+            <p className="relative mt-3 text-2xl font-bold tracking-tight text-white">{value}</p>
+            <p className="relative mt-0.5 text-xs text-white/55 sm:text-sm">{label}</p>
           </Link>
         ))}
       </div>

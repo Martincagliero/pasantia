@@ -5,7 +5,7 @@ import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
 import { SmoothScroll } from './components/layout/SmoothScroll';
 import { PageTransition } from './components/layout/PageTransition';
-import { EarlyAccessProvider } from './components/early-access/EarlyAccess';
+import { EarlyAccessProvider, useEarlyAccess } from './components/early-access/EarlyAccess';
 import { ProtectedRoute } from './features/auth/ProtectedRoute';
 import { useAuth } from './features/auth/AuthProvider';
 import { DashboardLayout } from './features/dashboard/DashboardLayout';
@@ -252,96 +252,110 @@ export default function App() {
         </Routes>
         </Suspense>
       ) : (
-        <div className="flex min-h-screen flex-col">
-          <SmoothScroll />
-          <Navbar />
-
-        <div className="flex-1">
-          <AnimatePresence mode="wait">
-            <Suspense fallback={fallback}>
-              <Routes location={location} key={location.pathname}>
-                <Route
-                  path="/"
-                  element={
-                    <PageTransition>
-                      <Home />
-                    </PageTransition>
-                  }
-                />
-                <Route
-                  path="/estudiantes"
-                  element={
-                    <PageTransition>
-                      <Estudiantes />
-                    </PageTransition>
-                  }
-                />
-                <Route
-                  path="/empresas"
-                  element={
-                    <PageTransition>
-                      <Empresas />
-                    </PageTransition>
-                  }
-                />
-                <Route
-                  path="/embajadores"
-                  element={
-                    <PageTransition>
-                      <AmbassadorDirectory />
-                    </PageTransition>
-                  }
-                />
-                <Route
-                  path="/comunidad/:id"
-                  element={
-                    <PageTransition>
-                      <PublicCommunityPage />
-                    </PageTransition>
-                  }
-                />
-                <Route
-                  path="/politica-de-privacidad"
-                  element={
-                    <PageTransition>
-                      <PoliticaPrivacidad />
-                    </PageTransition>
-                  }
-                />
-                <Route
-                  path="/terminos"
-                  element={
-                    <PageTransition>
-                      <Terminos />
-                    </PageTransition>
-                  }
-                />
-                <Route
-                  path="/normas-comunidad"
-                  element={
-                    <PageTransition>
-                      <NormasComunidad />
-                    </PageTransition>
-                  }
-                />
-                {/* Fallback: cualquier ruta desconocida vuelve al Home */}
-                <Route
-                  path="*"
-                  element={
-                    <PageTransition>
-                      <Home />
-                    </PageTransition>
-                  }
-                />
-              </Routes>
-            </Suspense>
-          </AnimatePresence>
-        </div>
-
-        <Footer />
-      </div>
+        <LandingShell location={location} />
       )}
     </EarlyAccessProvider>
+  );
+}
+
+// Landing pública (Navbar + rutas animadas + Footer). Se DESMONTA mientras el
+// onboarding full-screen está abierto: ese modal es opaco y tapa toda la
+// pantalla, así que dejar la landing montada solo malgasta CPU (GSAP
+// ScrollTrigger + framer-motion + preview auto-rotando animan sin verse) y
+// hacía que el modal y el ingreso al panel se trabaran/titilaran en el celular.
+function LandingShell({ location }: { location: ReturnType<typeof useLocation> }) {
+  const { isOpen } = useEarlyAccess();
+  if (isOpen) return fallback;
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <SmoothScroll />
+      <Navbar />
+
+      <div className="flex-1">
+        <AnimatePresence mode="wait">
+          <Suspense fallback={fallback}>
+            <Routes location={location} key={location.pathname}>
+              <Route
+                path="/"
+                element={
+                  <PageTransition>
+                    <Home />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/estudiantes"
+                element={
+                  <PageTransition>
+                    <Estudiantes />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/empresas"
+                element={
+                  <PageTransition>
+                    <Empresas />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/embajadores"
+                element={
+                  <PageTransition>
+                    <AmbassadorDirectory />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/comunidad/:id"
+                element={
+                  <PageTransition>
+                    <PublicCommunityPage />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/politica-de-privacidad"
+                element={
+                  <PageTransition>
+                    <PoliticaPrivacidad />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/terminos"
+                element={
+                  <PageTransition>
+                    <Terminos />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/normas-comunidad"
+                element={
+                  <PageTransition>
+                    <NormasComunidad />
+                  </PageTransition>
+                }
+              />
+              {/* Fallback: cualquier ruta desconocida vuelve al Home */}
+              <Route
+                path="*"
+                element={
+                  <PageTransition>
+                    <Home />
+                  </PageTransition>
+                }
+              />
+            </Routes>
+          </Suspense>
+        </AnimatePresence>
+      </div>
+
+      <Footer />
+    </div>
   );
 }
 

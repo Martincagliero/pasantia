@@ -40,6 +40,8 @@ type Role = 'estudiante' | 'empresa' | 'embajador';
 
 interface EarlyAccessContextValue {
   open: (role?: Role) => void;
+  /** true mientras el onboarding full-screen está abierto (tapa toda la pantalla). */
+  isOpen: boolean;
 }
 
 const EarlyAccessContext = createContext<EarlyAccessContextValue | null>(null);
@@ -147,7 +149,7 @@ export function EarlyAccessProvider({ children }: { children: ReactNode }) {
     setIsOpen(true);
   }, []);
   const close = useCallback(() => setIsOpen(false), []);
-  const value = useMemo(() => ({ open }), [open]);
+  const value = useMemo(() => ({ open, isOpen }), [open, isOpen]);
 
   // Si la persona llega con un enlace de promotor (?ref= / ?promo=), abrimos
   // directo el onboarding de acceso anticipado en la pantalla de roles, para

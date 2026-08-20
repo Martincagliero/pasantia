@@ -258,14 +258,9 @@ export default function StudentHome() {
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <section className="min-w-0">
           <Card className={`mb-3 sm:mb-4 ${fullBleedCard}`}>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white">
-                <House className="h-5 w-5" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-lg font-bold text-white">Hola, {firstName}</h1>
-                <p className="mt-0.5 text-xs font-normal text-white/50">Descubrí qué hay de nuevo para vos.</p>
-              </div>
+            <div className="min-w-0">
+              <h1 className="text-lg font-bold text-white">Hola, {firstName}</h1>
+              <p className="mt-0.5 text-xs font-normal text-white/50">Descubrí qué hay de nuevo para vos.</p>
             </div>
             <button
               type="button"

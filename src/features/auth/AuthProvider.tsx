@@ -148,18 +148,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // (ej. admin) trabado en pantalla. Este ref guarda cuál es el usuario
   // "vigente" para descartar respuestas tardías que ya no corresponden.
   const currentUserIdRef = useRef<string | null>(null);
+  // id del usuario cuyo perfil YA está cargado en el estado. Sirve para NO
+  // recargar (ni parpadear) cuando llegan eventos de auth repetidos del MISMO
+  // usuario (TOKEN_REFRESHED, SIGNED_IN al volver el foco de la pestaña,
+  // USER_UPDATED que dispara el onboarding). Antes cada evento recargaba el
+  // perfil y prendía el spinner => la pantalla "titilaba en blanco".
+  const loadedUserIdRef = useRef<string | null>(null);
 
   const loadProfile = useCallback(async (user: User) => {
     currentUserIdRef.current = user.id;
     setProfileLoading(true);
     const p = await ensureProfile(user);
     if (currentUserIdRef.current !== user.id) return; // respuesta obsoleta, se descarta
-    setProfile(p);
+    if (p) {
+      setProfile(p);
+      loadedUserIdRef.current = user.id;
+    } else if (loadedUserIdRef.current !== user.id) {
+      // No pudimos cargar el perfil y NO es el usuario que ya teníamos: recién
+      // ahí lo dejamos en null. Si era el mismo usuario (fallo transitorio de
+      // red/RLS) conservamos el perfil previo para no parpadear en blanco.
+      setProfile(null);
+    }
     setProfileLoading(false);
   }, []);
 
   const clearProfile = useCallback(() => {
     currentUserIdRef.current = null;
+    loadedUserIdRef.current = null;
     setProfile(null);
     setProfileLoading(false);
   }, []);
@@ -188,19 +203,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (active) setLoading(false);
       });
 
-    // Cambios de sesión (login/logout/refresh)
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+    // Cambios de sesión (login/logout/refresh). El callback es SÍNCRONO a
+    // propósito: awaitear consultas de supabase acá dentro puede trabar el
+    // cliente de auth (mantiene el lock) y disparar más eventos en cascada.
+    // Por eso solo actualizamos la sesión y disparamos loadProfile sin await.
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (!active) return;
       setSession(newSession);
-      try {
-        if (newSession?.user) {
-          await loadProfile(newSession.user);
-        } else {
-          clearProfile();
-        }
-      } catch (err) {
-        console.warn('[Auth] No se pudo procesar el cambio de sesión:', err);
+      const nextUser = newSession?.user ?? null;
+      if (!nextUser) {
+        clearProfile();
+        return;
       }
+      // Evento repetido del MISMO usuario que ya tenemos cargado (refresh de
+      // token, foco de la pestaña, USER_UPDATED del onboarding): NO recargamos
+      // el perfil para no prender el spinner y evitar el parpadeo en blanco.
+      if (nextUser.id === loadedUserIdRef.current) return;
+      void loadProfile(nextUser);
     });
 
     return () => {

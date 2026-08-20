@@ -369,10 +369,14 @@ export function DashboardLayout() {
           <Outlet />
         </main>
 
-        {/* Barra inferior mobile: bloque flotante que se compacta al bajar. */}
+        {/* Barra inferior mobile: bloque flotante que se compacta al bajar.
+            OJO iOS: NO usar backdrop-blur en un elemento position:fixed. Safari
+            lo "despega" al hacer scroll y lo dibuja flotando en el medio de la
+            pantalla. El fondo ya es opaco (mobile-end-gradient), así que el blur
+            no aportaba nada visual. */}
         <nav
-          className={`dash-panel mobile-end-gradient fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 mx-auto max-w-md overflow-hidden rounded-2xl border border-white/12 shadow-xl shadow-black/20 backdrop-blur-xl transition-all duration-300 ease-out lg:hidden ${
-            compactBottomNav ? 'scale-[0.92] opacity-90' : 'scale-100 opacity-100'
+          className={`dash-panel mobile-end-gradient fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 mx-auto max-w-md overflow-hidden rounded-2xl border border-white/12 shadow-xl shadow-black/20 transition-[transform,opacity] duration-300 ease-out lg:hidden ${
+            compactBottomNav ? 'scale-[0.92] opacity-95' : 'scale-100 opacity-100'
           }`}
         >
 

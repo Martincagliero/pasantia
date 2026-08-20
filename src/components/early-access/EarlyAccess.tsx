@@ -140,59 +140,64 @@ type Screen =
 
 export function EarlyAccessProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
-  const [isOpen, setIsOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
   const [presetRole, setPresetRole] = useState<Role | undefined>(undefined);
   const wasGoogleRegistrationRef = useRef(false);
 
+  // La apertura del onboarding de Google se DERIVA directo de la URL (no vía
+  // estado + efecto). Cuando el callback de Google navega a /?registro=google,
+  // el modal queda abierto en el MISMO render: así la landing (LandingShell) no
+  // alcanza a montarse/animarse ni un frame detrás del modal -> se elimina el
+  // parpadeo/jank al registrarse con Google.
+  const params = new URLSearchParams(location.search);
+  const hasRef = !!(params.get('ref') || params.get('promo'));
+  const isGoogleRegistration = params.get('registro') === 'google';
+  const inAppArea = location.pathname.startsWith('/app');
+  const googleAutoOpen = isGoogleRegistration && !inAppArea;
+  const isOpen = manualOpen || googleAutoOpen;
+
   const open = useCallback((role?: Role) => {
     setPresetRole(role);
-    setIsOpen(true);
+    setManualOpen(true);
   }, []);
-  const close = useCallback(() => setIsOpen(false), []);
+  const close = useCallback(() => setManualOpen(false), []);
   const value = useMemo(() => ({ open, isOpen }), [open, isOpen]);
 
   // Si la persona llega con un enlace de promotor (?ref= / ?promo=), abrimos
   // directo el onboarding de acceso anticipado en la pantalla de roles, para
-  // que se registre y sume al promotor que la invitó.
+  // que se registre y sume al promotor que la invitó. También cerramos la
+  // sesión de un registro con Google abandonado a medias.
   useEffect(() => {
-    try {
-      const params = new URLSearchParams(location.search);
-      const hasRef = !!(params.get('ref') || params.get('promo'));
-      const isGoogleRegistration = params.get('registro') === 'google';
-      const inAppArea = location.pathname.startsWith('/app');
-      const leftGoogleRegistration = wasGoogleRegistrationRef.current && !isGoogleRegistration;
-      wasGoogleRegistrationRef.current = isGoogleRegistration;
+    const leftGoogleRegistration = wasGoogleRegistrationRef.current && !isGoogleRegistration;
+    wasGoogleRegistrationRef.current = isGoogleRegistration;
 
-      if (leftGoogleRegistration && !inAppArea) {
-        // Sólo cerramos sesión si la persona ABANDONÓ el registro con Google
-        // sin completarlo (salió a la landing/login). Si entró al panel (/app)
-        // NO tocamos nada: significa que completó y no hay que echarla.
-        clearPendingGoogleOnboarding();
-        void supabase.auth.getUser().then(({ data }) => {
-          const user = data.user;
-          if (!user) return;
-          // Blindaje: nunca desloguear cuentas de email; sólo cuentas de Google
-          // que quedaron a medio registrar (sin el flag de onboarding completo).
-          const isGoogleUser =
-            user.app_metadata?.provider === 'google' ||
-            user.identities?.some((identity) => identity.provider === 'google');
-          if (isGoogleUser && user.user_metadata.pasantia_onboarding_completed !== true) {
-            void supabase.auth.signOut();
-          }
-        });
-      }
-
-      if ((hasRef || isGoogleRegistration) && !inAppArea) {
-        setPresetRole(undefined);
-        setIsOpen(true);
-      } else {
-        setPresetRole(undefined);
-        setIsOpen(false);
-      }
-    } catch {
-      /* ignore: si falla, se puede abrir manualmente */
+    if (leftGoogleRegistration && !inAppArea) {
+      // Sólo cerramos sesión si la persona ABANDONÓ el registro con Google
+      // sin completarlo (salió a la landing/login). Si entró al panel (/app)
+      // NO tocamos nada: significa que completó y no hay que echarla.
+      clearPendingGoogleOnboarding();
+      void supabase.auth.getUser().then(({ data }) => {
+        const user = data.user;
+        if (!user) return;
+        // Blindaje: nunca desloguear cuentas de email; sólo cuentas de Google
+        // que quedaron a medio registrar (sin el flag de onboarding completo).
+        const isGoogleUser =
+          user.app_metadata?.provider === 'google' ||
+          user.identities?.some((identity) => identity.provider === 'google');
+        if (isGoogleUser && user.user_metadata.pasantia_onboarding_completed !== true) {
+          void supabase.auth.signOut();
+        }
+      });
     }
-  }, [location.key, location.pathname, location.search]);
+
+    if (hasRef && !inAppArea) {
+      setPresetRole(undefined);
+      setManualOpen(true);
+    } else if (!googleAutoOpen) {
+      setPresetRole(undefined);
+      setManualOpen(false);
+    }
+  }, [hasRef, isGoogleRegistration, inAppArea, googleAutoOpen]);
 
   return (
     <EarlyAccessContext.Provider value={value}>

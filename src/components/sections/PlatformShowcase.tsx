@@ -70,9 +70,11 @@ export function PlatformShowcase() {
 
   return (
     <div ref={ref} className="relative">
-      {/* Avatares: convergen/divergen del centro con el scroll (mobile + desktop) */}
+      {/* Avatares: convergen/divergen del centro con el scroll (mobile + desktop).
+          La escala del cluster (efecto de juntarse al centro) se activa salvo que
+          el usuario tenga reduce-motion. La flotación infinita queda solo desktop. */}
       <motion.div
-        style={staticMotion ? undefined : { scale: clusterScale }}
+        style={reduce ? undefined : { scale: clusterScale }}
         animate={staticMotion ? undefined : { y: [0, -8, 0] }}
         transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
         className="pointer-events-none absolute inset-0"

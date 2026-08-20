@@ -281,6 +281,11 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ===================== POR QUÉ PASANTIA (solo mobile: 2da sección) ===================== */}
+      <Section className="bg-brand-950/30 md:hidden">
+        <PlatformShowcase />
+      </Section>
+
       {/* ===================== TIRA DE RUBROS (estilo tira de marcas go-marz) ===================== */}
       <div className="py-12 sm:py-16">
         <p className="container-px mb-10 text-center text-xs font-bold uppercase tracking-[0.2em] text-white/50">
@@ -355,7 +360,8 @@ export default function Home() {
       </Section>
 
       {/* ===================== POR QUÉ PASANTIA ===================== */}
-      <Section className="bg-brand-950/30">
+      {/* ===================== POR QUÉ PASANTIA (desktop: en su posición original) ===================== */}
+      <Section className="hidden bg-brand-950/30 md:block">
         <PlatformShowcase />
       </Section>
 

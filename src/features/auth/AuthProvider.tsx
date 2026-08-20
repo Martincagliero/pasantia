@@ -26,6 +26,11 @@ interface AuthContextValue {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
+  /** true mientras se está resolviendo el perfil del usuario actual. */
+  profileLoading: boolean;
+  /** Rol que un admin eligió ver (para cambiar de panel). null = su rol real. */
+  adminViewRole: Role | null;
+  setAdminViewRole: (role: Role | null) => void;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
   requestPasswordReset: (email: string) => Promise<{ error: string | null }>;
@@ -114,6 +119,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  // Mientras se resuelve el perfil (rol) del usuario actual. Evita que el
+  // panel redirija al rol por defecto (estudiante) y "parpadee" al pasar al
+  // panel correcto ni bien te registrás/logueás.
+  const [profileLoading, setProfileLoading] = useState(true);
+  // Solo para admins: panel de rol que están viendo (estudiante/empresa/embajador).
+  const [adminViewRole, setAdminViewRoleState] = useState<Role | null>(() => {
+    try {
+      const v = localStorage.getItem('admin-view-role');
+      return VALID_ROLES.includes(v as Role) ? (v as Role) : null;
+    } catch {
+      return null;
+    }
+  });
+  const setAdminViewRole = useCallback((role: Role | null) => {
+    setAdminViewRoleState(role);
+    try {
+      if (role) localStorage.setItem('admin-view-role', role);
+      else localStorage.removeItem('admin-view-role');
+    } catch {
+      /* ignore */
+    }
+  }, []);
   // getSession() (carga inicial) y onAuthStateChange (login/logout/refresh)
   // pueden disparar loadProfile en paralelo. Si sus respuestas llegan
   // desordenadas (frecuente en mobile por latencia/reconexiones), la más
@@ -124,14 +151,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadProfile = useCallback(async (user: User) => {
     currentUserIdRef.current = user.id;
+    setProfileLoading(true);
     const p = await ensureProfile(user);
     if (currentUserIdRef.current !== user.id) return; // respuesta obsoleta, se descarta
     setProfile(p);
+    setProfileLoading(false);
   }, []);
 
   const clearProfile = useCallback(() => {
     currentUserIdRef.current = null;
     setProfile(null);
+    setProfileLoading(false);
   }, []);
 
   useEffect(() => {
@@ -224,8 +254,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session, loadProfile]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ session, profile, loading, signIn, signInWithGoogle, requestPasswordReset, signUp, signOut, refreshProfile }),
-    [session, profile, loading, signIn, signInWithGoogle, requestPasswordReset, signUp, signOut, refreshProfile]
+    () => ({ session, profile, loading, profileLoading, adminViewRole, setAdminViewRole, signIn, signInWithGoogle, requestPasswordReset, signUp, signOut, refreshProfile }),
+    [session, profile, loading, profileLoading, adminViewRole, setAdminViewRole, signIn, signInWithGoogle, requestPasswordReset, signUp, signOut, refreshProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

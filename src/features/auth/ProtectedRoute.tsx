@@ -12,10 +12,12 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, role }: ProtectedRouteProps) {
-  const { session, profile, loading } = useAuth();
+  const { session, profile, loading, profileLoading } = useAuth();
   const location = useLocation();
 
-  if (loading) {
+  // Esperamos también a que el perfil (rol) esté resuelto cuando aún no lo
+  // tenemos, para no renderizar el panel equivocado y provocar un parpadeo.
+  if (loading || (profileLoading && !profile)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -28,7 +30,8 @@ export function ProtectedRoute({ children, role }: ProtectedRouteProps) {
   }
 
   // Si el rol requerido no coincide, lo mandamos a su propio panel.
-  if (role && profile && profile.role !== role) {
+  // Los admins pueden entrar a cualquier panel (para cambiar de rol/vista).
+  if (role && profile && !profile.is_admin && profile.role !== role) {
     return <Navigate to="/app" replace />;
   }
 

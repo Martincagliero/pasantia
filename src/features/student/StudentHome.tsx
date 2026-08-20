@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Bookmark, BriefcaseBusiness, Building2, Check, Clock3, House, MessageSquare, Newspaper, ShieldCheck, UserCheck, UserPlus } from 'lucide-react';
+import { ArrowRight, Bookmark, BriefcaseBusiness, Building2, Check, Clock3, House, MessageSquare, Newspaper, Plus, ShieldCheck, UserCheck, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import type { ConnectionRequest, InternshipWithCompany, Post, Profile } from '../../lib/database.types';
@@ -12,6 +12,7 @@ import { sendPushEvent } from '../../lib/notify';
 import { InternshipDetailModal } from '../ui/InternshipDetailModal';
 import { useMessages } from '../messages/MessagesProvider';
 import { ApplyModal } from './BrowseInternships';
+import { PostComposerModal } from '../posts/PostComposer';
 
 interface HomePost extends Post {
   author: { is_admin: boolean } | null;
@@ -68,6 +69,7 @@ export default function StudentHome() {
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<InternshipWithCompany | null>(null);
   const [detail, setDetail] = useState<InternshipWithCompany | null>(null);
+  const [composing, setComposing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -522,6 +524,30 @@ export default function StudentHome() {
               </button>
             )
           }
+        />
+      )}
+
+      {/* Botón minimalista para publicar */}
+      <button
+        type="button"
+        onClick={() => setComposing(true)}
+        aria-label="Publicar"
+        title="Publicar"
+        className="fixed bottom-20 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-brand-500 text-white shadow-lg shadow-brand-500/30 transition hover:bg-brand-400 active:scale-95 lg:bottom-8 lg:right-8"
+      >
+        <Plus className="h-6 w-6" strokeWidth={2.4} />
+      </button>
+
+      {composing && profile && (
+        <PostComposerModal
+          authorId={profile.id}
+          authorName={profile.full_name ?? ''}
+          authorRole={profile.role}
+          onClose={() => setComposing(false)}
+          onCreated={(post) => {
+            setPosts((current) => [{ ...(post as HomePost), author: { is_admin: profile.is_admin ?? false } }, ...current]);
+            setComposing(false);
+          }}
         />
       )}
     </div>

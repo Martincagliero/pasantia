@@ -78,7 +78,7 @@ function initials(name: string): string {
 }
 
 export function DashboardLayout() {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, adminViewRole, setAdminViewRole } = useAuth();
   const navigate = useNavigate();
   // Modo oscuro deshabilitado (próximamente): la app usa siempre modo claro.
   const theme = 'light' as const;
@@ -91,7 +91,9 @@ export function DashboardLayout() {
     }
   }, []);
 
-  const role: Role = (profile?.role as Role) ?? 'estudiante';
+  // Un admin puede elegir ver el panel de cualquier rol; el resto usa su rol real.
+  const role: Role =
+    profile?.is_admin && adminViewRole ? adminViewRole : ((profile?.role as Role) ?? 'estudiante');
   const nav =
     role === 'estudiante' ? studentNav : role === 'empresa' ? companyNav : ambassadorNav;
   const perfilTo = role === 'embajador' ? '/app/embajador-perfil' : '/app/perfil';
@@ -99,6 +101,23 @@ export function DashboardLayout() {
   const bottomNav = nav.filter(
     (item) => item.to !== perfilTo && !(role === 'estudiante' && item.to === '/app/postulaciones')
   );
+
+  // Cambia el panel de rol que ve el admin y navega a su inicio.
+  function switchAdminRole(next: Role | null) {
+    setAdminViewRole(next);
+    setAccountOpen(false);
+    if (!next) {
+      navigate('/app/admin');
+      return;
+    }
+    navigate(
+      next === 'empresa'
+        ? '/app/inicio'
+        : next === 'embajador'
+          ? '/app/embajador'
+          : '/app/inicio-estudiante'
+    );
+  }
 
   useEffect(() => {
     const warmRoutes = () => prefetchRoleRoutes(role, !!profile?.is_admin);
@@ -283,15 +302,35 @@ export function DashboardLayout() {
                       </Link>
                     )}
                     {profile?.is_admin && (
-                      <Link
-                        to="/app/admin"
-                        onMouseEnter={() => prefetchAppRoute('/app/admin')}
-                        onTouchStart={() => prefetchAppRoute('/app/admin')}
-                        onClick={() => setAccountOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/[0.06] hover:text-white"
-                      >
-                        <Shield className="h-[18px] w-[18px]" /> Administración
-                      </Link>
+                      <>
+                        <div className="my-1 border-t border-white/10" />
+                        <p className="px-4 pt-1.5 pb-1 text-[11px] font-semibold uppercase tracking-wide text-white/40">
+                          Ver como (admin)
+                        </p>
+                        {([
+                          { value: null, label: 'Administración', icon: Shield },
+                          { value: 'estudiante' as Role, label: 'Estudiante', icon: House },
+                          { value: 'empresa' as Role, label: 'Empresa', icon: Briefcase },
+                          { value: 'embajador' as Role, label: 'Embajador', icon: Megaphone },
+                        ] as const).map((opt) => {
+                          const active =
+                            opt.value === null ? !adminViewRole : adminViewRole === opt.value;
+                          const Icon = opt.icon;
+                          return (
+                            <button
+                              key={opt.label}
+                              onClick={() => switchAdminRole(opt.value)}
+                              className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-sm transition hover:bg-white/[0.06] ${
+                                active ? 'font-semibold text-brand-500' : 'text-white/80 hover:text-white'
+                              }`}
+                            >
+                              <Icon className="h-[18px] w-[18px]" /> {opt.label}
+                              {active && <span className="ml-auto h-2 w-2 rounded-full bg-brand-500" />}
+                            </button>
+                          );
+                        })}
+                        <div className="my-1 border-t border-white/10" />
+                      </>
                     )}
                     <Link
                       to="/app/ayuda"

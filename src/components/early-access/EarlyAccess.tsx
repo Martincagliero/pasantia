@@ -228,6 +228,11 @@ function Onboarding({
   const [googleAuth, setGoogleAuth] = useState(false);
   // true cuando el registro dejó una sesión activa y entramos directo al panel.
   const [enteredApp, setEnteredApp] = useState(false);
+  // Garantiza que la redirección de éxito ocurra UNA sola vez. Sin esto, como
+  // `navigate` de React Router cambia de identidad al navegar, el efecto de
+  // abajo se re-ejecutaba y volvía a navegar a /app cada 2.5s -> el panel se
+  // re-montaba en loop (parpadeo/"inusable"; un refresh lo limpiaba).
+  const redirectedRef = useRef(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -241,6 +246,7 @@ function Onboarding({
       setSubmitting(false);
       setGoogleAuth(isGoogleReturn);
       setEnteredApp(false);
+      redirectedRef.current = false;
       document.body.style.overflow = 'hidden';
 
       if (isGoogleReturn) {
@@ -272,11 +278,14 @@ function Onboarding({
   }, [isOpen, presetRole]);
 
   // Dejamos visible el check de éxito y luego continuamos según el método usado.
+  // El guard redirectedRef evita re-navegar en loop (navigate cambia identidad).
   useEffect(() => {
-    if (!submitted) return;
+    if (!submitted || redirectedRef.current) return;
+    const target = googleAuth || enteredApp ? '/app' : '/ingresar';
     const timer = window.setTimeout(() => {
+      redirectedRef.current = true;
       onClose();
-      navigate(googleAuth || enteredApp ? '/app' : '/ingresar');
+      navigate(target);
     }, 2500);
     return () => window.clearTimeout(timer);
   }, [submitted, googleAuth, enteredApp, navigate, onClose]);
@@ -709,6 +718,8 @@ function Onboarding({
                   role={data.role}
                   entered={googleAuth || enteredApp}
                   onLogin={() => {
+                    if (redirectedRef.current) return;
+                    redirectedRef.current = true;
                     onClose();
                     navigate(googleAuth || enteredApp ? '/app' : '/ingresar');
                   }}

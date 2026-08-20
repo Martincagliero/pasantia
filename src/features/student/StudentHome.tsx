@@ -267,6 +267,16 @@ export default function StudentHome() {
                 <p className="mt-0.5 text-xs font-normal text-white/50">Descubrí qué hay de nuevo para vos.</p>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setComposing(true)}
+              className="mt-3 flex w-full items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-2 text-left transition hover:bg-white/[0.06] sm:gap-3 sm:px-4 sm:py-2.5"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white sm:h-9 sm:w-9">
+                <Plus className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2.4} />
+              </span>
+              <span className="flex-1 truncate text-sm text-white/50">Publicá algo para tu red…</span>
+            </button>
             <div className="mt-3 grid grid-cols-3 border-t border-white/10 pt-3">
               <Link to="/app/pasantias" className="text-center text-xs font-medium text-white/60 transition hover:text-brand-500">Pasantías</Link>
               <Link to="/app/novedades" className="border-x border-white/10 text-center text-xs font-medium text-white/60 transition hover:text-brand-500">Novedades</Link>
@@ -526,17 +536,6 @@ export default function StudentHome() {
           }
         />
       )}
-
-      {/* Botón minimalista para publicar */}
-      <button
-        type="button"
-        onClick={() => setComposing(true)}
-        aria-label="Publicar"
-        title="Publicar"
-        className="fixed bottom-20 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-brand-500 text-white shadow-lg shadow-brand-500/30 transition hover:bg-brand-400 active:scale-95 lg:bottom-8 lg:right-8"
-      >
-        <Plus className="h-6 w-6" strokeWidth={2.4} />
-      </button>
 
       {composing && profile && (
         <PostComposerModal

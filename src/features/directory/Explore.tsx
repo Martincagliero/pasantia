@@ -800,7 +800,11 @@ function StudentDetail({ row, onMessage, connectionState, onToggleConnection, ca
           <ReportButton targetType="profile" targetId={row.id} variant="button" className="!rounded-lg !px-3 !py-2 !text-xs" />
         </div>
 
-        <UserPosts authorId={row.id} />
+        <UserPosts
+          authorId={row.id}
+          title="Actividad reciente"
+          emptyText="Todavía no publicó nada."
+        />
       </div>
     </div>
   );

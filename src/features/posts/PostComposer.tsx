@@ -19,12 +19,14 @@ export function PostComposerModal({
   authorId,
   authorName,
   authorRole,
+  showCategory = true,
   onClose,
   onCreated,
 }: {
   authorId: string;
   authorName: string;
   authorRole: Post['author_role'];
+  showCategory?: boolean;
   onClose: () => void;
   onCreated: (post: Post) => void;
 }) {
@@ -73,19 +75,21 @@ export function PostComposerModal({
       >
         <h2 className="text-xl font-bold text-white">Nueva publicación</h2>
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-          <FormRow label="Categoría" htmlFor="cat">
-            <SelectField
-              id="cat"
-              value={category}
-              onChange={(e) => setCategory(e.target.value as PostCategory)}
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </SelectField>
-          </FormRow>
+          {showCategory && (
+            <FormRow label="Categoría" htmlFor="cat">
+              <SelectField
+                id="cat"
+                value={category}
+                onChange={(e) => setCategory(e.target.value as PostCategory)}
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
+              </SelectField>
+            </FormRow>
+          )}
 
           <FormRow label="Título" htmlFor="title">
             <TextField

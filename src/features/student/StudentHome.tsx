@@ -537,6 +537,7 @@ export default function StudentHome() {
           authorId={profile.id}
           authorName={profile.full_name ?? ''}
           authorRole={profile.role}
+          showCategory={false}
           onClose={() => setComposing(false)}
           onCreated={(post) => {
             setPosts((current) => [{ ...(post as HomePost), author: { is_admin: profile.is_admin ?? false } }, ...current]);

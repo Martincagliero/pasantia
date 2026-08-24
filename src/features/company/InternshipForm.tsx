@@ -173,7 +173,11 @@ export default function InternshipForm({
 
     setSaving(false);
     if (result.error) {
-      setError('No se pudo guardar la pasantía. Revisá los datos e intentá de nuevo.');
+      setError(
+        /FREE_COMPANY_MONTHLY_LIMIT/i.test(result.error.message)
+          ? 'Alcanzaste las 3 publicaciones mensuales del plan Gratis. Solicitá Empresa Pro para publicar sin límite.'
+          : 'No se pudo guardar la pasantía. Revisá los datos e intentá de nuevo.'
+      );
       return;
     }
 

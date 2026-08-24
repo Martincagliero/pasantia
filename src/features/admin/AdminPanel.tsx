@@ -14,6 +14,8 @@ import {
   Search,
   RefreshCw,
   Trash2,
+  CreditCard,
+  X,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
@@ -67,7 +69,24 @@ interface PromoterStat {
   ultimo_registro: string | null;
 }
 
-type Tab = 'usuarios' | 'solicitudes' | 'promotores';
+interface PlanRequestRow {
+  id: string;
+  user_id: string;
+  full_name: string;
+  email: string;
+  role: Role;
+  current_plan: string;
+  requested_plan: 'pro' | 'enterprise' | null;
+  kind: 'subscription' | 'featured';
+  internship_id: string | null;
+  internship_title: string | null;
+  featured_days: number | null;
+  message: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+}
+
+type Tab = 'usuarios' | 'solicitudes' | 'planes' | 'promotores';
 
 const roleLabel: Record<string, string> = {
   estudiante: 'Estudiante',
@@ -98,23 +117,26 @@ export default function AdminPanel() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [promoters, setPromoters] = useState<PromoterStat[]>([]);
+  const [planRequests, setPlanRequests] = useState<PlanRequestRow[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const [u, r, p] = await Promise.all([
+    const [u, r, p, plans] = await Promise.all([
       supabase.rpc('admin_list_users'),
       supabase.rpc('admin_list_requests'),
       supabase.rpc('admin_promoter_stats'),
+      supabase.rpc('admin_list_plan_requests'),
     ]);
-    if (u.error || r.error || p.error) {
+    if (u.error || r.error || p.error || plans.error) {
       setError('No pudimos cargar los datos. ¿Corriste la migración y te marcaste como admin?');
       setLoading(false);
       return;
     }
     setUsers((u.data ?? []) as UserRow[]);
     setRequests((r.data ?? []) as RequestRow[]);
+    setPlanRequests((plans.data ?? []) as PlanRequestRow[]);
     setPromoters(
       ((p.data ?? []) as PromoterStat[]).map((row) => ({
         ...row,
@@ -139,6 +161,7 @@ export default function AdminPanel() {
   const tabs: { key: Tab; label: string; icon: typeof Users; count: number }[] = [
     { key: 'usuarios', label: 'Registrados', icon: Users, count: users.length },
     { key: 'solicitudes', label: 'Formulario', icon: ClipboardList, count: requests.length },
+    { key: 'planes', label: 'Planes', icon: CreditCard, count: planRequests.filter((request) => request.status === 'pending').length },
     { key: 'promotores', label: 'Promotores', icon: Rocket, count: promoters.length },
   ];
 
@@ -182,9 +205,73 @@ export default function AdminPanel() {
         <UsersTab users={users} onChanged={load} />
       ) : tab === 'solicitudes' ? (
         <RequestsTab requests={requests} users={users} onChanged={load} />
+      ) : tab === 'planes' ? (
+        <PlanRequestsTab requests={planRequests} onChanged={load} />
       ) : (
         <PromotersTab promoters={promoters} users={users} onChanged={load} />
       )}
+    </div>
+  );
+}
+
+function PlanRequestsTab({ requests, onChanged }: { requests: PlanRequestRow[]; onChanged: () => void }) {
+  const [resolving, setResolving] = useState<string | null>(null);
+
+  async function resolve(request: PlanRequestRow, approve: boolean) {
+    const action = approve ? 'aprobar' : 'rechazar';
+    if (!window.confirm(`¿${action[0].toUpperCase() + action.slice(1)} la solicitud de ${request.full_name}?`)) return;
+    setResolving(request.id);
+    const { error } = await supabase.rpc('admin_resolve_plan_request', {
+      p_request_id: request.id,
+      p_approve: approve,
+      p_note: null,
+    });
+    setResolving(null);
+    if (error) {
+      alert(`No se pudo ${action}: ${error.message}`);
+      return;
+    }
+    onChanged();
+  }
+
+  return (
+    <div className="space-y-3">
+      {requests.map((request) => (
+        <Card key={request.id}>
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-semibold text-white">{request.full_name || request.email}</p>
+                <span className={`rounded-full border px-2 py-0.5 text-xs ${roleBadge[request.role] ?? ''}`}>
+                  {roleLabel[request.role] ?? request.role}
+                </span>
+                <span className="rounded-full border border-white/15 px-2 py-0.5 text-xs text-white/55">
+                  {request.status === 'pending' ? 'Pendiente' : request.status === 'approved' ? 'Aprobada' : 'Rechazada'}
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-white/55">{request.email}</p>
+              <p className="mt-3 text-sm text-white">
+                {request.kind === 'subscription'
+                  ? `Plan ${request.requested_plan === 'enterprise' ? 'Empresa' : 'Pro'} · actual: ${request.current_plan}`
+                  : `Destacar “${request.internship_title || 'Pasantía'}” por ${request.featured_days} días`}
+              </p>
+              {request.message && <p className="mt-1 text-xs text-white/45">{request.message}</p>}
+              <p className="mt-2 text-xs text-white/40">{fmtDate(request.created_at)}</p>
+            </div>
+            {request.status === 'pending' && (
+              <div className="flex shrink-0 gap-2">
+                <Button variant="ghost" size="sm" disabled={resolving === request.id} onClick={() => void resolve(request, false)}>
+                  <X className="h-4 w-4" /> Rechazar
+                </Button>
+                <Button variant="primary" size="sm" disabled={resolving === request.id} onClick={() => void resolve(request, true)}>
+                  <Check className="h-4 w-4" /> Aprobar
+                </Button>
+              </div>
+            )}
+          </div>
+        </Card>
+      ))}
+      {requests.length === 0 && <Card className="text-center text-sm text-white/45">Sin solicitudes de planes.</Card>}
     </div>
   );
 }

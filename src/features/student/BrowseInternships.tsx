@@ -1,7 +1,7 @@
 // Estudiante: explora las pasantías activas y se postula.
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Building2, Search, Heart } from 'lucide-react';
+import { MapPin, Building2, Search, Heart, Sparkles } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { InternshipWithCompany, Modality } from '../../lib/database.types';
@@ -40,7 +40,13 @@ async function fetchActiveInternships(): Promise<InternshipWithCompany[]> {
       { company_name: c.company_name, industry: c.industry },
     ])
   );
-  return items.map((i) => ({ ...i, company: map.get(i.company_id) ?? null }));
+  return items
+    .map((i) => ({ ...i, company: map.get(i.company_id) ?? null }))
+    .sort((left, right) => {
+      const leftFeatured = left.featured_until && new Date(left.featured_until) > new Date() ? 1 : 0;
+      const rightFeatured = right.featured_until && new Date(right.featured_until) > new Date() ? 1 : 0;
+      return rightFeatured - leftFeatured || new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
+    });
 }
 
 export default function BrowseInternships() {
@@ -188,6 +194,11 @@ export default function BrowseInternships() {
                   <div className="flex min-w-0 items-center gap-2">
                     <Building2 className="h-4 w-4 shrink-0" strokeWidth={1.75} />
                     <span className="truncate">{i.company_name || i.company?.company_name || 'Empresa'}</span>
+                    {i.featured_until && new Date(i.featured_until) > new Date() && (
+                      <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-brand-400">
+                        <Sparkles className="h-3.5 w-3.5" /> Destacada
+                      </span>
+                    )}
                   </div>
                   <div className="flex shrink-0 items-center gap-0.5">
                     <button

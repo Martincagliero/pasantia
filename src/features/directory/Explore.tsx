@@ -43,6 +43,7 @@ import { LinkPreview } from '../ui/LinkPreview';
 import { PostInteractions } from '../ui/PostInteractions';
 import { EmojiText } from '../ui/EmojiText';
 import { ReportButton } from '../ui/ReportButton';
+import { FREE_STUDENT_CONNECTIONS_PER_MONTH, isPro } from '../../lib/plans';
 
 type Tab = 'estudiantes' | 'empresas' | 'embajadores' | 'red';
 
@@ -154,8 +155,7 @@ export default function Explore() {
       supabase
         .from('connection_requests')
         .select('*')
-        .or(`requester_id.eq.${uid},recipient_id.eq.${uid}`)
-        .in('status', ['pending', 'accepted']),
+        .or(`requester_id.eq.${uid},recipient_id.eq.${uid}`),
     ]);
     setFollowingIds(
       new Set(
@@ -252,7 +252,9 @@ export default function Explore() {
     const { data, error } = await supabase.rpc('request_connection', { p_recipient_id: targetId });
     if (error) {
       alert(
-        /does not exist|schema cache|function/i.test(error.message)
+        /FREE_CONNECTION_MONTHLY_LIMIT/i.test(error.message)
+          ? 'Alcanzaste las 5 conexiones nuevas de este mes. Estudiante Pro permite conectar sin límite.'
+          : /does not exist|schema cache|function/i.test(error.message)
           ? 'Falta correr la migración "migracion-solicitudes-conexion.sql" en Supabase.'
           : 'No se pudo enviar la solicitud.'
       );
@@ -394,6 +396,12 @@ export default function Explore() {
       : tab === 'empresas'
         ? filteredCompanies.length
         : filteredAmbassadors.length;
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  const monthlyConnections = connectionRequests.filter(
+    (request) => request.requester_id === uid && new Date(request.created_at) >= monthStart
+  ).length;
 
   return (
     <div>
@@ -405,6 +413,15 @@ export default function Explore() {
             : 'Buscá y conocé a estudiantes, empresas y embajadores de la comunidad.'
         }
       />
+
+      {viewerRole === 'estudiante' && !isPro(viewer) && (
+        <Card className="mb-4 flex flex-col justify-between gap-2 !p-4 sm:flex-row sm:items-center">
+          <p className="text-sm text-white/60">
+            Plan Gratis: <span className="font-semibold text-white">{monthlyConnections} de {FREE_STUDENT_CONNECTIONS_PER_MONTH}</span> conexiones iniciadas este mes.
+          </p>
+          <a href="/app/planes" className="text-sm font-semibold text-brand-500 hover:text-brand-400">Ver Estudiante Pro</a>
+        </Card>
+      )}
 
       {/* Tabs: categorías (segmentado) + "Red" como acceso aparte, minimalista */}
       <div className="mb-4 flex items-center gap-2 sm:mb-5">

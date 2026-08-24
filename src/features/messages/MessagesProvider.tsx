@@ -734,6 +734,12 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       const msg = err?.message ?? '';
       if (activeGroup && /group_messages|message_group|does not exist|relation|schema cache|function/i.test(msg)) {
         alert('Falta crear las tablas de grupos. Ejecutá supabase/migracion-mensajes-grupos.sql en Supabase.');
+      } else if (/row-level security|policy|not authorized|permission denied/i.test(msg)) {
+        alert(
+          profile?.role === 'estudiante'
+            ? 'Para enviar este mensaje primero conectate con la persona o solicitá Estudiante Pro.'
+            : 'La mensajería con talento está disponible en Empresa Pro.'
+        );
       } else if (/messages|does not exist|relation|schema cache/i.test(msg)) {
         alert(
           'Falta crear la tabla de mensajes.\nEjecutá supabase/migracion-mensajes.sql en el SQL Editor de Supabase.'

@@ -8,6 +8,8 @@ import { useAuth } from '../auth/AuthProvider';
 import type { ApplicationStatus } from '../../lib/database.types';
 import { Button } from '../../components/ui/Button';
 import { Card, EmptyState, PageLoader, StatusBadge } from '../ui/primitives';
+import { isPro } from '../../lib/plans';
+import { UpgradePrompt } from '../plans/UpgradePrompt';
 
 interface RecentApp {
   id: string;
@@ -57,6 +59,7 @@ export default function CompanyOverview() {
   if (loading) return <PageLoader />;
 
   const firstName = (profile?.full_name || 'tu empresa').split(' ')[0];
+  const paid = isPro(profile);
 
   const cards: {
     label: string;
@@ -82,7 +85,9 @@ export default function CompanyOverview() {
           <p className="text-sm text-white/55">{greeting}</p>
           <h1 className="mt-0.5 text-xl font-bold tracking-tight text-white sm:text-2xl">{firstName}</h1>
           <p className="mt-1.5 text-[15px] text-white/60">
-            {stats.pendientes > 0
+            {!paid
+              ? 'Gestioná tus publicaciones y activá Empresa Pro para medir resultados.'
+              : stats.pendientes > 0
               ? `Tenés ${stats.pendientes} postulación${stats.pendientes === 1 ? '' : 'es'} sin revisar.`
               : 'No tenés postulaciones pendientes. Todo al día.'}
           </p>
@@ -93,8 +98,9 @@ export default function CompanyOverview() {
       </div>
 
       {/* Métricas (clickeables) */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {cards.map(({ label, value, icon: Icon, chip, to }) => (
+      {paid ? (
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          {cards.map(({ label, value, icon: Icon, chip, to }) => (
           <Link
             key={label}
             to={to}
@@ -110,8 +116,11 @@ export default function CompanyOverview() {
             <p className="relative mt-3 text-2xl font-bold tracking-tight text-white">{value}</p>
             <p className="relative mt-0.5 text-xs text-white/55 sm:text-sm">{label}</p>
           </Link>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <UpgradePrompt title="Estadísticas de empresa" description="Medí publicaciones, candidatos y pendientes desde un único panel con Empresa Pro." compact />
+      )}
 
       {/* Accesos rápidos */}
       <div className="mt-4 grid gap-3 sm:mt-6 sm:grid-cols-3 sm:gap-4">
@@ -121,7 +130,7 @@ export default function CompanyOverview() {
       </div>
 
       {/* Últimas postulaciones */}
-      <div className="mt-8">
+      {paid && <div className="mt-8">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white">Últimas postulaciones</h2>
           {recent.length > 0 && (
@@ -161,7 +170,7 @@ export default function CompanyOverview() {
             ))}
           </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

@@ -22,6 +22,7 @@ import {
   Shield,
   CircleHelp,
   House,
+  Crown,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import logo from '../../assets/logo.png';
@@ -298,6 +299,17 @@ export function DashboardLayout() {
                         className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/[0.06] hover:text-white"
                       >
                         <Send className="h-[18px] w-[18px]" /> Mis postulaciones
+                      </Link>
+                    )}
+                    {role !== 'embajador' && (
+                      <Link
+                        to="/app/planes"
+                        onMouseEnter={() => prefetchAppRoute('/app/planes')}
+                        onTouchStart={() => prefetchAppRoute('/app/planes')}
+                        onClick={() => setAccountOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/[0.06] hover:text-white"
+                      >
+                        <Crown className="h-[18px] w-[18px] text-brand-500" /> Planes
                       </Link>
                     )}
                     {profile?.is_admin && (

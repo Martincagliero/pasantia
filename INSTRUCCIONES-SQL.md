@@ -1,5 +1,15 @@
 # 📋 Instrucciones: Ejecutar Migraciones SQL en Supabase
 
+## Freemium
+
+Para activar planes, límites, solicitudes al administrador y publicaciones destacadas, ejecutá completo en **Supabase > SQL Editor**:
+
+```text
+supabase/migracion-freemium.sql
+```
+
+Esta migración requiere que ya se hayan ejecutado `migracion-admin.sql`, `migracion-mensajes.sql` y `migracion-solicitudes-conexion.sql`. Es idempotente y puede volver a ejecutarse después de actualizarla.
+
 ## ⚠️ REGLA IMPORTANTE
 **NO ejecutar múltiples `ALTER TYPE` en una sola consulta.** Supabase las ejecuta en transacción, y PostgreSQL no permite eso.
 

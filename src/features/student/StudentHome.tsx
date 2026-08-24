@@ -102,7 +102,6 @@ export default function StudentHome() {
               .from('connection_requests')
               .select('*')
               .or(`requester_id.eq.${profile.id},recipient_id.eq.${profile.id}`)
-              .in('status', ['pending', 'accepted'])
           : Promise.resolve({ data: [] }),
         supabase.from('applications').select('internship_id').eq('student_id', profile?.id ?? ''),
         supabase.from('saved_internships').select('internship_id').eq('student_id', profile?.id ?? ''),
@@ -231,7 +230,9 @@ export default function StudentHome() {
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
       alert(
-        /does not exist|schema cache|function/i.test(message)
+        /FREE_CONNECTION_MONTHLY_LIMIT/i.test(message)
+          ? 'Alcanzaste las 5 conexiones nuevas de este mes. Estudiante Pro permite conectar sin límite.'
+          : /does not exist|schema cache|function/i.test(message)
           ? 'Falta correr la migración de solicitudes de conexión en Supabase.'
           : 'No se pudo actualizar la conexión.'
       );

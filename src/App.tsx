@@ -10,6 +10,7 @@ import { ProtectedRoute } from './features/auth/ProtectedRoute';
 import { useAuth } from './features/auth/AuthProvider';
 import { DashboardLayout } from './features/dashboard/DashboardLayout';
 import Home from './pages/Home';
+import { PlanGate } from './features/plans/PlanGate';
 
 // Lazy load de las subpáginas para aligerar el bundle inicial.
 const Estudiantes = lazy(() => import('./pages/Estudiantes'));
@@ -51,6 +52,7 @@ const CommunityDetailPage = lazy(() => import('./pages/CommunityDetailPage'));
 const PublicCommunityPage = lazy(() => import('./pages/PublicCommunityPage'));
 const AdminPanel = lazy(() => import('./features/admin/AdminPanel'));
 const HelpCenter = lazy(() => import('./features/help/HelpCenter'));
+const PlansPage = lazy(() => import('./features/plans/PlansPage'));
 
 const fallback = <div className="min-h-screen" aria-hidden />;
 
@@ -162,7 +164,9 @@ export default function App() {
               path="postulaciones-recibidas"
               element={
                 <ProtectedRoute role="empresa">
-                  <CompanyApplications />
+                  <PlanGate title="Gestión de candidatos" description="Compará postulantes, aplicá filtros y gestioná el proceso con Empresa Pro.">
+                    <CompanyApplications />
+                  </PlanGate>
                 </ProtectedRoute>
               }
             />
@@ -178,7 +182,9 @@ export default function App() {
               path="pasantia/:id"
               element={
                 <ProtectedRoute role="empresa">
-                  <InternshipApplicants />
+                  <PlanGate title="Candidatos de la pasantía" description="Revisá perfiles y administrá candidatos con Empresa Pro.">
+                    <InternshipApplicants />
+                  </PlanGate>
                 </ProtectedRoute>
               }
             />
@@ -186,7 +192,9 @@ export default function App() {
               path="talento"
               element={
                 <ProtectedRoute role="empresa">
-                  <TalentSearch />
+                  <PlanGate title="Búsqueda de talento" description="Buscá, filtrá y contactá estudiantes con Empresa Pro.">
+                    <TalentSearch />
+                  </PlanGate>
                 </ProtectedRoute>
               }
             />
@@ -249,6 +257,14 @@ export default function App() {
             />
             <Route path="perfil" element={<ProfileByRole />} />
             <Route path="ayuda" element={<HelpCenter />} />
+            <Route
+              path="planes"
+              element={
+                <ProtectedRoute role={['estudiante', 'empresa']}>
+                  <PlansPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="admin"
               element={

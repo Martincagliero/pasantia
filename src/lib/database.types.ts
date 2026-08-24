@@ -2,6 +2,9 @@
 // Si más adelante generás tipos con `supabase gen types`, podés reemplazar este archivo.
 
 export type Role = 'estudiante' | 'empresa' | 'embajador';
+export type SubscriptionPlan = 'free' | 'pro' | 'enterprise';
+export type PlanRequestKind = 'subscription' | 'featured';
+export type PlanRequestStatus = 'pending' | 'approved' | 'rejected';
 
 export type ApplicationStatus =
   | 'pendiente'
@@ -23,6 +26,8 @@ export interface Profile {
   created_at: string;
   is_admin?: boolean;
   onboarded?: boolean;
+  plan?: SubscriptionPlan;
+  plan_expires_at?: string | null;
 }
 
 export interface StudentProfile {
@@ -102,6 +107,21 @@ export interface Internship {
   company_name: string | null;
   /** Imagen opcional de la pasantía. */
   image_url: string | null;
+  featured_until?: string | null;
+}
+
+export interface PlanRequest {
+  id: string;
+  user_id: string;
+  requested_plan: SubscriptionPlan | null;
+  kind: PlanRequestKind;
+  internship_id: string | null;
+  featured_days: number | null;
+  message: string | null;
+  status: PlanRequestStatus;
+  admin_note: string | null;
+  created_at: string;
+  resolved_at: string | null;
 }
 
 /** Pasantía con datos de la empresa que la publicó (join). */

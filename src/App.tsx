@@ -88,7 +88,7 @@ export default function App() {
             <Route
               path="inicio-estudiante"
               element={
-                <ProtectedRoute role="estudiante">
+                <ProtectedRoute role={['estudiante', 'embajador']}>
                   <StudentHome />
                 </ProtectedRoute>
               }

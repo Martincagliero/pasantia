@@ -13,6 +13,7 @@ import { InternshipDetailModal } from '../ui/InternshipDetailModal';
 import { useMessages } from '../messages/MessagesProvider';
 import { ApplyModal } from './BrowseInternships';
 import { PostComposerModal } from '../posts/PostComposer';
+import pasantiaLogo from '../../assets/logo.png';
 
 interface HomePost extends Post {
   author: { is_admin: boolean } | null;
@@ -168,6 +169,8 @@ export default function StudentHome() {
   if (loading) return <PageLoader />;
 
   const firstName = (profile?.full_name || 'estudiante').split(' ')[0];
+  const isStudent = profile?.role === 'estudiante';
+  const isCommunity = profile?.role === 'embajador';
   const fullBleedCard = '!rounded-none !border-x-0 sm:!rounded-2xl sm:!border-x';
 
   function connectionStateFor(targetId: string): ConnectionState {
@@ -273,8 +276,12 @@ export default function StudentHome() {
               <span className="flex-1 truncate text-sm text-white/50">Publicá algo para tu red…</span>
             </button>
             <div className="mt-3 grid grid-cols-2 border-t border-white/10 pt-3">
-              <Link to="/app/pasantias" className="text-center text-xs font-medium text-white/60 transition hover:text-brand-500">Pasantías</Link>
-              <Link to="/app/explorar" className="border-l border-white/10 text-center text-xs font-medium text-white/60 transition hover:text-brand-500">Mi red</Link>
+              <Link to={isCommunity ? '/app/anuncios' : '/app/pasantias'} className="text-center text-xs font-medium text-white/60 transition hover:text-brand-500">
+                {isCommunity ? 'Anuncios' : 'Pasantías'}
+              </Link>
+              <Link to="/app/explorar" className="border-l border-white/10 text-center text-xs font-medium text-white/60 transition hover:text-brand-500">
+                {isCommunity ? 'Explorar perfiles' : 'Mi red'}
+              </Link>
             </div>
           </Card>
 
@@ -301,13 +308,24 @@ export default function StudentHome() {
                       <p className="truncate text-xs font-semibold text-white">{member.full_name || 'Nuevo integrante'}</p>
                       <p className="truncate text-[11px] text-white/45">{roleLabel[member.role]}</p>
                     </Link>
-                    {member.role === 'estudiante' && (
+                    {member.role === 'estudiante' && isStudent && (
                       <ConnectionButton
                         state={state}
                         loading={connectingId === member.id}
                         compact
                         onClick={() => void toggleConnection(member.id)}
                       />
+                    )}
+                    {member.role === 'estudiante' && isCommunity && (
+                      <button
+                        type="button"
+                        onClick={() => openChatWith(member.id, member.full_name, member.avatarUrl)}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 text-white/65 transition hover:bg-white/8"
+                        title="Enviar mensaje"
+                        aria-label={`Enviar mensaje a ${member.full_name}`}
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" />
+                      </button>
                     )}
                   </div>
                 );
@@ -335,8 +353,12 @@ export default function StudentHome() {
                 <Card key={`post-${item.post.id}`} className={`overflow-hidden p-0 ${fullBleedCard}`}>
                   <div className="p-3 sm:p-5">
                   <div className="flex items-start gap-3">
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${verified ? 'bg-brand-500 text-white' : 'bg-white/8 text-white/65'}`}>
-                      {verified ? <ShieldCheck className="h-5 w-5" /> : <Newspaper className="h-4 w-4" />}
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full ${verified ? 'bg-brand-500 text-white' : 'bg-white/8 text-white/65'}`}>
+                      {verified ? (
+                        <img src={pasantiaLogo} alt="PasantIA" className="h-full w-full object-cover" />
+                      ) : (
+                        <Newspaper className="h-4 w-4" />
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
@@ -402,7 +424,7 @@ export default function StudentHome() {
                     >
                       Ver detalle
                     </button>
-                    {appliedIds.has(item.internship.id) ? (
+                    {isStudent && (appliedIds.has(item.internship.id) ? (
                       <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 px-3 py-1.5 text-xs font-semibold text-emerald-400">
                         <Check className="h-3.5 w-3.5" /> Ya postulaste
                       </span>
@@ -414,8 +436,8 @@ export default function StudentHome() {
                       >
                         Postularme
                       </button>
-                    )}
-                    <button
+                    ))}
+                    {isStudent && <button
                       type="button"
                       onClick={() => void toggleSave(item.internship.id)}
                       className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition ${savedIds.has(item.internship.id) ? 'border-brand-500/35 bg-brand-500/10 text-brand-500' : 'border-white/15 text-white/65 hover:bg-white/8'}`}
@@ -423,7 +445,7 @@ export default function StudentHome() {
                       aria-label={savedIds.has(item.internship.id) ? 'Quitar de guardadas' : 'Guardar pasantía'}
                     >
                       <Bookmark className={`h-3.5 w-3.5 ${savedIds.has(item.internship.id) ? 'fill-current' : ''}`} />
-                    </button>
+                    </button>}
                     <button
                       type="button"
                       onClick={() => openChatWith(item.internship.company_id, item.internship.company_name || item.internship.company?.company_name || 'Empresa')}
@@ -469,12 +491,21 @@ export default function StudentHome() {
                         <p className="truncate text-xs text-white/45">{roleLabel[member.role]}</p>
                       </Link>
                     </div>
-                    {member.role === 'estudiante' && (
+                    {member.role === 'estudiante' && isStudent && (
                       <ConnectionButton
                         state={state}
                         loading={connectingId === member.id}
                         onClick={() => void toggleConnection(member.id)}
                       />
+                    )}
+                    {member.role === 'estudiante' && isCommunity && (
+                      <button
+                        type="button"
+                        onClick={() => openChatWith(member.id, member.full_name, member.avatarUrl)}
+                        className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/70 transition hover:bg-white/8"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" /> Mensaje
+                      </button>
                     )}
                   </div>
                 );
@@ -485,7 +516,7 @@ export default function StudentHome() {
             </Link>
           </Card>
 
-          <Card className="mt-4 hidden lg:block">
+          {isStudent && <Card className="mt-4 hidden lg:block">
             <div className="flex items-center gap-2">
               <BriefcaseBusiness className="h-4 w-4 text-brand-500" />
               <h2 className="text-sm font-semibold text-white">Encontrá tu próxima oportunidad</h2>
@@ -494,10 +525,10 @@ export default function StudentHome() {
             <Link to="/app/pasantias" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-500 hover:underline">
               Ver pasantías <ArrowRight className="h-3.5 w-3.5" />
             </Link>
-          </Card>
+          </Card>}
         </aside>
       </div>
-      {selected && (
+      {isStudent && selected && (
         <ApplyModal
           internship={selected}
           studentId={session!.user.id}
@@ -512,7 +543,7 @@ export default function StudentHome() {
         <InternshipDetailModal
           internship={detail}
           onClose={() => setDetail(null)}
-          actions={
+          actions={isStudent ? (
             appliedIds.has(detail.id) ? (
               <span className="rounded-full border border-emerald-500/25 px-4 py-2 text-sm font-semibold text-emerald-400">Ya postulaste</span>
             ) : (
@@ -527,7 +558,7 @@ export default function StudentHome() {
                 Postularme
               </button>
             )
-          }
+          ) : undefined}
         />
       )}
 

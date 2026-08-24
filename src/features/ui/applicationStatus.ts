@@ -1,5 +1,8 @@
 // Configuración central de los estados de una postulación/candidato.
-// Un solo lugar para etiquetas, colores y orden; se usa en toda la app.
+// Un solo lugar para etiquetas, iconos y orden; se usa en toda la app.
+import type { LucideIcon } from 'lucide-react';
+import { Circle, Search, MessagesSquare, ClipboardCheck, CircleCheck, CircleX } from 'lucide-react';
+
 export type AppStatus =
   | 'pendiente' // Nuevo
   | 'en_revision'
@@ -10,12 +13,7 @@ export type AppStatus =
 
 export interface StatusMeta {
   label: string;
-  /** color del punto */
-  dot: string;
-  /** clases del badge (borde + fondo + texto) */
-  badge: string;
-  /** clases del botón activo */
-  active: string;
+  icon: LucideIcon;
 }
 
 export const STATUS_ORDER: AppStatus[] = [
@@ -30,39 +28,27 @@ export const STATUS_ORDER: AppStatus[] = [
 export const STATUS_META: Record<AppStatus, StatusMeta> = {
   pendiente: {
     label: 'Nuevo',
-    dot: 'bg-emerald-400',
-    badge: 'border-emerald-300/30 bg-emerald-400/15 text-emerald-200',
-    active: 'border-emerald-300 bg-emerald-400 text-emerald-950',
+    icon: Circle,
   },
   en_revision: {
     label: 'En revisión',
-    dot: 'bg-amber-400',
-    badge: 'border-amber-300/30 bg-amber-400/15 text-amber-200',
-    active: 'border-amber-300 bg-amber-400 text-amber-950',
+    icon: Search,
   },
   entrevista: {
     label: 'Entrevista',
-    dot: 'bg-orange-400',
-    badge: 'border-orange-300/30 bg-orange-400/15 text-orange-200',
-    active: 'border-orange-300 bg-orange-400 text-orange-950',
+    icon: MessagesSquare,
   },
   prueba_tecnica: {
     label: 'Prueba técnica',
-    dot: 'bg-sky-400',
-    badge: 'border-sky-300/30 bg-sky-400/15 text-sky-200',
-    active: 'border-sky-300 bg-sky-400 text-sky-950',
+    icon: ClipboardCheck,
   },
   seleccionado: {
     label: 'Seleccionado',
-    dot: 'bg-violet-400',
-    badge: 'border-violet-300/30 bg-violet-400/15 text-violet-200',
-    active: 'border-violet-300 bg-violet-400 text-violet-950',
+    icon: CircleCheck,
   },
   rechazada: {
     label: 'Rechazado',
-    dot: 'bg-red-400',
-    badge: 'border-red-300/30 bg-red-400/15 text-red-200',
-    active: 'border-red-300 bg-red-400 text-red-950',
+    icon: CircleX,
   },
 };
 

@@ -41,7 +41,13 @@ const roleRoutes: Record<Role, string[]> = {
     '/app/talento',
     '/app/perfil',
   ],
-  embajador: ['/app/embajador', '/app/anuncios', '/app/ranking', '/app/embajador-perfil'],
+  embajador: [
+    '/app/embajador',
+    '/app/inicio-estudiante',
+    '/app/anuncios',
+    '/app/ranking',
+    '/app/embajador-perfil',
+  ],
 };
 
 const loaded = new Set<string>();
@@ -55,7 +61,8 @@ export function prefetchAppRoute(path: string): void {
 }
 
 export function prefetchRoleRoutes(role: Role, isAdmin = false): void {
-  const paths = [...roleRoutes[role], '/app/novedades', '/app/explorar', '/app/ayuda'];
+  const paths = [...roleRoutes[role], '/app/explorar', '/app/ayuda'];
+  if (role === 'empresa') paths.push('/app/novedades');
   if (isAdmin) paths.push('/app/admin');
   paths.forEach(prefetchAppRoute);
 }

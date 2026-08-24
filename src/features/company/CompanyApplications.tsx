@@ -67,6 +67,38 @@ function Avatar({ url, name, className = '' }: { url?: string | null; name: stri
 
 type Filter = 'todas' | 'favoritos' | AppStatus;
 
+function ApplicationStatusSelect({
+  value,
+  onChange,
+  className = '',
+}: {
+  value: AppStatus;
+  onChange: (status: AppStatus) => void;
+  className?: string;
+}) {
+  const Icon = STATUS_META[value].icon;
+  return (
+    <div className="relative">
+      <Icon
+        className="pointer-events-none absolute left-3.5 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-white/50"
+        strokeWidth={1.75}
+        aria-hidden
+      />
+      <SelectField
+        value={value}
+        onChange={(event) => onChange(event.target.value as AppStatus)}
+        className={`pl-10 ${className}`}
+      >
+        {STATUS_ORDER.map((status) => (
+          <option key={status} value={status}>
+            {STATUS_META[status].label}
+          </option>
+        ))}
+      </SelectField>
+    </div>
+  );
+}
+
 export default function CompanyApplications() {
   const { session } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
@@ -283,21 +315,15 @@ export default function CompanyApplications() {
                 {/* Estado (desplegable) */}
                 <div className="mt-4">
                   <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-white/45">Estado</label>
-                  <SelectField
+                  <ApplicationStatusSelect
                     value={st}
-                    onChange={(e) => changeStatus(r.id, e.target.value as AppStatus)}
-                    className="h-9 py-0 text-sm"
-                  >
-                    {STATUS_ORDER.map((s) => (
-                      <option key={s} value={s}>
-                        {STATUS_META[s].label}
-                      </option>
-                    ))}
-                  </SelectField>
+                    onChange={(status) => changeStatus(r.id, status)}
+                    className="h-10 py-0 text-sm"
+                  />
                 </div>
 
-                <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
-                  <div className="flex gap-3 text-white/50">
+                <div className="mt-4 flex min-h-10 flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-3 pb-0.5">
+                  <div className="flex min-w-0 gap-3 text-white/50">
                     {d?.cv_url && (
                       <a href={d.cv_url} target="_blank" rel="noreferrer" title="CV" className="hover:text-white">
                         <FileText className="h-4 w-4" />
@@ -316,7 +342,7 @@ export default function CompanyApplications() {
                   </div>
                   <button
                     onClick={() => setSelected(r)}
-                    className="text-sm font-medium text-white/70 transition hover:text-white"
+                    className="shrink-0 text-sm font-medium text-white/70 transition hover:text-white"
                   >
                     Ver perfil →
                   </button>
@@ -473,13 +499,7 @@ function CandidateModal({
           <p className="mb-2 flex items-center gap-2 text-sm font-medium text-white/80">
             Estado actual: <StatusBadge status={st} />
           </p>
-          <SelectField value={st} onChange={(e) => onStatus(e.target.value as AppStatus)}>
-            {STATUS_ORDER.map((s) => (
-              <option key={s} value={s}>
-                {STATUS_META[s].label}
-              </option>
-            ))}
-          </SelectField>
+          <ApplicationStatusSelect value={st} onChange={onStatus} />
         </div>
       </div>
     </div>

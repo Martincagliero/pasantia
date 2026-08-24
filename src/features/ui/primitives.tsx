@@ -75,11 +75,10 @@ export function EmptyState({
 
 export function StatusBadge({ status }: { status: ApplicationStatus }) {
   const meta = STATUS_META[normalizeStatus(status)];
+  const Icon = meta.icon;
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${meta.badge}`}
-    >
-      <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+    <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-xs font-medium text-white/65">
+      <Icon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
       {meta.label}
     </span>
   );

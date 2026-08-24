@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Compass,
   FileText,
+  House,
   LayoutDashboard,
   Megaphone,
   MessageSquare,
@@ -66,10 +67,10 @@ const ROLE_COPY: Record<Role, { eyebrow: string; title: string; description: str
     description: 'Probá el panel de comunidad, los anuncios para difundir y el ranking de embajadores.',
     views: [
       { id: 'panel', label: 'Mi panel', icon: LayoutDashboard },
+      { id: 'inicio', label: 'Inicio', icon: House },
       { id: 'anuncios', label: 'Anuncios', icon: Megaphone },
       { id: 'ranking', label: 'Ranking', icon: Trophy },
       { id: 'explorar', label: 'Explorar perfiles', icon: Compass },
-      { id: 'novedades', label: 'Novedades', icon: Newspaper },
       { id: 'comunidad', label: 'Mi comunidad', icon: UserRound },
     ],
   },
@@ -141,9 +142,10 @@ function Metric({ value, label }: { value: string; label: string }) {
 function NewsDemo({ role }: { role: Role }) {
   const author = role === 'empresa' ? 'Nexo Labs' : role === 'embajador' ? 'Comunidad UTN' : 'Abril Álvarez';
   const avatar = role === 'embajador' ? avatarCommunity : role === 'empresa' ? undefined : avatarStudent;
+  const isCommunityHome = role === 'embajador';
   return (
     <div>
-      <div className="flex items-center justify-between"><div><h4 className="text-sm font-bold">Novedades</h4><p className="text-[8px] text-slate-500">Proyectos, búsquedas y recursos de la comunidad.</p></div><button className="rounded-full bg-brand-500 px-3 py-1.5 text-[8px] font-bold text-white">Publicar</button></div>
+      <div className="flex items-center justify-between"><div><h4 className="text-sm font-bold">{isCommunityHome ? 'Inicio' : 'Novedades'}</h4><p className="text-[8px] text-slate-500">{isCommunityHome ? 'Actividad reciente de PasantIA.' : 'Proyectos, búsquedas y recursos de la comunidad.'}</p></div><button className="rounded-full bg-brand-500 px-3 py-1.5 text-[8px] font-bold text-white">Publicar</button></div>
       <article className="mt-4 rounded-xl border bg-white p-3">
         <div className="flex items-center gap-2">{avatar ? <img src={avatar} alt={author} className="h-8 w-8 rounded-full object-cover" /> : <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-900 text-[7px] font-bold text-white">NL</span>}<div><p className="text-[9px] font-bold">{author}</p><p className="text-[7px] text-slate-400">Proyecto · hoy</p></div></div>
         <h5 className="mt-3 text-[11px] font-bold">Nueva iniciativa para estudiantes</h5><p className="mt-1 text-[8px] leading-relaxed text-slate-500">Compartimos una oportunidad y recursos para preparar tu próxima postulación.</p>
@@ -219,7 +221,7 @@ function CompanyScreen({ view }: { view: string }) {
 
 function AmbassadorScreen({ view }: { view: string }) {
   if (view === 'explorar') return <ExploreDemo />;
-  if (view === 'novedades') return <NewsDemo role="embajador" />;
+  if (view === 'inicio') return <NewsDemo role="embajador" />;
   if (view === 'comunidad') return <ProfileDemo role="embajador" />;
   if (view === 'anuncios') {
     return <div><h4 className="text-sm font-bold">Anuncios para difundir</h4><article className="mt-3 overflow-hidden rounded-xl border bg-white"><img src={internshipImage} alt="Anuncio de pasantía" className="h-24 w-full object-cover" /><div className="p-3"><p className="text-[8px] text-slate-500">Nexo Labs</p><h5 className="text-[11px] font-bold">Pasantía Frontend</h5><button className="mt-3 inline-flex items-center gap-1 rounded-full bg-brand-500 px-3 py-1.5 text-[8px] font-bold text-white"><Megaphone className="h-3 w-3" />Marcar difundida</button></div></article></div>;

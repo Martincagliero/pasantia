@@ -230,7 +230,7 @@ export default function Explore() {
   }
 
   async function toggleConnection(targetId: string) {
-    if (!uid || targetId === uid) return;
+    if (!uid || viewerRole !== 'estudiante' || targetId === uid) return;
     const state = connectionStateFor(targetId);
     const existing = connectionRequests.find(
       (row) =>
@@ -519,6 +519,8 @@ export default function Explore() {
           onToggleFollow={() => toggleFollow(selected.row.id)}
           connectionState={connectionStateFor(selected.row.id)}
           onToggleConnection={() => toggleConnection(selected.row.id)}
+          canConnect={viewerRole === 'estudiante'}
+          messageOnly={viewerRole === 'embajador'}
         />
       )}
     </div>
@@ -579,6 +581,8 @@ function DetailModal({
   onToggleFollow,
   connectionState,
   onToggleConnection,
+  canConnect,
+  messageOnly,
 }: {
   selected: Selected;
   onClose: () => void;
@@ -587,6 +591,8 @@ function DetailModal({
   onToggleFollow: () => void;
   connectionState: ConnectionState;
   onToggleConnection: () => void;
+  canConnect: boolean;
+  messageOnly: boolean;
 }) {
   useModalGuard();
   return (
@@ -606,7 +612,7 @@ function DetailModal({
         </button>
 
         {selected.type === 'estudiantes' && (
-          <StudentDetail row={selected.row} onMessage={onMessage} connectionState={connectionState} onToggleConnection={onToggleConnection} />
+          <StudentDetail row={selected.row} onMessage={onMessage} connectionState={connectionState} onToggleConnection={onToggleConnection} canConnect={canConnect} messageOnly={messageOnly} />
         )}
         {selected.type === 'empresas' && (
           <CompanyDetail row={selected.row} onMessage={onMessage} isFollowing={isFollowing} onToggleFollow={onToggleFollow} />
@@ -696,7 +702,7 @@ function LinkChip({ href, label, icon }: { href: string; label: string; icon: Re
   );
 }
 
-function StudentDetail({ row, onMessage, connectionState, onToggleConnection }: { row: StudentRow; onMessage: (id: string, name: string, avatar?: string | null) => void; connectionState: ConnectionState; onToggleConnection: () => void }) {
+function StudentDetail({ row, onMessage, connectionState, onToggleConnection, canConnect, messageOnly }: { row: StudentRow; onMessage: (id: string, name: string, avatar?: string | null) => void; connectionState: ConnectionState; onToggleConnection: () => void; canConnect: boolean; messageOnly: boolean }) {
   const name = row.profile?.full_name || 'Estudiante';
   return (
     <>
@@ -727,14 +733,14 @@ function StudentDetail({ row, onMessage, connectionState, onToggleConnection }: 
       </div>
 
       <div className="mb-5 flex flex-wrap gap-3">
-        <ConnectionButton state={connectionState} onClick={onToggleConnection} />
+        {canConnect && <ConnectionButton state={connectionState} onClick={onToggleConnection} />}
         <button
           onClick={() => onMessage(row.id, name, row.avatar_url)}
           className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-brand-600 transition hover:bg-brand-950 hover:text-white"
         >
           <MessageSquare size={16} /> Enviar mensaje
         </button>
-        {row.profile?.email && (
+        {!messageOnly && row.profile?.email && (
           <a
             href={`mailto:${row.profile.email}`}
             className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
@@ -742,7 +748,7 @@ function StudentDetail({ row, onMessage, connectionState, onToggleConnection }: 
             <Mail size={16} /> Email
           </a>
         )}
-        {row.phone && (
+        {!messageOnly && row.phone && (
           <a
             href={`tel:${row.phone}`}
             className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"

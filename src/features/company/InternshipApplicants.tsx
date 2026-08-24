@@ -195,6 +195,7 @@ export default function InternshipApplicants() {
                     <div className="flex flex-wrap gap-1.5">
                       {STATUS_ORDER.map((s) => {
                         const activeS = normalizeStatus(r.status) === s;
+                        const Icon = STATUS_META[s].icon;
                         return (
                           <button
                             key={s}
@@ -202,11 +203,11 @@ export default function InternshipApplicants() {
                             disabled={activeS}
                             className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                               activeS
-                                ? STATUS_META[s].active
+                                ? 'border-white/30 bg-white/12 text-white'
                                 : 'border-white/15 bg-white/5 text-white/70 hover:bg-white/10'
                             }`}
                           >
-                            <span className={`h-2 w-2 rounded-full ${STATUS_META[s].dot}`} />
+                            <Icon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
                             {STATUS_META[s].label}
                           </button>
                         );

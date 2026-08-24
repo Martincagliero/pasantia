@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { useMessages } from '../messages/MessagesProvider';
+import pasantiaLogo from '../../assets/logo.png';
 
 type NotificationKind = 'message' | 'internship' | 'post' | 'admin_post' | 'member' | 'connection';
 
@@ -333,7 +334,13 @@ export function NotificationCenter() {
                     }`}
                   >
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-500/10 text-brand-500">
-                      {item.avatarUrl ? (
+                      {item.kind === 'admin_post' ? (
+                        <img
+                          src={pasantiaLogo}
+                          alt="PasantIA"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : item.avatarUrl ? (
                         <img
                           src={item.avatarUrl}
                           alt=""

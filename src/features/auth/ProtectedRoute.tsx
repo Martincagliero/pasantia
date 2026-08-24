@@ -7,8 +7,8 @@ import type { Role } from '../../lib/database.types';
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  /** Si se define, solo usuarios con este rol pueden entrar. */
-  role?: Role;
+  /** Si se define, solo usuarios con alguno de estos roles pueden entrar. */
+  role?: Role | Role[];
 }
 
 export function ProtectedRoute({ children, role }: ProtectedRouteProps) {
@@ -31,7 +31,8 @@ export function ProtectedRoute({ children, role }: ProtectedRouteProps) {
 
   // Si el rol requerido no coincide, lo mandamos a su propio panel.
   // Los admins pueden entrar a cualquier panel (para cambiar de rol/vista).
-  if (role && profile && !profile.is_admin && profile.role !== role) {
+  const allowedRoles = role ? (Array.isArray(role) ? role : [role]) : null;
+  if (allowedRoles && profile && !profile.is_admin && !allowedRoles.includes(profile.role)) {
     return <Navigate to="/app" replace />;
   }
 

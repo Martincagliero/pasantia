@@ -61,10 +61,10 @@ const companyNav: NavItem[] = [
 
 const ambassadorNav: NavItem[] = [
   { to: '/app/embajador', label: 'Resumen', icon: LayoutDashboard },
+  { to: '/app/inicio-estudiante', label: 'Inicio', icon: House },
   { to: '/app/anuncios', label: 'Anuncios', icon: Megaphone },
   { to: '/app/ranking', label: 'Ranking', icon: Trophy },
   { to: '/app/explorar', label: 'Explorar perfiles', icon: Compass },
-  { to: '/app/novedades', label: 'Novedades', icon: Newspaper },
   { to: '/app/embajador-perfil', label: 'Mi comunidad', icon: UserRound },
 ];
 
@@ -196,7 +196,7 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className="dash-root min-h-screen" data-theme={theme}>
+    <div className={`dash-root min-h-screen ${role === 'embajador' ? 'dash-community' : ''}`} data-theme={theme}>
       <MessagesProvider>
         <WelcomeOnboarding />
         <header className="dash-panel sticky top-0 z-[45] border-b border-white/10 pt-[env(safe-area-inset-top)]">

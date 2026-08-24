@@ -12,7 +12,7 @@ import {
 import { AnimatePresence, motion } from 'framer-motion';
 import { flushSync } from 'react-dom';
 import { ArrowRight, ArrowLeft, Check, Eye, EyeOff, Camera } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   CONTACT,
   FORM_ENDPOINT,
@@ -37,6 +37,7 @@ import { sendPushEvent } from '../../lib/notify';
 import estudianteImg from '../../assets/images/estudiante.webp';
 import logo from '../../assets/images/logosinfobndo-ui.png';
 import { detectProfileLink } from '../../lib/url';
+import { TERMS_VERSION } from '../../lib/legal';
 
 type Role = 'estudiante' | 'empresa' | 'embajador';
 
@@ -79,6 +80,7 @@ interface FormData {
   followers_range: string;
   mensaje: string;
   recordar: boolean;
+  termsAccepted: boolean;
 }
 
 const EMPTY: FormData = {
@@ -106,6 +108,7 @@ const EMPTY: FormData = {
   followers_range: '',
   mensaje: '',
   recordar: true,
+  termsAccepted: false,
 };
 
 const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
@@ -332,6 +335,8 @@ function Onboarding({
         return data.org_name.trim() !== '' && data.org_type !== '';
       case 'embDetail':
         return data.instagram_link.trim() !== '' && data.followers_range !== '';
+      case 'mensaje':
+        return data.termsAccepted;
       default:
         return true;
     }
@@ -399,6 +404,10 @@ function Onboarding({
   }, [isOpen, current, data, submitted, isLast]);
 
   async function handleSubmit() {
+    if (!data.termsAccepted) {
+      setError('Tenés que aceptar los Términos y la Política de privacidad para continuar.');
+      return;
+    }
     setSubmitting(true);
     setError(null);
 
@@ -548,6 +557,8 @@ function Onboarding({
                   full_name: data.nombre.trim(),
                   role: data.role,
                   pasantia_onboarding_completed: true,
+                  terms_accepted_at: new Date().toISOString(),
+                  terms_version: TERMS_VERSION,
                 },
               });
               if (metadataError) throw metadataError;
@@ -799,7 +810,7 @@ function Onboarding({
               {isLast ? (
                 <button
                   onClick={handleSubmit}
-                  disabled={submitting}
+                  disabled={submitting || !canContinue()}
                   className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2.5 text-xs font-semibold text-brand-600 transition-colors hover:bg-brand-950 hover:text-white disabled:opacity-60 sm:gap-2 sm:px-7 sm:py-3 sm:text-sm"
                 >
                   {submitting ? 'Enviando…' : 'Enviar'}
@@ -1256,6 +1267,25 @@ function StepMensaje({
       <p className="mt-4 text-center text-sm text-white/45">
         Al enviar, sumamos tus datos a la lista de acceso anticipado de PasantIA.
       </p>
+      <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-white/15 bg-white/[0.05] p-3 text-left text-sm text-white/70">
+        <input
+          type="checkbox"
+          checked={data.termsAccepted}
+          onChange={(event) => set({ termsAccepted: event.target.checked })}
+          className="mt-0.5 h-4 w-4 shrink-0 accent-white"
+        />
+        <span>
+          Acepto los{' '}
+          <Link to="/terminos" target="_blank" className="font-semibold text-white underline underline-offset-4">
+            Términos y condiciones
+          </Link>{' '}
+          y la{' '}
+          <Link to="/politica-de-privacidad" target="_blank" className="font-semibold text-white underline underline-offset-4">
+            Política de privacidad
+          </Link>
+          .
+        </span>
+      </label>
       {error && (
         <p className="mt-4 rounded-xl border border-red-300/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">
           {error}

@@ -18,6 +18,7 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -48,6 +49,12 @@ export default function Register() {
 
     setError(null);
     setLoading(true);
+
+    if (!termsAccepted) {
+      setError('Tenés que aceptar los Términos y la Política de privacidad para continuar.');
+      setLoading(false);
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError('Las contraseñas no coinciden');
@@ -176,6 +183,26 @@ export default function Register() {
           />
         </FormRow>
 
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/15 bg-white/[0.05] p-3 text-sm text-white/70">
+          <input
+            type="checkbox"
+            checked={termsAccepted}
+            onChange={(event) => setTermsAccepted(event.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-white"
+          />
+          <span>
+            Acepto los{' '}
+            <Link to="/terminos" target="_blank" className="font-semibold text-white underline underline-offset-4">
+              Términos y condiciones
+            </Link>{' '}
+            y la{' '}
+            <Link to="/politica-de-privacidad" target="_blank" className="font-semibold text-white underline underline-offset-4">
+              Política de privacidad
+            </Link>
+            .
+          </span>
+        </label>
+
         {error && (
           <p className="rounded-2xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-200">
             {error}
@@ -192,7 +219,7 @@ export default function Register() {
           >
             Atrás
           </Button>
-          <Button type="submit" variant="secondary" className="flex-1" disabled={loading}>
+          <Button type="submit" variant="secondary" className="flex-1" disabled={loading || !termsAccepted}>
             {loading ? 'Registrando…' : 'Registrarse'}
           </Button>
         </div>

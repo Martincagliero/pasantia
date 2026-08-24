@@ -81,6 +81,14 @@ export function Footer() {
           <p className="text-sm text-white/50">
             © {year} PasantIA. Todos los derechos reservados.
           </p>
+          <p className="mt-3 max-w-3xl text-xs leading-relaxed text-white/40">
+            PasantIA es una plataforma tecnológica de conexión. No participa en contrataciones,
+            convenios ni acuerdos privados entre usuarios. Consultá los{' '}
+            <Link to="/terminos" className="underline underline-offset-4 hover:text-white/70">
+              Términos y condiciones
+            </Link>
+            .
+          </p>
         </div>
       </div>
     </footer>

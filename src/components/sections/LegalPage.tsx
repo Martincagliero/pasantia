@@ -40,12 +40,6 @@ export function LegalPage({ title, updated, intro, blocks }: LegalPageProps) {
               </div>
             ))}
           </div>
-
-          {/* TODO (fase 2): reemplazar por el texto legal definitivo revisado por un profesional. */}
-          <p className="mt-14 rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 text-sm text-white/50">
-            Este documento es una versión preliminar mientras PasantIA está en etapa de
-            acceso anticipado. Su contenido puede actualizarse antes del lanzamiento.
-          </p>
         </Reveal>
       </div>
     </section>

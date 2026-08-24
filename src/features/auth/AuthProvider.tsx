@@ -14,6 +14,7 @@ import {
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
 import type { Profile, Role } from '../../lib/database.types';
+import { TERMS_VERSION } from '../../lib/legal';
 
 interface SignUpData {
   email: string;
@@ -74,7 +75,13 @@ async function ensureSubtable(role: Role, id: string, name: string): Promise<voi
 // registrarse (guardados en user_metadata). Lo crea si falta o lo corrige si
 // quedó con otro rol. Así cada cuenta tiene su perfil separado y correcto.
 async function ensureProfile(user: User): Promise<Profile | null> {
-  const meta = (user.user_metadata ?? {}) as { role?: string; full_name?: string; name?: string };
+  const meta = (user.user_metadata ?? {}) as {
+    role?: string;
+    full_name?: string;
+    name?: string;
+    terms_accepted_at?: string;
+    terms_version?: string;
+  };
   const metaRole = VALID_ROLES.includes(meta.role as Role) ? (meta.role as Role) : null;
   const metaName = (meta.full_name ?? meta.name ?? '').trim();
 
@@ -106,6 +113,12 @@ async function ensureProfile(user: User): Promise<Profile | null> {
     }
 
     if (prof) {
+      if (meta.terms_accepted_at && meta.terms_version) {
+        await supabase.from('profiles').update({
+          terms_accepted_at: meta.terms_accepted_at,
+          terms_version: meta.terms_version,
+        }).eq('id', user.id);
+      }
       await ensureSubtable(prof.role, user.id, metaName || prof.full_name);
     }
     return prof;
@@ -272,11 +285,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = useCallback(async ({ email, password, fullName, role }: SignUpData) => {
+    const termsAcceptedAt = new Date().toISOString();
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName, role },
+        data: {
+          full_name: fullName,
+          role,
+          terms_accepted_at: termsAcceptedAt,
+          terms_version: TERMS_VERSION,
+        },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });

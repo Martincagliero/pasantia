@@ -28,6 +28,8 @@ export interface Profile {
   onboarded?: boolean;
   plan?: SubscriptionPlan;
   plan_expires_at?: string | null;
+  terms_accepted_at?: string | null;
+  terms_version?: string | null;
 }
 
 export interface StudentProfile {

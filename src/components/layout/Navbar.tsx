@@ -179,89 +179,67 @@ export function Navbar() {
 
       {/* Menú mobile a pantalla completa */}
       {menuOpen && (
-          <div
-            className="fixed inset-x-0 top-0 z-40 flex h-[100dvh] flex-col bg-brand-600 md:hidden"
-          >
-            <nav
-              className="flex flex-1 flex-col justify-center gap-5 px-4 pt-20"
-            >
-              <div className="grid grid-cols-2 gap-2">
-                <NavLink
-                  to="/"
-                  end
-                  onClick={() => setMenuOpen(false)}
-                  className="flex min-h-12 items-center justify-center rounded-xl border border-white/15 bg-white/10 px-3 text-base font-semibold text-white"
-                >
-                  Inicio
-                </NavLink>
-                <Link
-                  to="/#planes"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex min-h-12 items-center justify-center rounded-xl border border-white/15 bg-white/10 px-3 text-base font-semibold text-white"
-                >
-                  Planes
-                </Link>
-              </div>
-
-              <div>
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">Elegí tu perfil</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {audienceLinks.map(({ label, to, photo }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    onClick={() => setMenuOpen(false)}
-                    className="flex min-w-0 flex-col items-center gap-1.5 rounded-xl border border-white/12 bg-white/[0.07] px-1.5 py-2.5 text-center text-[11px] font-semibold leading-tight text-white"
-                  >
-                    <img src={photo} alt="" className="h-9 w-9 rounded-lg object-cover" />
-                    <span className="w-full text-[10px]">{label}</span>
-                  </NavLink>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-x-3 gap-y-1 border-t border-white/12 pt-3">
-                {HASH_LINKS.map((link) => (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    onClick={() => setMenuOpen(false)}
-                    className="px-2 py-2 text-center text-sm font-medium text-white/70"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            </nav>
-
-            {/* CTA abajo */}
-            <div
-              className="flex w-full items-center justify-center gap-2 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3"
-            >
-              <div className="flex-1" onClick={() => setMenuOpen(false)}>
-                <Button
-                  as="link"
-                  to="/ingresar"
-                  variant="secondary"
-                  size="lg"
-                  className="w-full justify-center"
-                >
-                  Ingresar
-                </Button>
-              </div>
-              <Button
-                onClick={() => {
-                  setMenuOpen(false);
-                  open();
-                }}
-                variant="landing"
-                size="lg"
-                className="flex-1 justify-center"
+        <div className="fixed inset-x-0 top-0 z-40 flex h-[100dvh] flex-col bg-brand-600 md:hidden">
+          <nav className="flex flex-1 flex-col items-center justify-center gap-6 px-6 pt-16">
+            {NAV_LINKS.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end={link.to === '/'}
+                onClick={() => setMenuOpen(false)}
+                className={({ isActive }) =>
+                  `text-2xl font-medium tracking-tight transition-colors ${
+                    isActive ? 'text-white' : 'text-white/60 hover:text-white'
+                  }`
+                }
               >
-                Registrarse
+                {link.label}
+              </NavLink>
+            ))}
+            {HASH_LINKS.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setMenuOpen(false)}
+                className="text-2xl font-medium tracking-tight text-white/60 transition-colors hover:text-white"
+              >
+                {link.label}
+              </Link>
+            ))}
+            <Link
+              to="/#planes"
+              onClick={() => setMenuOpen(false)}
+              className="text-2xl font-medium tracking-tight text-white/60 transition-colors hover:text-white"
+            >
+              Planes
+            </Link>
+          </nav>
+
+          <div className="flex w-full items-center justify-center gap-2 px-6 pb-[max(3rem,env(safe-area-inset-bottom))]">
+            <div className="flex-1" onClick={() => setMenuOpen(false)}>
+              <Button
+                as="link"
+                to="/ingresar"
+                variant="secondary"
+                size="lg"
+                className="w-full justify-center"
+              >
+                Ingresar
               </Button>
             </div>
+            <Button
+              onClick={() => {
+                setMenuOpen(false);
+                open();
+              }}
+              variant="landing"
+              size="lg"
+              className="flex-1 justify-center"
+            >
+              Registrarse
+            </Button>
           </div>
+        </div>
       )}
     </header>
   );

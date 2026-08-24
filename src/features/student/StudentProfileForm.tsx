@@ -1,6 +1,6 @@
 // Estudiante: edita su perfil (nombre + datos académicos, links y CV).
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
-import { UploadCloud, FileText, Loader2, Plus, Check } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
+import { UploadCloud, FileText, Loader2, Plus, Check, BriefcaseBusiness, GraduationCap, MapPin, Clock3 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { StudentProfile } from '../../lib/database.types';
@@ -10,7 +10,7 @@ import { Card, PageLoader } from '../ui/primitives';
 import { AvatarUpload } from '../ui/AvatarUpload';
 import { ProfileHeader } from '../ui/ProfileHeader';
 import { ProfileCompletion } from '../ui/ProfileCompletion';
-import { UserPosts } from '../posts/UserPosts';
+import { StudentRecentActivity } from './StudentRecentActivity';
 import { whatsappLink } from '../../lib/constants';
 import { UniversityAutocomplete } from '../ui/UniversityAutocomplete';
 import { AVAILABILITY_OPTIONS, CAREERS, suggestFor } from './suggestions';
@@ -554,7 +554,7 @@ export default function StudentProfileForm() {
   const skillsArr = form.skills.split(',').map((s) => s.trim()).filter(Boolean);
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-4xl">
       <ProfileHeader
         name={fullName || 'Estudiante'}
         subtitle={[form.career, form.university, form.year].filter(Boolean).join(' · ') || 'Estudiante'}
@@ -581,38 +581,26 @@ export default function StudentProfileForm() {
         ]}
       />
 
-      <div className="grid gap-6">
-        <Card>
-          <h3 className="mb-3 text-base font-semibold text-white">Sobre mí</h3>
-          <p className="text-sm leading-relaxed text-white/70">
-            {form.bio || 'Todavía no agregaste una descripción. Tocá “Editar perfil” para completarla.'}
+      <div className="grid gap-5">
+        <Card className="p-4 sm:p-5">
+          <p className="text-sm leading-6 text-white/65">
+            {form.bio || 'Agregá una descripción breve para contar qué estás buscando.'}
           </p>
-          <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-            <SView label="Universidad" value={form.university} />
-            <SView label="Carrera" value={form.career} />
-            <SView label="Año" value={form.year} />
-            <SView label="Área de interés" value={form.area} />
-            <SView label="Disponibilidad" value={form.availability} />
-            <SView label="Ubicación" value={form.location} />
-          </dl>
-        </Card>
-
-        {skillsArr.length > 0 && (
-          <Card>
-            <h3 className="mb-3 text-base font-semibold text-white">Habilidades</h3>
-            <div className="flex flex-wrap gap-2">
-              {skillsArr.map((s) => (
-                <span key={s} className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-sm text-white/80">
-                  {s}
-                </span>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <ProfileFact icon={<GraduationCap className="h-4 w-4" />} value={[form.career, form.university, form.year].filter(Boolean).join(' · ')} fallback="Completá tus estudios" />
+            <ProfileFact icon={<BriefcaseBusiness className="h-4 w-4" />} value={form.area} fallback="Agregá un área de interés" />
+            <ProfileFact icon={<Clock3 className="h-4 w-4" />} value={form.availability} fallback="Indicá tu disponibilidad" />
+            <ProfileFact icon={<MapPin className="h-4 w-4" />} value={form.location} fallback="Agregá tu ubicación" />
+          </div>
+          {skillsArr.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {skillsArr.slice(0, 6).map((skill) => (
+                <span key={skill} className="rounded-full border border-white/12 bg-white/5 px-2.5 py-1 text-xs text-white/70">{skill}</span>
               ))}
+              {skillsArr.length > 6 && <span className="px-2 py-1 text-xs text-white/40">+{skillsArr.length - 6}</span>}
             </div>
-          </Card>
-        )}
-
-        <Card>
-          <h3 className="mb-3 text-base font-semibold text-white">Links y archivos</h3>
-          <div className="flex flex-wrap gap-2">
+          )}
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-white/8 pt-4">
             {linkChip(form.cv_url, 'CV')}
             {linkChip(form.transcript_url, 'Analítico')}
             {linkChip(form.linkedin_url, 'LinkedIn')}
@@ -625,21 +613,16 @@ export default function StudentProfileForm() {
               !form.github_url &&
               !form.instagram_url &&
               !form.portfolio_url && (
-                <p className="text-sm text-white/50">Todavía no agregaste links.</p>
+                <p className="text-xs text-white/40">Todavía no agregaste links.</p>
               )}
           </div>
-          <p className="mt-4 text-xs text-white/45">
+          <p className="mt-3 text-xs text-white/40">
             {form.is_public
               ? 'Tu perfil es visible para empresas en el buscador de talento.'
               : 'Tu perfil está oculto para las empresas. Activá la visibilidad al editar.'}
           </p>
         </Card>
-
-        <UserPosts
-          authorId={session!.user.id}
-          title="Mi actividad en Novedades"
-          emptyText="Todavía no publicaste nada en Novedades."
-        />
+        <StudentRecentActivity studentId={session!.user.id} />
       </div>
     </div>
   );
@@ -691,11 +674,11 @@ function safeHref(url: string | null | undefined): string | null {
   return /^https?:\/\//i.test(u) ? u : `https://${u}`;
 }
 
-function SView({ label, value }: { label: string; value: string | null | undefined }) {
+function ProfileFact({ icon, value, fallback }: { icon: ReactNode; value: string | null | undefined; fallback: string }) {
   return (
-    <div>
-      <dt className="text-xs uppercase tracking-wider text-white/40">{label}</dt>
-      <dd className="mt-0.5 text-sm text-white/80">{value || '—'}</dd>
+    <div className="flex min-w-0 items-center gap-2 rounded-lg bg-white/[0.035] px-3 py-2.5">
+      <span className="shrink-0 text-brand-400">{icon}</span>
+      <span className={`truncate text-sm ${value ? 'text-white/75' : 'text-white/35'}`}>{value || fallback}</span>
     </div>
   );
 }
@@ -709,7 +692,7 @@ function linkChip(url: string | null | undefined, label: string) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-white/80 transition hover:bg-white/10"
+      className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/5 px-2.5 py-1 text-xs text-white/75 transition hover:bg-white/10"
     >
       {label}
     </a>

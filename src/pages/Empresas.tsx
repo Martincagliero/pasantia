@@ -116,10 +116,10 @@ export default function Empresas() {
         />
       </Section>
 
-      {/* Cómo va a funcionar para tu empresa */}
+      {/* Cómo funciona para tu empresa */}
       <Section className="bg-brand-950/30">
         <HowItWorks
-          eyebrow="Cómo va a funcionar para tu empresa"
+          eyebrow="Cómo funciona para tu empresa"
           heading={<>De la búsqueda al match, <Accent>en 4 pasos.</Accent></>}
           subheading="Estamos construyendo el sistema completo. Así va a ser tu experiencia."
           steps={STEPS}

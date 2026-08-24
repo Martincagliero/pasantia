@@ -10,7 +10,8 @@ import {
   type ReactNode,
 } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, ArrowRight, ArrowLeft, Check, Eye, EyeOff, Camera } from 'lucide-react';
+import { flushSync } from 'react-dom';
+import { ArrowRight, ArrowLeft, Check, Eye, EyeOff, Camera } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   CONTACT,
@@ -160,7 +161,9 @@ export function EarlyAccessProvider({ children }: { children: ReactNode }) {
     setPresetRole(role);
     setManualOpen(true);
   }, []);
-  const close = useCallback(() => setManualOpen(false), []);
+  const close = useCallback(() => {
+    flushSync(() => setManualOpen(false));
+  }, []);
   const value = useMemo(() => ({ open, isOpen }), [open, isOpen]);
 
   // Si la persona llega con un enlace de promotor (?ref= / ?promo=), abrimos
@@ -338,6 +341,8 @@ function Onboarding({
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
   async function closeRegistration(goToLogin = false) {
+    onClose();
+    if (goToLogin || googleAuth) navigate('/ingresar');
     if (googleAuth && !submitted) {
       clearPendingGoogleOnboarding();
       try {
@@ -346,8 +351,16 @@ function Onboarding({
         /* ignore */
       }
     }
+  }
+
+  function returnToLanding() {
+    if (googleAuth) {
+      clearPendingGoogleOnboarding();
+      navigate('/', { replace: true, flushSync: true });
+      void signOut();
+      return;
+    }
     onClose();
-    if (goToLogin || googleAuth) navigate('/ingresar');
   }
 
   async function startGoogleRegistration() {
@@ -655,13 +668,8 @@ function Onboarding({
   const progress = submitted ? 1 : (step + 1) / Math.max(screens.length, 1);
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
+      isOpen ? (
+        <div
           className="early-access-onboarding fixed inset-0 z-[100] flex flex-col bg-brand-600"
           role="dialog"
           aria-modal="true"
@@ -692,11 +700,11 @@ function Onboarding({
                 Ingresar
               </button>
               <button
-                onClick={() => void closeRegistration()}
-                aria-label="Cerrar"
-                className="flex h-10 w-10 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                onClick={returnToLanding}
+                aria-label="Volver a la landing"
+                className="flex h-10 items-center justify-center gap-1.5 rounded-full px-2 text-sm font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
               >
-                <X size={22} />
+                <ArrowLeft size={18} /> <span className="hidden sm:inline">Volver</span>
               </button>
             </div>
           </header>
@@ -803,9 +811,8 @@ function Onboarding({
               )}
             </footer>
           )}
-        </motion.div>
-      )}
-    </AnimatePresence>
+        </div>
+      ) : null
   );
 }
 

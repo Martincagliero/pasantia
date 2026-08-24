@@ -33,6 +33,7 @@ import { PlatformShowcase } from '../components/sections/PlatformShowcase';
 import { InteractiveAppPreview } from '../components/sections/InteractiveAppPreview';
 import { InstallAppSection } from '../components/sections/InstallAppSection';
 import { PricingPlans } from '../components/sections/PricingPlans';
+import { LaunchCountdown } from '../components/sections/LaunchCountdown';
 import { IMAGES, AVATARS } from '../lib/images';
 import estudianteImg from '../assets/images/estudiante.webp';
 import iconosHero from '../assets/images/iconos-hero.png';
@@ -196,13 +197,7 @@ export default function Home() {
 
               <div className="h-8 w-px bg-white/15" />
 
-              <div className="flex items-center gap-2 text-xs text-white/70 lg:text-sm">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-70" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-                </span>
-                Acceso anticipado abierto
-              </div>
+              <LaunchCountdown compact />
             </motion.div>
             </div>
 
@@ -250,12 +245,8 @@ export default function Home() {
                 </svg>
               </motion.div>
               <InteractiveAppPreview variant="hero" />
-              <div className="mt-3 flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[9px] font-medium text-white/65 md:hidden">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-70" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-                </span>
-                Acceso anticipado abierto
+              <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.06] px-2.5 py-1.5 md:hidden">
+                <LaunchCountdown compact />
               </div>
               <div className="mt-2 flex items-center justify-center gap-2 md:hidden">
                 <Button
@@ -374,10 +365,10 @@ export default function Home() {
         <PricingPlans id="planes-desktop" />
       </div>
 
-      {/* ===================== CÓMO VA A FUNCIONAR ===================== */}
+      {/* ===================== CÓMO FUNCIONA ===================== */}
       <Section id="como-funciona" className="bg-white text-brand-800">
         <HowItWorks
-          eyebrow="Cómo va a funcionar"
+          eyebrow="Cómo funciona"
           heading={
             <>
               De registrarte a arrancar,{' '}
@@ -452,7 +443,7 @@ export default function Home() {
                     <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-white backdrop-blur">
                       <card.icon size={22} />
                     </span>
-                    <h3 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
+                    <h3 className="mt-5 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                       {card.title}
                     </h3>
                     <p className="mt-3 max-w-sm text-base font-light text-white/75">
@@ -484,7 +475,7 @@ export default function Home() {
                     <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-white backdrop-blur">
                       <card.icon size={22} />
                     </span>
-                    <h3 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
+                    <h3 className="mt-5 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                       {card.title}
                     </h3>
                     <p className="mt-3 max-w-sm text-base font-light text-white/75">

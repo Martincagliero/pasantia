@@ -39,11 +39,13 @@ import { orgTypeLabel } from '../ambassador/ambassadorConfig';
 import { useMessages } from '../messages/MessagesProvider';
 import { useAuth } from '../auth/AuthProvider';
 import { UserPosts } from '../posts/UserPosts';
+import { SocialPostImages, SocialPostText } from '../posts/SocialPostContent';
 import { LinkPreview } from '../ui/LinkPreview';
 import { PostInteractions } from '../ui/PostInteractions';
 import { EmojiText } from '../ui/EmojiText';
 import { ReportButton } from '../ui/ReportButton';
 import { FREE_STUDENT_CONNECTIONS_PER_MONTH, isPro } from '../../lib/plans';
+import { PostActionsMenu } from '../posts/PostActionsMenu';
 
 type Tab = 'estudiantes' | 'empresas' | 'embajadores' | 'red';
 
@@ -470,6 +472,7 @@ export default function Explore() {
 
       {tab === 'red' ? (
         <NetworkTab
+          currentUserId={uid ?? undefined}
           companies={companies.filter((c) => followingIds.has(c.id))}
           students={students.filter((s) => followingIds.has(s.id))}
           ambassadors={ambassadors.filter((a) => followingIds.has(a.id))}
@@ -945,6 +948,7 @@ function AmbassadorDetail({ row, onMessage, isFollowing, onToggleFollow }: { row
 /* ─────────────────────────── Pestaña "Red" ─────────────────────────── */
 
 function NetworkTab({
+  currentUserId,
   companies,
   students,
   ambassadors,
@@ -953,6 +957,7 @@ function NetworkTab({
   onRespond,
   onOpen,
 }: {
+  currentUserId?: string;
   companies: CompanyRow[];
   students: StudentRow[];
   ambassadors: AmbRow[];
@@ -1135,7 +1140,13 @@ function NetworkTab({
         ) : (
           <div className="space-y-3">
             {feed.map((p) => (
-              <FeedCard key={p.id} post={p} person={people.get(p.author_id)} />
+              <FeedCard
+                key={p.id}
+                post={p}
+                person={people.get(p.author_id)}
+                currentUserId={currentUserId}
+                onDeleted={(postId) => setFeed((current) => current.filter((item) => item.id !== postId))}
+              />
             ))}
           </div>
         )}
@@ -1201,7 +1212,7 @@ function NetItem({
   );
 }
 
-function FeedCard({ post, person }: { post: Post; person?: { name: string; avatar: string | null } }) {
+function FeedCard({ post, person, currentUserId, onDeleted }: { post: Post; person?: { name: string; avatar: string | null }; currentUserId?: string; onDeleted: (postId: string) => void }) {
   const name = person?.name || post.author_name || 'Usuario';
   const date = new Date(post.created_at).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
   return (
@@ -1212,9 +1223,11 @@ function FeedCard({ post, person }: { post: Post; person?: { name: string; avata
           <p className="truncate text-sm font-semibold text-white">{name}</p>
           <p className="text-xs text-white/45">{date}</p>
         </div>
+        <PostActionsMenu post={post} currentUserId={currentUserId} onDeleted={onDeleted} />
       </div>
-      <h3 className="text-base font-semibold text-white">{post.title}</h3>
-      <p className="mt-1 line-clamp-4 whitespace-pre-line text-sm text-white/70">{post.body}</p>
+      {post.title && <h3 className="text-base font-semibold text-white">{post.title}</h3>}
+      <p className={`${post.title ? 'mt-1' : 'mt-2'} line-clamp-4 whitespace-pre-wrap break-words text-sm text-white/70`}><SocialPostText text={post.body} mentions={post.mentions} /></p>
+      <SocialPostImages urls={post.image_urls} />
       {post.link_url && (
         <div className="mt-2">
           <LinkPreview url={post.link_url} />

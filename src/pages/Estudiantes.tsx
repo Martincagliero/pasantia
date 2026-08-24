@@ -124,10 +124,10 @@ export default function Estudiantes() {
         />
       </Section>
 
-      {/* Cómo va a funcionar para vos */}
+      {/* Cómo funciona para vos */}
       <Section className="bg-brand-950/30">
         <HowItWorks
-          eyebrow="Cómo va a funcionar para vos"
+          eyebrow="Cómo funciona para vos"
           heading={<>Tu camino, <Accent>paso a paso.</Accent></>}
           subheading="Estamos construyendo el sistema completo. Así va a ser tu experiencia."
           steps={STEPS}

@@ -77,7 +77,7 @@ export function NotificationCenter() {
           .limit(8),
         supabase
           .from('posts')
-          .select('id, title, author_name, created_at, author:profiles!author_id(is_admin)')
+          .select('id, title, body, author_name, created_at, author:profiles!author_id(is_admin)')
           .gte('created_at', since)
           .order('created_at', { ascending: false })
           .limit(8),
@@ -188,17 +188,19 @@ export function NotificationCenter() {
         ...((postsResult.data ?? []) as unknown as {
           id: string;
           title: string;
+          body: string;
           author_name: string;
           created_at: string;
           author: { is_admin: boolean } | { is_admin: boolean }[] | null;
         }[]).map((post) => {
           const author = Array.isArray(post.author) ? post.author[0] : post.author;
           const isAdminPost = author?.is_admin === true;
+          const preview = post.title.trim() || post.body.trim().slice(0, 120) || 'Publicación con imágenes';
           return {
             id: `post-${post.id}`,
             kind: isAdminPost ? 'admin_post' as const : 'post' as const,
             title: isAdminPost ? 'Aviso oficial de PasantIA' : 'Nueva publicación en Novedades',
-            detail: isAdminPost ? post.title : `${post.author_name}: ${post.title}`,
+            detail: isAdminPost ? preview : `${post.author_name}: ${preview}`,
             createdAt: post.created_at,
           };
         }),

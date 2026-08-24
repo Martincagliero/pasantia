@@ -1,5 +1,5 @@
 // Botón + modal de denuncia reutilizable (moderación).
-// Permite reportar una pasantía, un anuncio de comunidad o un perfil.
+// Permite reportar una pasantía, una publicación, un anuncio de comunidad o un perfil.
 // El reporte se guarda en la tabla `reports` (ver migracion-reportes.sql) y queda
 // privado: solo el dueño de la plataforma lo revisa desde Supabase.
 import { useState } from 'react';
@@ -28,6 +28,14 @@ const REASONS: Record<ReportTargetType, { value: string; label: string }[]> = {
     { value: 'discriminatorio', label: 'Contenido discriminatorio' },
     { value: 'otro', label: 'Otro' },
   ],
+  post: [
+    { value: 'acoso', label: 'Acoso o discurso de odio' },
+    { value: 'spam', label: 'Spam o publicidad' },
+    { value: 'ilegal', label: 'Contenido ilegal' },
+    { value: 'copyright', label: 'Infringe derechos de autor' },
+    { value: 'discriminatorio', label: 'Contenido discriminatorio' },
+    { value: 'otro', label: 'Otro' },
+  ],
   profile: [
     { value: 'suplantacion', label: 'Suplanta a una empresa o persona' },
     { value: 'falso', label: 'Perfil falso' },
@@ -40,6 +48,7 @@ const REASONS: Record<ReportTargetType, { value: string; label: string }[]> = {
 const TARGET_LABEL: Record<ReportTargetType, string> = {
   internship: 'esta pasantía',
   community_post: 'este anuncio',
+  post: 'esta publicación',
   profile: 'este perfil',
 };
 
@@ -47,7 +56,7 @@ interface ReportButtonProps {
   targetType: ReportTargetType;
   targetId: string;
   /** Estilo: icono suelto (por defecto) o botón con texto. */
-  variant?: 'icon' | 'button';
+  variant?: 'icon' | 'button' | 'menu';
   className?: string;
 }
 
@@ -109,6 +118,14 @@ export function ReportButton({ targetType, targetId, variant = 'icon', className
           className={`inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-red-300 ${className}`}
         >
           <Flag size={16} /> Reportar
+        </button>
+      ) : variant === 'menu' ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white/75 transition hover:bg-white/8 hover:text-red-300 ${className}`}
+        >
+          <Flag className="h-4 w-4" /> Denunciar
         </button>
       ) : (
         <button

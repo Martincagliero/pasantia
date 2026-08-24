@@ -1,7 +1,7 @@
 -- =============================================================================
 -- MIGRACIÓN: Reportes / denuncias (moderación)
 -- Permite que cualquier usuario autenticado denuncie una pasantía, un anuncio
--- de comunidad o un perfil (empresa/estudiante/embajador). Los reportes quedan
+-- de comunidad, una publicación o un perfil (empresa/estudiante/embajador). Los reportes quedan
 -- privados: SOLO el dueño de la plataforma los lee desde el dashboard de Supabase.
 -- Ejecutar en Supabase -> SQL Editor -> Run.
 -- =============================================================================
@@ -9,8 +9,8 @@
 CREATE TABLE IF NOT EXISTS reports (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   reporter_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  -- Qué se reporta: 'internship' | 'community_post' | 'profile'
-  target_type TEXT NOT NULL CHECK (target_type IN ('internship', 'community_post', 'profile')),
+  -- Qué se reporta: 'internship' | 'community_post' | 'post' | 'profile'
+  target_type TEXT NOT NULL CHECK (target_type IN ('internship', 'community_post', 'post', 'profile')),
   -- ID del elemento reportado (id de la pasantía / anuncio / perfil de usuario)
   target_id UUID NOT NULL,
   -- Motivo tipificado (falsa, estafa, no es pasantia, discriminatorio, acoso, spam, ilegal, copyright, otro)
@@ -27,6 +27,10 @@ CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
 CREATE INDEX IF NOT EXISTS idx_reports_created ON reports(created_at);
 
 ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE reports DROP CONSTRAINT IF EXISTS reports_target_type_check;
+ALTER TABLE reports ADD CONSTRAINT reports_target_type_check
+  CHECK (target_type IN ('internship', 'community_post', 'post', 'profile'));
 
 -- Cualquier usuario autenticado puede CREAR un reporte como sí mismo.
 DROP POLICY IF EXISTS "reports_insert_own" ON reports;

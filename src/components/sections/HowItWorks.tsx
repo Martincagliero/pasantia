@@ -51,7 +51,30 @@ export function HowItWorks({ eyebrow, heading, subheading, steps, inverted = fal
         )}
       </Reveal>
 
-      <div className="mt-14 sm:mt-20 lg:grid lg:grid-cols-[1fr_1.05fr] lg:gap-16">
+      <div className="mt-8 grid grid-cols-2 gap-3 lg:hidden">
+        {steps.map((step, index) => (
+          <motion.article
+            key={step.title}
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewportOnce}
+            transition={{ duration: 0.4, delay: index * 0.04, ease: EASE }}
+            className={`min-w-0 rounded-xl border p-3 sm:p-3.5 ${inverted ? 'border-brand-700/12 bg-brand-50' : 'border-white/12 bg-white/[0.06]'}`}
+          >
+            <span className={`text-xs font-bold tabular-nums ${inverted ? 'text-brand-600' : 'text-white/55'}`}>
+              {String(index + 1).padStart(2, '0')}
+            </span>
+            <h3 className={`mt-2 text-sm font-semibold leading-tight sm:text-base ${inverted ? 'text-brand-800' : 'text-white'}`}>
+              {step.title}
+            </h3>
+            <p className={`mt-2 hidden text-xs font-light leading-relaxed sm:block ${inverted ? 'text-brand-800/65' : 'text-white/65'}`}>
+              {step.description}
+            </p>
+          </motion.article>
+        ))}
+      </div>
+
+      <div className="mt-20 hidden lg:grid lg:grid-cols-[1fr_1.05fr] lg:gap-16">
         {/* ---- Media sticky (solo desktop) ---- */}
         <div className="hidden lg:block">
           <div className="sticky top-28">

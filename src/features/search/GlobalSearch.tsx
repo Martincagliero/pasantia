@@ -4,9 +4,10 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import type { Community, Internship, Post, Profile } from '../../lib/database.types';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
-import { EmojiText } from '../ui/EmojiText';
 import { LinkPreview } from '../ui/LinkPreview';
 import { useAuth } from '../auth/AuthProvider';
+import { SocialPostImages, SocialPostText } from '../posts/SocialPostContent';
+import { PostActionsMenu } from '../posts/PostActionsMenu';
 
 type SearchProfile = Pick<Profile, 'id' | 'full_name' | 'role'>;
 
@@ -44,7 +45,7 @@ function initials(name: string): string {
 
 export default function GlobalSearch() {
   const [params] = useSearchParams();
-  const { profile } = useAuth();
+  const { profile, session } = useAuth();
   const query = params.get('q')?.trim() ?? '';
   const normalizedQuery = searchable([query]);
   const [loading, setLoading] = useState(true);
@@ -165,11 +166,19 @@ export default function GlobalSearch() {
               <div className="grid gap-3 sm:grid-cols-2">
                 {results.posts.map((item) => (
                   <Card key={item.id}>
-                    <p className="text-xs font-medium text-brand-500">{categoryLabel[item.category]}</p>
-                    <h2 className="mt-1 text-base font-semibold text-white">{item.title}</h2>
-                    <p className="mt-1.5 line-clamp-4 whitespace-pre-line text-sm text-white/65">
-                      <EmojiText text={item.body} />
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-medium text-brand-500">{categoryLabel[item.category]}</p>
+                      <PostActionsMenu
+                        post={item}
+                        currentUserId={session?.user.id}
+                        onDeleted={(postId) => setPosts((current) => current.filter((post) => post.id !== postId))}
+                      />
+                    </div>
+                    {item.title && <h2 className="mt-1 text-base font-semibold text-white">{item.title}</h2>}
+                    <p className="mt-1.5 line-clamp-4 whitespace-pre-wrap break-words text-sm text-white/65">
+                      <SocialPostText text={item.body} mentions={item.mentions} />
                     </p>
+                    <SocialPostImages urls={item.image_urls} />
                     <p className="mt-2 text-xs text-white/40">{item.author_name || 'Usuario'}</p>
                     {item.link_url && <LinkPreview url={item.link_url} className="mt-3" />}
                   </Card>

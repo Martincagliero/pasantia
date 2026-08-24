@@ -1,7 +1,7 @@
 // Novedades: panel compartido donde estudiantes y empresas publican
 // novedades, proyectos, búsquedas y recursos. Todos los logueados las ven.
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Trash2, Building2, GraduationCap, Mail, ChevronDown } from 'lucide-react';
+import { Plus, Building2, GraduationCap, Mail, ChevronDown } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
@@ -10,8 +10,9 @@ import { Button } from '../../components/ui/Button';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
 import { LinkPreview } from '../ui/LinkPreview';
 import { PostInteractions } from '../ui/PostInteractions';
-import { EmojiText } from '../ui/EmojiText';
 import { PostComposerModal } from './PostComposer';
+import { SocialPostImages, SocialPostText } from './SocialPostContent';
+import { PostActionsMenu } from './PostActionsMenu';
 
 const CATEGORIES: { value: PostCategory; label: string }[] = [
   { value: 'novedad', label: 'Novedad' },
@@ -69,11 +70,6 @@ export default function Novedades() {
 
   if (profile?.role === 'estudiante' && !profile.is_admin) {
     return <Navigate to="/app/inicio-estudiante" replace />;
-  }
-
-  async function handleDelete(id: string) {
-    const { error } = await supabase.from('posts').delete().eq('id', id);
-    if (!error) setPosts((prev) => prev.filter((p) => p.id !== id));
   }
 
   function handleCreated(post: Post) {
@@ -149,19 +145,17 @@ export default function Novedades() {
                 >
                   {categoryLabel[p.category]}
                 </span>
-                {p.author_id === session!.user.id && (
-                  <button
-                    onClick={() => handleDelete(p.id)}
-                    className="rounded-lg p-1.5 text-white/40 transition hover:bg-white/10 hover:text-red-300"
-                    title="Eliminar"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                )}
+                <PostActionsMenu
+                  post={p}
+                  currentUserId={session?.user.id}
+                  onDeleted={(postId) => setPosts((current) => current.filter((post) => post.id !== postId))}
+                />
               </div>
 
-              <h3 className="text-base font-semibold leading-snug text-white sm:text-lg">{p.title}</h3>
-              <p className="mt-1.5 line-clamp-4 whitespace-pre-line text-sm text-white/70 sm:mt-2 sm:line-clamp-none"><EmojiText text={p.body} /></p>
+              {p.title && <h3 className="text-base font-semibold leading-snug text-white sm:text-lg">{p.title}</h3>}
+              <p className={`${p.title ? 'mt-1.5 sm:mt-2' : 'mt-2'} line-clamp-4 whitespace-pre-wrap break-words text-sm text-white/70 sm:line-clamp-none`}><SocialPostText text={p.body} mentions={p.mentions} /></p>
+
+              <SocialPostImages urls={p.image_urls} />
 
               {p.link_url && <LinkPreview url={p.link_url} className="mt-2.5 sm:mt-3" />}
 

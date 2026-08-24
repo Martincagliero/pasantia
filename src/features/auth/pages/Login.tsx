@@ -111,13 +111,14 @@ export default function Login() {
       {/* Contenido */}
       <div className="relative z-10 flex h-full items-center justify-center px-4 py-[clamp(3.25rem,8vh,4.5rem)] sm:px-6">
         <div className="w-full max-w-[28rem]">
-          <Link
-            to="/"
+          <button
+            type="button"
+            onClick={() => navigate('/', { flushSync: true })}
             aria-label="Volver al inicio"
             className="absolute left-4 top-[max(1rem,env(safe-area-inset-top))] z-20 inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-white/80 transition hover:text-white sm:left-1/2 sm:-translate-x-1/2"
           >
             <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Volver al inicio</span>
-          </Link>
+          </button>
 
           <div className="rounded-2xl border border-white/25 bg-white/[0.10] p-[clamp(1rem,3vh,1.75rem)] shadow-[0_24px_70px_-24px_rgba(2,14,56,0.45)] backdrop-blur-xl">
             <div>

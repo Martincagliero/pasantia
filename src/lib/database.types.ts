@@ -152,6 +152,12 @@ export interface ApplicationWithStudent extends Application {
 /** Categorías de publicación del panel de Novedades. */
 export type PostCategory = 'novedad' | 'proyecto' | 'busqueda' | 'recurso';
 
+export interface PostMention {
+  id: string;
+  name: string;
+  role: 'estudiante' | 'empresa';
+}
+
 /** Publicación del panel de Novedades (la pueden crear estudiantes y empresas). */
 export interface Post {
   id: string;
@@ -162,6 +168,8 @@ export interface Post {
   body: string;
   category: PostCategory;
   link_url: string | null;
+  image_urls?: string[];
+  mentions?: PostMention[];
   created_at: string;
 }
 
@@ -213,7 +221,7 @@ export interface CommunityPost {
   created_at: string;
 }
 
-export type ReportTargetType = 'internship' | 'community_post' | 'profile';
+export type ReportTargetType = 'internship' | 'community_post' | 'post' | 'profile';
 
 export interface Report {
   id: string;

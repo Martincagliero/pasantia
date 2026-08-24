@@ -5,6 +5,9 @@ import { supabase } from '../../lib/supabase';
 import type { Post, PostCategory } from '../../lib/database.types';
 import { Card } from '../ui/primitives';
 import { LinkPreview } from '../ui/LinkPreview';
+import { SocialPostImages, SocialPostText } from './SocialPostContent';
+import { PostActionsMenu } from './PostActionsMenu';
+import { useAuth } from '../auth/AuthProvider';
 
 const CATEGORY_LABEL: Record<PostCategory, string> = {
   novedad: 'Novedad',
@@ -36,6 +39,7 @@ export function UserPosts({
   title?: string;
   emptyText?: string;
 }) {
+  const { session } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,7 +49,7 @@ export function UserPosts({
       try {
         const { data } = await supabase
           .from('posts')
-          .select('id, author_id, author_name, author_role, title, body, category, link_url, created_at')
+          .select('id, author_id, author_name, author_role, title, body, category, link_url, image_urls, mentions, created_at')
           .eq('author_id', authorId)
           .order('created_at', { ascending: false })
           .limit(10);
@@ -83,9 +87,15 @@ export function UserPosts({
                     {CATEGORY_LABEL[p.category] ?? 'Novedad'}
                   </span>
                   <span className="ml-auto text-xs text-white/40">{formatDate(p.created_at)}</span>
+                  <PostActionsMenu
+                    post={p}
+                    currentUserId={session?.user.id}
+                    onDeleted={(postId) => setPosts((current) => current.filter((post) => post.id !== postId))}
+                  />
                 </div>
-                <h4 className="font-medium text-white">{p.title}</h4>
-                {p.body && <p className="mt-1 line-clamp-3 text-sm text-white/65">{p.body}</p>}
+                {p.title && <h4 className="font-medium text-white">{p.title}</h4>}
+                {p.body && <p className="mt-1 line-clamp-3 whitespace-pre-wrap break-words text-sm text-white/65"><SocialPostText text={p.body} mentions={p.mentions} /></p>}
+                <SocialPostImages urls={p.image_urls} />
                 {url && <LinkPreview url={url} className="mt-2" />}
               </div>
             );

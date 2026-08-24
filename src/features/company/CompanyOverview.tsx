@@ -26,6 +26,8 @@ interface InternshipPerformance {
   applications: number;
 }
 
+type MobilePanel = 'funnel' | 'priorities' | 'performance' | 'activity';
+
 const EMPTY_FUNNEL: Record<AppStatus, number> = {
   pendiente: 0,
   en_revision: 0,
@@ -42,6 +44,7 @@ export default function CompanyOverview() {
   const [funnel, setFunnel] = useState<Record<AppStatus, number>>(EMPTY_FUNNEL);
   const [performance, setPerformance] = useState<InternshipPerformance[]>([]);
   const [recent, setRecent] = useState<RecentApp[]>([]);
+  const [mobilePanel, setMobilePanel] = useState<MobilePanel>('funnel');
 
   useEffect(() => {
     let active = true;
@@ -121,7 +124,7 @@ export default function CompanyOverview() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
             <p className="text-xs font-medium uppercase text-white/45">Panel de empresa</p>
@@ -136,23 +139,23 @@ export default function CompanyOverview() {
               : 'No tenés postulaciones pendientes. Todo al día.'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {paid && <Button as="link" to="/app/explorar" variant="secondary" size="md">Explorar talento</Button>}
-          <Button as="link" to="/app/publicar" variant="primary" size="md">
-            <Plus className="h-4 w-4" /> Publicar pasantía
+        <div className="flex items-center gap-2 [&>*]:min-w-0 [&>*]:flex-1 sm:[&>*]:flex-none">
+          {paid && <Button as="link" to="/app/explorar" variant="secondary" size="sm"><span className="sm:hidden">Talentos</span><span className="hidden sm:inline">Explorar talento</span></Button>}
+          <Button as="link" to="/app/publicar" variant="primary" size="sm">
+            <Plus className="h-4 w-4" /> <span className="sm:hidden">Publicar</span><span className="hidden sm:inline">Publicar pasantía</span>
           </Button>
         </div>
       </div>
 
       {paid ? (
         <section className="overflow-hidden rounded-lg border border-[#24272e] bg-[#111317] shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
-          <div className="flex flex-col gap-3 border-b border-[#24272e] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <div className="flex items-center justify-between gap-3 border-b border-[#24272e] px-3.5 py-3 sm:px-5 sm:py-4">
             <div>
               <p className="text-sm font-semibold text-[#f4f6f8]">Pulso de contratación</p>
-              <p className="mt-0.5 text-xs text-[#8e96a3]">Vista general de todas tus búsquedas</p>
+              <p className="mt-0.5 text-[11px] text-[#8e96a3] sm:text-xs">Vista general de tus búsquedas</p>
             </div>
-            <span className="inline-flex w-fit items-center gap-1.5 text-[11px] text-[#707887]">
-              <Activity className="h-3.5 w-3.5 text-[#4b9cff]" /> Datos actualizados
+            <span className="inline-flex w-fit shrink-0 items-center gap-1.5 text-[10px] text-[#707887] sm:text-[11px]">
+              <Activity className="h-3.5 w-3.5 text-[#4b9cff]" /> <span className="hidden min-[380px]:inline">Actualizado</span>
             </span>
           </div>
 
@@ -163,8 +166,30 @@ export default function CompanyOverview() {
             <ProMetric icon={Target} label="Conversión" value={`${selectedRate}%`} detail={`${funnel.seleccionado} seleccionados`} />
           </div>
 
+          <div className="flex overflow-x-auto border-b border-[#24272e] px-2 py-2 lg:hidden" role="tablist" aria-label="Secciones del panel">
+            {([
+              ['funnel', 'Embudo'],
+              ['priorities', 'Prioridades'],
+              ['performance', 'Pasantías'],
+              ['activity', 'Actividad'],
+            ] as const).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={mobilePanel === id}
+                onClick={() => setMobilePanel(id)}
+                className={`shrink-0 rounded-md px-3 py-1.5 text-[11px] font-medium transition ${
+                  mobilePanel === id ? 'bg-[#272b32] text-[#f4f6f8]' : 'text-[#737b88]'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           <div className="grid lg:grid-cols-[minmax(0,1.45fr)_minmax(260px,0.75fr)]">
-            <div className="border-b border-[#24272e] p-4 sm:p-5 lg:border-b-0 lg:border-r">
+            <div className={`${mobilePanel === 'funnel' ? 'block' : 'hidden'} p-4 sm:p-5 lg:block lg:border-r`}>
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-semibold text-[#f4f6f8]">Embudo de candidatos</h2>
@@ -188,7 +213,7 @@ export default function CompanyOverview() {
               </div>
             </div>
 
-            <div className="p-4 sm:p-5">
+            <div className={`${mobilePanel === 'priorities' ? 'block' : 'hidden'} p-4 sm:p-5 lg:block`}>
               <h2 className="text-sm font-semibold text-[#f4f6f8]">Prioridades</h2>
               <div className="mt-3 divide-y divide-[#24272e]">
                 <PriorityLink to="/app/postulaciones-recibidas" icon={Clock} value={stats.pendientes} label="sin revisar" />
@@ -199,7 +224,7 @@ export default function CompanyOverview() {
           </div>
 
           <div className="grid border-t border-[#24272e] lg:grid-cols-2">
-            <div className="border-b border-[#24272e] p-4 sm:p-5 lg:border-b-0 lg:border-r">
+            <div className={`${mobilePanel === 'performance' ? 'block' : 'hidden'} p-4 sm:p-5 lg:block lg:border-r`}>
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-[#f4f6f8]">Interés por pasantía</h2>
                 <Link to="/app/mis-pasantias" className="text-xs text-[#737b88] hover:text-[#b9c0ca]">Ver publicaciones</Link>
@@ -223,7 +248,7 @@ export default function CompanyOverview() {
               )}
             </div>
 
-            <div className="p-4 sm:p-5">
+            <div className={`${mobilePanel === 'activity' ? 'block' : 'hidden'} p-4 sm:p-5 lg:block`}>
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-[#f4f6f8]">Actividad reciente</h2>
                 {recent.length > 0 && <Link to="/app/postulaciones-recibidas" className="text-xs text-[#737b88] hover:text-[#b9c0ca]">Ver todas</Link>}
@@ -264,13 +289,13 @@ export default function CompanyOverview() {
 
 function ProMetric({ icon: Icon, label, value, detail }: { icon: LucideIcon; label: string; value: string | number; detail: string }) {
   return (
-    <div className="border-b border-r border-[#24272e] p-4 last:border-r-0 sm:p-5 lg:border-b-0">
+    <div className="border-b border-r border-[#24272e] p-3 sm:p-5 lg:border-b-0">
       <div className="flex items-center gap-2 text-[#8e96a3]">
         <Icon className="h-3.5 w-3.5" strokeWidth={1.8} />
-        <span className="text-[11px]">{label}</span>
+        <span className="truncate text-[10px] sm:text-[11px]">{label}</span>
       </div>
-      <p className="mt-3 text-2xl font-semibold text-[#f4f6f8]">{value}</p>
-      <p className="mt-1 text-[11px] text-[#646c79]">{detail}</p>
+      <p className="mt-2 text-xl font-semibold text-[#f4f6f8] sm:mt-3 sm:text-2xl">{value}</p>
+      <p className="mt-1 hidden text-[11px] text-[#646c79] min-[360px]:block">{detail}</p>
     </div>
   );
 }
@@ -294,7 +319,7 @@ function QuickLink({ to, title, desc }: { to: string; title: string; desc: strin
     >
       <div className="min-w-0">
         <p className="font-semibold text-white">{title}</p>
-        <p className="mt-0.5 text-sm text-white/60">{desc}</p>
+        <p className="mt-0.5 hidden text-sm text-white/60 sm:block">{desc}</p>
       </div>
       <ArrowRight className="h-5 w-5 shrink-0 text-white/40 transition group-hover:translate-x-0.5 group-hover:text-white" />
     </Link>

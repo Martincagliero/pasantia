@@ -16,8 +16,10 @@ import {
   Trash2,
   CreditCard,
   X,
+  Flag,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { sendPushEvent } from '../../lib/notify';
 import { useAuth } from '../auth/AuthProvider';
 import type { Role } from '../../lib/database.types';
 import { Button } from '../../components/ui/Button';
@@ -86,7 +88,21 @@ interface PlanRequestRow {
   created_at: string;
 }
 
-type Tab = 'usuarios' | 'solicitudes' | 'planes' | 'promotores';
+interface ReportRow {
+  id: string;
+  reporter_id: string;
+  reporter_name: string;
+  reporter_email: string;
+  target_type: 'internship' | 'community_post' | 'post' | 'profile';
+  target_id: string;
+  target_label: string;
+  reason: string;
+  details: string | null;
+  status: 'pendiente' | 'revisado' | 'descartado';
+  created_at: string;
+}
+
+type Tab = 'usuarios' | 'solicitudes' | 'planes' | 'denuncias' | 'promotores';
 
 const roleLabel: Record<string, string> = {
   estudiante: 'Estudiante',
@@ -118,16 +134,19 @@ export default function AdminPanel() {
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [promoters, setPromoters] = useState<PromoterStat[]>([]);
   const [planRequests, setPlanRequests] = useState<PlanRequestRow[]>([]);
+  const [reports, setReports] = useState<ReportRow[]>([]);
+  const [reportsError, setReportsError] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const [u, r, p, plans] = await Promise.all([
+    const [u, r, p, plans, reportList] = await Promise.all([
       supabase.rpc('admin_list_users'),
       supabase.rpc('admin_list_requests'),
       supabase.rpc('admin_promoter_stats'),
       supabase.rpc('admin_list_plan_requests'),
+      supabase.rpc('admin_list_reports'),
     ]);
     if (u.error || r.error || p.error || plans.error) {
       setError('No pudimos cargar los datos. ¿Corriste la migración y te marcaste como admin?');
@@ -137,6 +156,8 @@ export default function AdminPanel() {
     setUsers((u.data ?? []) as UserRow[]);
     setRequests((r.data ?? []) as RequestRow[]);
     setPlanRequests((plans.data ?? []) as PlanRequestRow[]);
+    setReports((reportList.data ?? []) as ReportRow[]);
+    setReportsError(!!reportList.error);
     setPromoters(
       ((p.data ?? []) as PromoterStat[]).map((row) => ({
         ...row,
@@ -162,6 +183,7 @@ export default function AdminPanel() {
     { key: 'usuarios', label: 'Registrados', icon: Users, count: users.length },
     { key: 'solicitudes', label: 'Formulario', icon: ClipboardList, count: requests.length },
     { key: 'planes', label: 'Planes', icon: CreditCard, count: planRequests.filter((request) => request.status === 'pending').length },
+    { key: 'denuncias', label: 'Denuncias', icon: Flag, count: reports.filter((report) => report.status === 'pendiente').length },
     { key: 'promotores', label: 'Promotores', icon: Rocket, count: promoters.length },
   ];
 
@@ -169,7 +191,7 @@ export default function AdminPanel() {
     <div>
       <PageHeader
         title="Administración"
-        description="Usuarios, solicitudes del formulario y promotores."
+        description="Usuarios, solicitudes, denuncias y promotores."
         action={
           <Button variant="secondary" size="sm" onClick={load}>
             <RefreshCw className="h-4 w-4" /> Actualizar
@@ -207,9 +229,131 @@ export default function AdminPanel() {
         <RequestsTab requests={requests} users={users} onChanged={load} />
       ) : tab === 'planes' ? (
         <PlanRequestsTab requests={planRequests} onChanged={load} />
+      ) : tab === 'denuncias' ? (
+        <ReportsTab reports={reports} setupError={reportsError} onChanged={load} />
       ) : (
         <PromotersTab promoters={promoters} onChanged={load} />
       )}
+    </div>
+  );
+}
+
+const reportTargetLabel: Record<ReportRow['target_type'], string> = {
+  internship: 'Pasantía',
+  community_post: 'Anuncio de comunidad',
+  post: 'Publicación',
+  profile: 'Perfil',
+};
+
+const reportReasonLabel: Record<string, string> = {
+  falsa: 'Pasantía falsa o engañosa',
+  estafa: 'Posible estafa',
+  no_es_pasantia: 'No es una pasantía',
+  discriminatorio: 'Contenido discriminatorio',
+  spam: 'Spam o publicidad',
+  acoso: 'Acoso o discurso de odio',
+  ilegal: 'Contenido ilegal',
+  copyright: 'Infracción de derechos de autor',
+  suplantacion: 'Suplantación de identidad',
+  falso: 'Perfil falso',
+  otro: 'Otro motivo',
+};
+
+function ReportsTab({
+  reports,
+  setupError,
+  onChanged,
+}: {
+  reports: ReportRow[];
+  setupError: boolean;
+  onChanged: () => void;
+}) {
+  const [filter, setFilter] = useState<'todos' | ReportRow['status']>('pendiente');
+  const [resolving, setResolving] = useState<string | null>(null);
+
+  async function setStatus(id: string, status: ReportRow['status']) {
+    setResolving(id);
+    const { error } = await supabase.rpc('admin_set_report_status', { p_id: id, p_status: status });
+    setResolving(null);
+    if (error) {
+      alert(`No se pudo actualizar la denuncia: ${error.message}`);
+      return;
+    }
+    onChanged();
+  }
+
+  if (setupError) {
+    return (
+      <Card className="border-red-400/30 bg-red-500/5 text-sm text-red-700">
+        Falta actualizar la migración de denuncias. Ejecutá supabase/migracion-reportes.sql en el SQL Editor.
+      </Card>
+    );
+  }
+
+  const filtered = filter === 'todos' ? reports : reports.filter((report) => report.status === filter);
+
+  return (
+    <div>
+      <div className="mb-4 flex justify-end">
+        <select
+          value={filter}
+          onChange={(event) => setFilter(event.target.value as 'todos' | ReportRow['status'])}
+          className="rounded-full border border-white/12 bg-white/5 px-4 py-2 text-sm text-white outline-none focus:border-brand-400/60"
+          aria-label="Filtrar denuncias por estado"
+        >
+          <option value="pendiente">Pendientes</option>
+          <option value="revisado">Revisadas</option>
+          <option value="descartado">Descartadas</option>
+          <option value="todos">Todas</option>
+        </select>
+      </div>
+
+      <div className="space-y-3">
+        {filtered.map((report) => (
+          <Card key={report.id}>
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-red-400/25 bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-700">
+                    {reportTargetLabel[report.target_type]}
+                  </span>
+                  <span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-xs text-white/60">
+                    {report.status === 'pendiente' ? 'Pendiente' : report.status === 'revisado' ? 'Revisada' : 'Descartada'}
+                  </span>
+                  <span className="text-xs text-white/45">{fmtDate(report.created_at)}</span>
+                </div>
+                <p className="mt-3 font-semibold text-white">{report.target_label}</p>
+                <p className="mt-1 text-sm text-white/75">
+                  Motivo: {reportReasonLabel[report.reason] ?? report.reason}
+                </p>
+                {report.details && (
+                  <p className="mt-2 whitespace-pre-wrap rounded-lg bg-white/5 px-3 py-2 text-sm text-white/70">
+                    {report.details}
+                  </p>
+                )}
+                <p className="mt-3 text-xs text-white/45">
+                  Denunció {report.reporter_name}{report.reporter_email ? ` · ${report.reporter_email}` : ''}
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                {report.status !== 'descartado' && (
+                  <Button variant="ghost" size="sm" disabled={resolving === report.id} onClick={() => void setStatus(report.id, 'descartado')}>
+                    Descartar
+                  </Button>
+                )}
+                {report.status !== 'revisado' && (
+                  <Button variant="primary" size="sm" disabled={resolving === report.id} onClick={() => void setStatus(report.id, 'revisado')}>
+                    <Check className="h-4 w-4" /> Marcar revisada
+                  </Button>
+                )}
+              </div>
+            </div>
+          </Card>
+        ))}
+        {filtered.length === 0 && (
+          <Card className="text-center text-sm text-white/45">No hay denuncias en este estado.</Card>
+        )}
+      </div>
     </div>
   );
 }
@@ -231,6 +375,7 @@ function PlanRequestsTab({ requests, onChanged }: { requests: PlanRequestRow[]; 
       alert(`No se pudo ${action}: ${error.message}`);
       return;
     }
+    void sendPushEvent('plan_resolved', request.id);
     onChanged();
   }
 

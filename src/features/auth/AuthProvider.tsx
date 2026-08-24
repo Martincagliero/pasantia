@@ -228,6 +228,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [loadProfile, clearProfile]);
 
+  useEffect(() => {
+    const user = session?.user;
+    if (!user) return;
+
+    const profileChannel = supabase
+      .channel(`profile-live-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+        () => {
+          void loadProfile(user);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(profileChannel);
+    };
+  }, [session?.user, loadProfile]);
+
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error ? translateError(error.message) : null };

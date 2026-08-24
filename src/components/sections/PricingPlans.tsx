@@ -21,7 +21,7 @@ const studentPlans = [
     suffix: '/mes',
     description: 'Para moverte sin límites y contactar antes que nadie.',
     featured: true,
-    features: ['Postulaciones ilimitadas', 'Conexiones sin límite', 'Mensajes sin conexión previa', 'Podés solicitar ser promotor/a', 'Mayor visibilidad del perfil'],
+    features: ['Postulaciones ilimitadas', 'Conexiones sin límite', 'Mensajes sin conexión previa', 'Promotor/a con enlace personal incluido', 'Mayor visibilidad del perfil'],
   },
 ];
 

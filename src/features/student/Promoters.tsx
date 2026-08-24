@@ -1,10 +1,8 @@
 // Estudiante: sección "Promotores".
 // - Todos ven el RANKING de promotores (nombre + cuánta gente sumó).
-// - Si el usuario ES promotor (lo asignó el admin), ve su enlace y sus totales.
-// - Si no lo es, ve un botón para solicitar ser promotor por Instagram.
-// Los códigos NO se autogeneran: los asigna el admin.
+// - Estudiante Pro recibe automáticamente su enlace y ve sus totales.
 import { useEffect, useState } from 'react';
-import { Copy, Check, Share2, Trophy, Send, Trash2, GraduationCap, Building2, Users, Link2, Info, X, Gift, Rocket, Loader2, ChevronDown } from 'lucide-react';
+import { Copy, Check, Share2, Trophy, Trash2, GraduationCap, Building2, Users, Link2, Info, X, Gift, Rocket, Loader2, ChevronDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { createAchievementStory, shareAchievementFile } from '../../lib/achievementStory';
@@ -60,9 +58,6 @@ export default function Promoters() {
   const [me, setMe] = useState<MyPromoter | null>(null);
   const [ranking, setRanking] = useState<RankRow[]>([]);
   const [copied, setCopied] = useState(false);
-  const [promoterRequestStatus, setPromoterRequestStatus] = useState<'none' | 'pending' | 'rejected'>('none');
-  const [requestingPromoter, setRequestingPromoter] = useState(false);
-  const [requestError, setRequestError] = useState('');
   const [showInfo, setShowInfo] = useState(false);
   const [promoterDetailsOpen, setPromoterDetailsOpen] = useState(false);
   const [sharingAchievement, setSharingAchievement] = useState(false);
@@ -88,17 +83,9 @@ export default function Promoters() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const [mine, rank, request] = await Promise.all([
+      const [mine, rank] = await Promise.all([
         supabase.rpc('my_promoter'),
         supabase.rpc('public_promoter_ranking'),
-        supabase
-          .from('plan_requests')
-          .select('status')
-          .eq('user_id', session!.user.id)
-          .eq('kind', 'promoter')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
       ]);
       if (!active) return;
 
@@ -126,14 +113,12 @@ export default function Promoters() {
           comunidades: Number(r.comunidades),
         }))
       );
-      const status = request.data?.status;
-      setPromoterRequestStatus(status === 'pending' ? 'pending' : status === 'rejected' ? 'rejected' : 'none');
       setLoading(false);
     })();
     return () => {
       active = false;
     };
-  }, [session]);
+  }, [session, profile?.plan, profile?.plan_expires_at]);
 
   async function removePromoter(code: string) {
     const { error } = await supabase.rpc('admin_remove_promoter', { p_code: code });
@@ -189,34 +174,6 @@ export default function Promoters() {
     } finally {
       setSharingAchievement(false);
     }
-  }
-
-  async function requestPromoter() {
-    if (!profile || requestingPromoter || promoterRequestStatus === 'pending') return;
-    setRequestingPromoter(true);
-    setRequestError('');
-    const { error } = await supabase.from('plan_requests').insert({
-      user_id: profile.id,
-      requested_plan: null,
-      kind: 'promoter',
-      internship_id: null,
-      featured_days: null,
-      message: 'Solicitud para ser promotor/a de PasantIA',
-    });
-    setRequestingPromoter(false);
-    if (error) {
-      if (error.code === '23505') {
-        setPromoterRequestStatus('pending');
-        return;
-      }
-      setRequestError(
-        /plan_requests|schema cache|relation|kind/i.test(error.message)
-          ? 'Falta actualizar la migración freemium en Supabase.'
-          : 'No pudimos enviar la solicitud. Intentá nuevamente.'
-      );
-      return;
-    }
-    setPromoterRequestStatus('pending');
   }
 
   if (loading) return <PageLoader />;
@@ -379,24 +336,14 @@ export default function Promoters() {
             )}
           </div>
         </Card>
-      ) : promoterRequestStatus === 'pending' ? (
-        <Card className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-brand-400/25 bg-brand-500/10 text-brand-400">
-            <Check className="h-6 w-6" />
-          </div>
-          <h3 className="text-base font-semibold text-white">Solicitud enviada</h3>
-          <p className="mx-auto mt-2 max-w-md text-sm text-white/60">
-            Tu solicitud para ser promotor/a está pendiente. Te vamos a notificar cuando sea aprobada.
-          </p>
-        </Card>
       ) : activePlan(profile) !== 'pro' ? (
         <Card className="mb-6 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-brand-500">
             <Rocket className="h-6 w-6" />
           </div>
-          <h3 className="text-base font-semibold text-white">Promotores es un beneficio Pro</h3>
+          <h3 className="text-base font-semibold text-white">Tu enlace de promotor viene con Pro</h3>
           <p className="mx-auto mt-2 max-w-md text-sm text-white/60">
-            Con Estudiante Pro podés solicitar tu enlace personal, sumar personas y participar del ranking.
+            Al activar Estudiante Pro recibís automáticamente tu enlace personal, sumás personas y participás del ranking.
           </p>
           <div className="mt-5 flex justify-center">
             <Button as="link" to="/app/planes" variant="primary" size="sm">Ver Estudiante Pro</Button>
@@ -405,20 +352,12 @@ export default function Promoters() {
       ) : (
         <Card className="mb-6 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/70">
-            <Send className="h-6 w-6" />
+            <Loader2 className="h-6 w-6 animate-spin" />
           </div>
-          <h3 className="text-base font-semibold text-white">¿Querés ser promotor/a?</h3>
+          <h3 className="text-base font-semibold text-white">Activando tu enlace de promotor</h3>
           <p className="mx-auto mt-2 max-w-md text-sm text-white/60">
-            Enviá una solicitud para recibir tu enlace personal. La revisamos una vez y te avisamos
-            por notificación cuando quede habilitado.
+            Tu plan Pro ya está activo. El enlace personal va a aparecer acá automáticamente.
           </p>
-          <div className="mt-5 flex justify-center">
-            <Button variant="primary" size="sm" onClick={() => void requestPromoter()} disabled={requestingPromoter}>
-              {requestingPromoter ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              {promoterRequestStatus === 'rejected' ? 'Volver a solicitar' : 'Solicitar ser promotor'}
-            </Button>
-          </div>
-          {requestError && <p className="mt-3 text-xs text-red-300">{requestError}</p>}
         </Card>
       )}
 

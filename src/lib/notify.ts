@@ -10,7 +10,8 @@ export type PushEventType =
   | 'group_message'
   | 'post'
   | 'internship'
-  | 'member';
+  | 'member'
+  | 'plan_resolved';
 
 /**
  * Solicita un push a partir de un evento real de la base. La Edge Function

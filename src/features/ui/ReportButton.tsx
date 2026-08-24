@@ -3,6 +3,7 @@
 // El reporte se guarda en la tabla `reports` (ver migracion-reportes.sql) y queda
 // privado: solo el dueño de la plataforma lo revisa desde Supabase.
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Flag, Loader2, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
@@ -58,9 +59,10 @@ interface ReportButtonProps {
   /** Estilo: icono suelto (por defecto) o botón con texto. */
   variant?: 'icon' | 'button' | 'menu';
   className?: string;
+  onOpen?: () => void;
 }
 
-export function ReportButton({ targetType, targetId, variant = 'icon', className = '' }: ReportButtonProps) {
+export function ReportButton({ targetType, targetId, variant = 'icon', className = '', onOpen }: ReportButtonProps) {
   const { session } = useAuth();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState(REASONS[targetType][0].value);
@@ -69,6 +71,11 @@ export function ReportButton({ targetType, targetId, variant = 'icon', className
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useModalGuard(open);
+
+  function openReport() {
+    onOpen?.();
+    setOpen(true);
+  }
 
   function close() {
     setOpen(false);
@@ -114,7 +121,8 @@ export function ReportButton({ targetType, targetId, variant = 'icon', className
     <>
       {variant === 'button' ? (
         <button
-          onClick={() => setOpen(true)}
+          type="button"
+          onClick={openReport}
           className={`inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-red-300 ${className}`}
         >
           <Flag size={16} /> Reportar
@@ -122,14 +130,15 @@ export function ReportButton({ targetType, targetId, variant = 'icon', className
       ) : variant === 'menu' ? (
         <button
           type="button"
-          onClick={() => setOpen(true)}
-          className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white/75 transition hover:bg-white/8 hover:text-red-300 ${className}`}
+          onClick={openReport}
+          className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold text-slate-900 transition hover:bg-red-50 hover:text-red-700 ${className}`}
         >
           <Flag className="h-4 w-4" /> Denunciar
         </button>
       ) : (
         <button
-          onClick={() => setOpen(true)}
+          type="button"
+          onClick={openReport}
           className={`shrink-0 rounded-lg p-1.5 text-white/35 transition hover:bg-white/10 hover:text-red-300 ${className}`}
           title="Reportar"
           aria-label="Reportar"
@@ -138,14 +147,18 @@ export function ReportButton({ targetType, targetId, variant = 'icon', className
         </button>
       )}
 
-      {open && (
+      {open && createPortal(
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4 py-8"
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 px-4 py-8"
           onClick={close}
+          role="presentation"
         >
           <div
-            className="glass w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-3xl border border-white/12 p-5 sm:p-6"
+            className="dash-panel w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl border border-white/12 p-5 shadow-2xl sm:p-6"
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="report-dialog-title"
           >
             {done ? (
               <div className="py-4 text-center">
@@ -168,7 +181,7 @@ export function ReportButton({ targetType, targetId, variant = 'icon', className
                   <Flag className="h-4 w-4" />
                   <span className="text-xs font-semibold uppercase tracking-wide">Reportar</span>
                 </div>
-                <h2 className="text-lg font-bold text-white">
+                <h2 id="report-dialog-title" className="text-lg font-bold text-white">
                   ¿Por qué querés reportar {TARGET_LABEL[targetType]}?
                 </h2>
                 <p className="mt-1.5 text-sm text-white/55">
@@ -176,19 +189,25 @@ export function ReportButton({ targetType, targetId, variant = 'icon', className
                 </p>
 
                 <div className="mt-5 space-y-3">
-                  <SelectField value={reason} onChange={(e) => setReason(e.target.value)}>
-                    {REASONS[targetType].map((r) => (
-                      <option key={r.value} value={r.value}>
-                        {r.label}
-                      </option>
-                    ))}
-                  </SelectField>
-                  <TextArea
-                    value={details}
-                    onChange={(e) => setDetails(e.target.value)}
-                    placeholder="Contanos más (opcional)…"
-                    rows={3}
-                  />
+                  <label className="block">
+                    <span className="mb-1.5 block text-sm font-semibold text-white/80">Motivo</span>
+                    <SelectField value={reason} onChange={(e) => setReason(e.target.value)}>
+                      {REASONS[targetType].map((r) => (
+                        <option key={r.value} value={r.value}>
+                          {r.label}
+                        </option>
+                      ))}
+                    </SelectField>
+                  </label>
+                  <label className="block">
+                    <span className="mb-1.5 block text-sm font-semibold text-white/80">Detalles (opcional)</span>
+                    <TextArea
+                      value={details}
+                      onChange={(e) => setDetails(e.target.value)}
+                      placeholder="Contanos qué pasó"
+                      rows={3}
+                    />
+                  </label>
                 </div>
 
                 {error && (
@@ -208,7 +227,8 @@ export function ReportButton({ targetType, targetId, variant = 'icon', className
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.querySelector('.dash-root') ?? document.body
       )}
     </>
   );

@@ -173,6 +173,32 @@ Deno.serve(async (req) => {
       body = `${member.full_name || 'Un nuevo usuario'} se sumó a la plataforma.`;
       url = `/app/explorar?u=${member.id}`;
       broadcast = true;
+    } else if (event_type === 'plan_resolved') {
+      const [{ data: request }, { data: adminProfile }] = await Promise.all([
+        admin
+          .from('plan_requests')
+          .select('user_id, kind, requested_plan, status')
+          .eq('id', resource_id)
+          .maybeSingle(),
+        admin.from('profiles').select('is_admin').eq('id', caller.id).maybeSingle(),
+      ]);
+      if (!request || adminProfile?.is_admin !== true || request.status === 'pending') {
+        return json({ error: 'evento inválido' }, 403);
+      }
+      const approved = request.status === 'approved';
+      const isPromoter = request.kind === 'promoter';
+      title = approved
+        ? isPromoter ? 'Ya sos promotor/a de PasantIA' : 'Tu plan ya está activo'
+        : isPromoter ? 'Solicitud de promotor revisada' : 'Solicitud de plan revisada';
+      body = approved
+        ? isPromoter
+          ? 'Tu enlace personal ya está habilitado.'
+          : request.requested_plan === 'pro'
+            ? 'Ya tenés activos tus beneficios Pro y, si sos estudiante, tu enlace de promotor.'
+            : 'Ya podés usar todos los beneficios de tu nuevo plan.'
+        : 'Esta vez la solicitud no fue aprobada.';
+      url = isPromoter ? '/app/promotores' : '/app/planes';
+      recipientIds = [request.user_id];
     } else {
       return json({ error: 'tipo de evento no soportado' }, 400);
     }

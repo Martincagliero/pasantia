@@ -14,7 +14,7 @@ const STUDENT_PLANS = [
   {
     plan: 'pro' as const,
     name: 'Estudiante Pro',
-    features: ['Postulaciones ilimitadas', 'Conexiones sin límite', 'Mensajes sin conexión previa', 'Podés solicitar ser promotor/a', 'Mayor visibilidad del perfil'],
+    features: ['Postulaciones ilimitadas', 'Conexiones sin límite', 'Mensajes sin conexión previa', 'Promotor/a con enlace personal incluido', 'Mayor visibilidad del perfil'],
   },
 ];
 

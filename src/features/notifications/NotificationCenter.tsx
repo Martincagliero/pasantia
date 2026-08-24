@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bell, Briefcase, Check, MessageSquare, Newspaper, Rocket, ShieldCheck, UserPlus } from 'lucide-react';
+import { Bell, Briefcase, Check, MessageSquare, Newspaper, Rocket, ShieldCheck, Sparkles, UserPlus, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { useMessages } from '../messages/MessagesProvider';
 import pasantiaLogo from '../../assets/logo.png';
 
-type NotificationKind = 'message' | 'internship' | 'post' | 'admin_post' | 'member' | 'connection' | 'promoter';
+type NotificationKind = 'message' | 'internship' | 'post' | 'admin_post' | 'member' | 'connection' | 'promoter' | 'plan';
 
 interface ActivityNotification {
   id: string;
@@ -26,6 +26,7 @@ const ICONS = {
   member: UserPlus,
   connection: UserPlus,
   promoter: Rocket,
+  plan: Sparkles,
 };
 
 function relativeTime(value: string): string {
@@ -39,7 +40,7 @@ function relativeTime(value: string): string {
 }
 
 export function NotificationCenter() {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const { openMessages } = useMessages();
   const navigate = useNavigate();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -47,6 +48,7 @@ export function NotificationCenter() {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<ActivityNotification[]>([]);
   const [lastSeen, setLastSeen] = useState(0);
+  const [planNotice, setPlanNotice] = useState<string | null>(null);
   const uid = profile?.id;
   const storageKey = uid ? `pasantia_notifications_seen_${uid}` : '';
 
@@ -60,7 +62,7 @@ export function NotificationCenter() {
     setLoading(true);
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     try {
-      const [messagesResult, internshipsResult, postsResult, membersResult, connectionsResult, promoterRequestsResult] = await Promise.all([
+      const [messagesResult, internshipsResult, postsResult, membersResult, connectionsResult, promoterRequestsResult, planRequestsResult] = await Promise.all([
         supabase
           .from('messages')
           .select('id, sender_id, content, created_at')
@@ -100,6 +102,15 @@ export function NotificationCenter() {
           .select('id, status, resolved_at')
           .eq('user_id', uid)
           .eq('kind', 'promoter')
+          .neq('status', 'pending')
+          .gte('resolved_at', since)
+          .order('resolved_at', { ascending: false })
+          .limit(2),
+        supabase
+          .from('plan_requests')
+          .select('id, requested_plan, status, resolved_at')
+          .eq('user_id', uid)
+          .eq('kind', 'subscription')
           .neq('status', 'pending')
           .gte('resolved_at', since)
           .order('resolved_at', { ascending: false })
@@ -231,6 +242,17 @@ export function NotificationCenter() {
           detail: request.status === 'approved' ? 'Tu enlace personal ya está habilitado.' : 'Esta vez tu solicitud no fue aprobada.',
           createdAt: request.resolved_at,
         })),
+        ...((planRequestsResult.data ?? []) as { id: string; requested_plan: 'pro' | 'enterprise'; status: 'approved' | 'rejected'; resolved_at: string }[]).map((request) => ({
+          id: `plan-${request.id}`,
+          kind: 'plan' as const,
+          title: request.status === 'approved' ? 'Tu plan ya está activo' : 'Solicitud de plan revisada',
+          detail: request.status === 'approved'
+            ? request.requested_plan === 'pro'
+              ? 'Ya tenés activos todos tus beneficios Pro.'
+              : 'Ya tenés activos todos los beneficios de tu nuevo plan.'
+            : 'Esta vez la solicitud no fue aprobada.',
+          createdAt: request.resolved_at,
+        })),
       ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setItems(next.slice(0, 6));
@@ -250,7 +272,16 @@ export function NotificationCenter() {
       .subscribe();
     const plansChannel = supabase
       .channel(`notification-plan-requests-${uid}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'plan_requests', filter: `user_id=eq.${uid}` }, () => {
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'plan_requests', filter: `user_id=eq.${uid}` }, (payload) => {
+        const request = payload.new as { kind?: string; requested_plan?: string; status?: string };
+        if (request.kind === 'subscription' && request.status === 'approved') {
+          setPlanNotice(
+            request.requested_plan === 'pro'
+              ? 'Tu plan Pro ya está activo. Tus beneficios y enlace de promotor ya están habilitados.'
+              : 'Tu nuevo plan ya está activo con todos sus beneficios.'
+          );
+          void refreshProfile();
+        }
         void load();
       })
       .subscribe();
@@ -259,7 +290,13 @@ export function NotificationCenter() {
       void supabase.removeChannel(postsChannel);
       void supabase.removeChannel(plansChannel);
     };
-  }, [load, uid]);
+  }, [load, refreshProfile, uid]);
+
+  useEffect(() => {
+    if (!planNotice) return;
+    const timer = window.setTimeout(() => setPlanNotice(null), 8000);
+    return () => window.clearTimeout(timer);
+  }, [planNotice]);
 
   useEffect(() => {
     function closeOnOutsideClick(event: MouseEvent) {
@@ -301,6 +338,7 @@ export function NotificationCenter() {
     }
     if (item.kind === 'connection') navigate('/app/explorar?tab=red&requests=1');
     if (item.kind === 'promoter') navigate('/app/promotores');
+    if (item.kind === 'plan') navigate('/app/planes');
     if (item.kind === 'member') navigate(`/app/explorar?u=${item.targetId}`);
     if (item.kind === 'internship') {
       navigate(
@@ -315,6 +353,20 @@ export function NotificationCenter() {
 
   return (
     <div ref={rootRef} className="relative">
+      {planNotice && (
+        <div className="fixed right-3 top-[calc(env(safe-area-inset-top)+4rem)] z-[70] flex w-[calc(100vw-1.5rem)] max-w-sm items-start gap-3 rounded-xl border border-brand-500/25 bg-white p-4 text-slate-900 shadow-2xl" role="status">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white">
+            <Sparkles className="h-4 w-4" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold">Plan activado</p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-600">{planNotice}</p>
+          </div>
+          <button type="button" onClick={() => setPlanNotice(null)} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100" aria-label="Cerrar notificación">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
       <button
         onClick={toggle}
         className="relative flex h-9 w-9 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"

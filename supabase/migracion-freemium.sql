@@ -30,6 +30,26 @@ CREATE TABLE IF NOT EXISTS public.plan_requests (
   )
 );
 
+-- La app escucha estas tablas para activar beneficios y avisos sin recargar.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_publication_tables
+      WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'profiles'
+    ) THEN
+      EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles';
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_publication_tables
+      WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'plan_requests'
+    ) THEN
+      EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.plan_requests';
+    END IF;
+  END IF;
+END;
+$$;
+
 -- Compatibilidad si la tabla ya fue creada por una versión anterior.
 ALTER TABLE public.plan_requests DROP CONSTRAINT IF EXISTS plan_requests_kind_check;
 ALTER TABLE public.plan_requests ADD CONSTRAINT plan_requests_kind_check
@@ -290,6 +310,7 @@ DECLARE
   r public.plan_requests%ROWTYPE;
   v_name TEXT;
   v_email TEXT;
+  v_role TEXT;
   v_base TEXT;
   v_code TEXT;
 BEGIN
@@ -299,6 +320,21 @@ BEGIN
   IF p_approve AND r.kind = 'subscription' THEN
     UPDATE public.profiles SET plan = r.requested_plan, plan_expires_at = now() + interval '30 days'
     WHERE id = r.user_id;
+    SELECT full_name, email, role::TEXT INTO v_name, v_email, v_role
+    FROM public.profiles WHERE id = r.user_id;
+    IF r.requested_plan = 'pro' AND v_role = 'estudiante'
+      AND NOT EXISTS (SELECT 1 FROM public.promoters WHERE profile_id = r.user_id) THEN
+      v_base := left(regexp_replace(lower(COALESCE(v_name, 'promotor')), '[^a-z0-9]+', '', 'g'), 12);
+      IF v_base = '' THEN v_base := 'promotor'; END IF;
+      v_code := v_base || substr(md5(r.user_id::text), 1, 8);
+      INSERT INTO public.promoters(code, profile_id, nombre, email)
+      VALUES (v_code, r.user_id, v_name, v_email);
+    END IF;
+    IF r.requested_plan = 'pro' AND v_role = 'estudiante' THEN
+      UPDATE public.plan_requests
+      SET status = 'approved', resolved_at = now(), admin_note = 'Incluido con Estudiante Pro'
+      WHERE user_id = r.user_id AND kind = 'promoter' AND status = 'pending';
+    END IF;
   ELSIF p_approve AND r.kind = 'featured' THEN
     UPDATE public.internships SET featured_until = now() + make_interval(days => r.featured_days)
     WHERE id = r.internship_id;
@@ -321,6 +357,26 @@ BEGIN
     admin_note = p_note, resolved_at = now() WHERE id = p_request_id;
 END;
 $$;
+
+-- Regulariza estudiantes que ya tenían Pro antes de que Promotor fuera automático.
+INSERT INTO public.promoters(code, profile_id, nombre, email)
+SELECT
+  left(COALESCE(NULLIF(regexp_replace(lower(p.full_name), '[^a-z0-9]+', '', 'g'), ''), 'promotor'), 12)
+    || substr(md5(p.id::TEXT), 1, 8),
+  p.id,
+  p.full_name,
+  p.email
+FROM public.profiles p
+WHERE p.role = 'estudiante'
+  AND public.current_plan(p.id) = 'pro'
+  AND NOT EXISTS (SELECT 1 FROM public.promoters promoter WHERE promoter.profile_id = p.id)
+ON CONFLICT DO NOTHING;
+
+UPDATE public.plan_requests request
+SET status = 'approved', resolved_at = COALESCE(request.resolved_at, now()), admin_note = 'Incluido con Estudiante Pro'
+WHERE request.kind = 'promoter'
+  AND request.status = 'pending'
+  AND EXISTS (SELECT 1 FROM public.promoters promoter WHERE promoter.profile_id = request.user_id);
 
 GRANT EXECUTE ON FUNCTION public.current_plan(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.can_message(UUID, UUID) TO authenticated;

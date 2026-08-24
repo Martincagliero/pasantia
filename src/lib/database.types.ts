@@ -3,7 +3,7 @@
 
 export type Role = 'estudiante' | 'empresa' | 'embajador';
 export type SubscriptionPlan = 'free' | 'pro' | 'enterprise';
-export type PlanRequestKind = 'subscription' | 'featured';
+export type PlanRequestKind = 'subscription' | 'featured' | 'promoter';
 export type PlanRequestStatus = 'pending' | 'approved' | 'rejected';
 
 export type ApplicationStatus =

@@ -9,11 +9,13 @@ export function UpgradePrompt({
   title,
   description,
   plan = 'pro',
+  planName,
   compact = false,
 }: {
   title: string;
   description: string;
   plan?: Exclude<SubscriptionPlan, 'free'>;
+  planName?: string;
   compact?: boolean;
 }) {
   const { profile } = useAuth();
@@ -33,6 +35,10 @@ export function UpgradePrompt({
     });
     setSending(false);
     if (requestError) {
+      if (requestError.code === '23505') {
+        setSent(true);
+        return;
+      }
       setError(/plan_requests|schema cache|relation/i.test(requestError.message)
         ? 'Falta ejecutar la migración freemium en Supabase.'
         : 'No pudimos enviar la solicitud. Intentá nuevamente.');
@@ -55,7 +61,7 @@ export function UpgradePrompt({
         className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold !text-white transition hover:bg-brand-400 disabled:opacity-60"
       >
         {sending && <Loader2 className="h-4 w-4 animate-spin" />}
-        {sent ? 'Solicitud enviada' : `Solicitar plan ${plan === 'enterprise' ? 'Empresa' : 'Pro'}`}
+        {sent ? 'Solicitud enviada' : `Solicitar plan ${planName ?? (plan === 'enterprise' ? 'Empresa' : 'Pro')}`}
       </button>
       {sent && <p className="mt-2 text-xs text-white/50">La solicitud ya aparece en el panel de PasantIA.</p>}
       {error && <p className="mt-2 text-xs text-red-500">{error}</p>}

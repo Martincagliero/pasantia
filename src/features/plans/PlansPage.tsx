@@ -14,7 +14,7 @@ const STUDENT_PLANS = [
   {
     plan: 'pro' as const,
     name: 'Estudiante Pro',
-    features: ['Conexiones sin límite', 'Mensajes sin conexión previa', 'Mayor visibilidad del perfil', 'Soporte prioritario'],
+    features: ['Conexiones sin límite', 'Mensajes sin conexión previa', 'Podés solicitar ser promotor/a', 'Mayor visibilidad del perfil', 'Soporte prioritario'],
   },
 ];
 
@@ -36,11 +36,24 @@ const COMPANY_PLANS = [
   },
 ];
 
+const AMBASSADOR_PLANS = [
+  {
+    plan: 'free' as const,
+    name: 'Embajador Gratis',
+    features: ['Perfil de comunidad', 'Publicación de anuncios', 'Directorio y ranking de comunidades'],
+  },
+  {
+    plan: 'pro' as const,
+    name: 'Embajador Premium',
+    features: ['Todo lo incluido en Gratis', 'Acompañamiento en campañas', 'Reportes de alcance', 'Soporte prioritario'],
+  },
+];
+
 export default function PlansPage() {
   const { profile } = useAuth();
   const role: Role = profile?.role ?? 'estudiante';
   const current = activePlan(profile);
-  const plans = role === 'empresa' ? COMPANY_PLANS : STUDENT_PLANS;
+  const plans = role === 'empresa' ? COMPANY_PLANS : role === 'embajador' ? AMBASSADOR_PLANS : STUDENT_PLANS;
 
   return (
     <div>
@@ -99,11 +112,11 @@ function PlanCard({
       </div>
       {active ? (
         <span className="mt-5 inline-flex w-fit rounded-full border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/60">
-          Plan actual: {planLabel(plan)}
+          Plan actual: {planLabel(plan, role)}
         </span>
       ) : plan !== 'free' ? (
         <div className="mt-5">
-          <UpgradePrompt title={`Pasar a ${name}`} description="Enviá la solicitud y el equipo de PasantIA se contactará para activar el plan." plan={plan} compact />
+          <UpgradePrompt title={`Pasar a ${name}`} description="Enviá la solicitud y el equipo de PasantIA se contactará para activar el plan." plan={plan} planName={planLabel(plan, role)} compact />
         </div>
       ) : null}
     </Card>

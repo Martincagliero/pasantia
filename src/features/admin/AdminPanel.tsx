@@ -77,7 +77,7 @@ interface PlanRequestRow {
   role: Role;
   current_plan: string;
   requested_plan: 'pro' | 'enterprise' | null;
-  kind: 'subscription' | 'featured';
+  kind: 'subscription' | 'featured' | 'promoter';
   internship_id: string | null;
   internship_title: string | null;
   featured_days: number | null;
@@ -208,7 +208,7 @@ export default function AdminPanel() {
       ) : tab === 'planes' ? (
         <PlanRequestsTab requests={planRequests} onChanged={load} />
       ) : (
-        <PromotersTab promoters={promoters} users={users} onChanged={load} />
+        <PromotersTab promoters={promoters} onChanged={load} />
       )}
     </div>
   );
@@ -252,8 +252,10 @@ function PlanRequestsTab({ requests, onChanged }: { requests: PlanRequestRow[]; 
               <p className="mt-1 text-sm text-white/55">{request.email}</p>
               <p className="mt-3 text-sm text-white">
                 {request.kind === 'subscription'
-                  ? `Plan ${request.requested_plan === 'enterprise' ? 'Empresa' : 'Pro'} · actual: ${request.current_plan}`
-                  : `Destacar “${request.internship_title || 'Pasantía'}” por ${request.featured_days} días`}
+                  ? `Plan ${request.role === 'embajador' ? 'Embajador Premium' : request.requested_plan === 'enterprise' ? 'Empresa' : 'Pro'} · actual: ${request.current_plan}`
+                  : request.kind === 'featured'
+                    ? `Destacar “${request.internship_title || 'Pasantía'}” por ${request.featured_days} días`
+                    : 'Solicitud para ser promotor/a'}
               </p>
               {request.message && <p className="mt-1 text-xs text-white/45">{request.message}</p>}
               <p className="mt-2 text-xs text-white/40">{fmtDate(request.created_at)}</p>
@@ -538,47 +540,17 @@ function RequestsTab({
   );
 }
 
-/* ----------------------------- Promotores ----------------------------- */
-function slugify(v: string): string {
-  return v
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '')
-    .slice(0, 20);
-}
-
 function PromotersTab({
   promoters,
-  users,
   onChanged,
 }: {
   promoters: PromoterStat[];
-  users: UserRow[];
   onChanged: () => void;
 }) {
-  const [userQuery, setUserQuery] = useState('');
-  const [selected, setSelected] = useState<UserRow | null>(null);
-  const [code, setCode] = useState('');
-  const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const linkFor = (c: string) => `${origin}/?ref=${c}`;
-
-  const matches = useMemo(() => {
-    const s = userQuery.trim().toLowerCase();
-    if (!s) return [];
-    return users
-      .filter((u) => (u.full_name + ' ' + u.email).toLowerCase().includes(s))
-      .slice(0, 6);
-  }, [userQuery, users]);
-
-  function pickUser(u: UserRow) {
-    setSelected(u);
-    setUserQuery(u.full_name || u.email);
-    if (!code) setCode(slugify(u.full_name || u.email.split('@')[0]));
-  }
 
   async function copy(c: string) {
     try {
@@ -590,23 +562,6 @@ function PromotersTab({
     }
   }
 
-  async function assign() {
-    const clean = code.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
-    if (!selected || !clean) return;
-    setSaving(true);
-    const { error } = await supabase.rpc('admin_assign_promoter', {
-      p_profile_id: selected.id,
-      p_code: clean,
-    });
-    setSaving(false);
-    if (!error) {
-      setSelected(null);
-      setUserQuery('');
-      setCode('');
-      onChanged();
-    }
-  }
-
   async function remove(c: string) {
     const { error } = await supabase.rpc('admin_remove_promoter', { p_code: c });
     if (!error) onChanged();
@@ -614,68 +569,9 @@ function PromotersTab({
 
   return (
     <div>
-      {/* Asignar promotor a un usuario registrado */}
-      <Card className="mb-5">
-        <p className="text-sm font-semibold text-white">Asignar promotor</p>
-        <p className="mt-1 text-xs text-white/55">
-          Elegí un usuario registrado y asignale un código. Su enlace queda: {origin}/?ref=codigo
-        </p>
-
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-          {/* Buscador de usuario */}
-          <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
-            <input
-              value={userQuery}
-              onChange={(e) => {
-                setUserQuery(e.target.value);
-                setSelected(null);
-              }}
-              placeholder="Buscar usuario por nombre o email…"
-              className="w-full rounded-full border border-white/12 bg-white/5 py-2 pl-9 pr-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-brand-400/60"
-            />
-            {!selected && matches.length > 0 && (
-              <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-2xl border border-white/12 bg-brand-700 shadow-xl">
-                {matches.map((u) => (
-                  <button
-                    key={u.id}
-                    onClick={() => pickUser(u)}
-                    className="flex w-full flex-col items-start px-4 py-2 text-left text-sm transition hover:bg-white/10"
-                  >
-                    <span className="text-white">{u.full_name || '—'}</span>
-                    <span className="text-xs text-white/50">
-                      {u.email} · {roleLabel[u.role] ?? u.role}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <input
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="codigo"
-            className="min-w-0 flex-1 rounded-full border border-white/12 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-white/40 outline-none focus:border-brand-400/60 sm:max-w-[180px]"
-          />
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={assign}
-            disabled={saving || !selected || !code.trim()}
-          >
-            {saving ? 'Asignando…' : 'Asignar'}
-          </Button>
-        </div>
-
-        {selected && (
-          <p className="mt-2 text-xs text-brand-300">
-            Asignar a: {selected.full_name || selected.email} · enlace {linkFor(code || 'codigo')}
-          </p>
-        )}
-      </Card>
-
-      {/* Ranking */}
+      <p className="mb-4 text-sm text-white/55">
+        Las altas nuevas se aprueban desde la pestaña Planes. Los promotores existentes se mantienen activos.
+      </p>
       <Card className="overflow-x-auto p-0">
         <table className="w-full min-w-[600px] text-left text-sm">
           <thead className="border-b border-white/10 text-xs uppercase tracking-wide text-white/45">

@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS public.plan_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   requested_plan TEXT CHECK (requested_plan IN ('pro', 'enterprise')),
-  kind TEXT NOT NULL DEFAULT 'subscription' CHECK (kind IN ('subscription', 'featured')),
+  kind TEXT NOT NULL DEFAULT 'subscription' CHECK (kind IN ('subscription', 'featured', 'promoter')),
   internship_id UUID REFERENCES public.internships(id) ON DELETE CASCADE,
   featured_days INTEGER CHECK (featured_days IN (15, 30)),
   message TEXT,
@@ -25,7 +25,20 @@ CREATE TABLE IF NOT EXISTS public.plan_requests (
     (kind = 'subscription' AND requested_plan IS NOT NULL AND internship_id IS NULL)
     OR
     (kind = 'featured' AND requested_plan IS NULL AND internship_id IS NOT NULL AND featured_days IS NOT NULL)
+    OR
+    (kind = 'promoter' AND requested_plan IS NULL AND internship_id IS NULL AND featured_days IS NULL)
   )
+);
+
+-- Compatibilidad si la tabla ya fue creada por una versión anterior.
+ALTER TABLE public.plan_requests DROP CONSTRAINT IF EXISTS plan_requests_kind_check;
+ALTER TABLE public.plan_requests ADD CONSTRAINT plan_requests_kind_check
+  CHECK (kind IN ('subscription', 'featured', 'promoter'));
+ALTER TABLE public.plan_requests DROP CONSTRAINT IF EXISTS plan_requests_check;
+ALTER TABLE public.plan_requests ADD CONSTRAINT plan_requests_check CHECK (
+  (kind = 'subscription' AND requested_plan IS NOT NULL AND internship_id IS NULL)
+  OR (kind = 'featured' AND requested_plan IS NULL AND internship_id IS NOT NULL AND featured_days IS NOT NULL)
+  OR (kind = 'promoter' AND requested_plan IS NULL AND internship_id IS NULL AND featured_days IS NULL)
 );
 
 ALTER TABLE public.plan_requests ENABLE ROW LEVEL SECURITY;
@@ -33,6 +46,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS plan_requests_pending_subscription_idx
   ON public.plan_requests(user_id) WHERE kind = 'subscription' AND status = 'pending';
 CREATE UNIQUE INDEX IF NOT EXISTS plan_requests_pending_featured_idx
   ON public.plan_requests(internship_id) WHERE kind = 'featured' AND status = 'pending';
+CREATE UNIQUE INDEX IF NOT EXISTS plan_requests_pending_promoter_idx
+  ON public.plan_requests(user_id) WHERE kind = 'promoter' AND status = 'pending';
 DROP POLICY IF EXISTS plan_requests_select_own ON public.plan_requests;
 CREATE POLICY plan_requests_select_own ON public.plan_requests
   FOR SELECT USING (user_id = auth.uid() OR public.is_admin());
@@ -48,6 +63,15 @@ CREATE POLICY plan_requests_insert_own ON public.plan_requests
         SELECT 1 FROM public.internships i
         WHERE i.id = internship_id AND i.company_id = auth.uid()
       ))
+      OR (kind = 'promoter'
+        AND public.auth_role() = 'estudiante'
+        AND EXISTS (
+          SELECT 1 FROM public.profiles p
+          WHERE p.id = auth.uid() AND p.plan = 'pro'
+            AND (p.plan_expires_at IS NULL OR p.plan_expires_at > now())
+        )
+        AND NOT EXISTS (SELECT 1 FROM public.promoters WHERE profile_id = auth.uid())
+      )
     )
   );
 
@@ -186,10 +210,46 @@ RETURNS TABLE (
   ORDER BY r.created_at DESC;
 $$;
 
+-- Compatibilidad: bloquea altas manuales nuevas que no sean de Estudiante Pro.
+-- Los promotores ya existentes se conservan y pueden mantener su código.
+CREATE OR REPLACE FUNCTION public.admin_assign_promoter(p_profile_id UUID, p_code TEXT)
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_code TEXT;
+  v_name TEXT;
+  v_email TEXT;
+  v_role TEXT;
+  v_exists BOOLEAN;
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION 'no autorizado'; END IF;
+  v_code := lower(trim(p_code));
+  IF v_code = '' THEN RAISE EXCEPTION 'codigo vacio'; END IF;
+  SELECT full_name, email, role::TEXT INTO v_name, v_email, v_role
+  FROM public.profiles WHERE id = p_profile_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'perfil inexistente'; END IF;
+  SELECT EXISTS(SELECT 1 FROM public.promoters WHERE profile_id = p_profile_id) INTO v_exists;
+  IF NOT v_exists AND (v_role <> 'estudiante' OR public.current_plan(p_profile_id) <> 'pro') THEN
+    RAISE EXCEPTION 'PROMOTER_REQUIRES_STUDENT_PRO';
+  END IF;
+  DELETE FROM public.promoters WHERE profile_id = p_profile_id AND code <> v_code;
+  INSERT INTO public.promoters(code, profile_id, nombre, email)
+  VALUES (v_code, p_profile_id, v_name, v_email)
+  ON CONFLICT (code) DO UPDATE SET
+    profile_id = EXCLUDED.profile_id,
+    nombre = EXCLUDED.nombre,
+    email = EXCLUDED.email;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.admin_resolve_plan_request(
   p_request_id UUID, p_approve BOOLEAN, p_note TEXT DEFAULT NULL
 ) RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE r public.plan_requests%ROWTYPE;
+DECLARE
+  r public.plan_requests%ROWTYPE;
+  v_name TEXT;
+  v_email TEXT;
+  v_base TEXT;
+  v_code TEXT;
 BEGIN
   IF NOT public.is_admin() THEN RAISE EXCEPTION 'not authorized'; END IF;
   SELECT * INTO r FROM public.plan_requests WHERE id = p_request_id AND status = 'pending' FOR UPDATE;
@@ -200,6 +260,20 @@ BEGIN
   ELSIF p_approve AND r.kind = 'featured' THEN
     UPDATE public.internships SET featured_until = now() + make_interval(days => r.featured_days)
     WHERE id = r.internship_id;
+  ELSIF p_approve AND r.kind = 'promoter' THEN
+    IF public.current_plan(r.user_id) <> 'pro' THEN
+      RAISE EXCEPTION 'PROMOTER_REQUIRES_STUDENT_PRO';
+    END IF;
+    SELECT full_name, email INTO v_name, v_email
+    FROM public.profiles WHERE id = r.user_id AND role = 'estudiante';
+    IF NOT FOUND THEN RAISE EXCEPTION 'student not found'; END IF;
+    IF NOT EXISTS (SELECT 1 FROM public.promoters WHERE profile_id = r.user_id) THEN
+      v_base := left(regexp_replace(lower(COALESCE(v_name, 'promotor')), '[^a-z0-9]+', '', 'g'), 12);
+      IF v_base = '' THEN v_base := 'promotor'; END IF;
+      v_code := v_base || substr(md5(r.user_id::text), 1, 8);
+      INSERT INTO public.promoters(code, profile_id, nombre, email)
+      VALUES (v_code, r.user_id, v_name, v_email);
+    END IF;
   END IF;
   UPDATE public.plan_requests SET status = CASE WHEN p_approve THEN 'approved' ELSE 'rejected' END,
     admin_note = p_note, resolved_at = now() WHERE id = p_request_id;
@@ -210,3 +284,4 @@ GRANT EXECUTE ON FUNCTION public.current_plan(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.can_message(UUID, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_list_plan_requests() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_resolve_plan_request(UUID, BOOLEAN, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_assign_promoter(UUID, TEXT) TO authenticated;

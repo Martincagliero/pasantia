@@ -13,12 +13,15 @@ export function isPro(profile: Profile | null | undefined): boolean {
   return activePlan(profile) === 'pro' || activePlan(profile) === 'enterprise';
 }
 
-export function planLabel(plan: SubscriptionPlan): string {
-  return plan === 'enterprise' ? 'Empresa' : plan === 'pro' ? 'Pro' : 'Gratis';
+export function planLabel(plan: SubscriptionPlan, role?: Role): string {
+  if (plan === 'free') return 'Gratis';
+  if (role === 'embajador' && plan === 'pro') return 'Premium';
+  return plan === 'enterprise' ? 'Empresa' : 'Pro';
 }
 
 export function planPrice(role: Role, plan: SubscriptionPlan): string {
   if (plan === 'free') return 'USD 0';
   if (role === 'estudiante') return 'USD 5/mes';
+  if (role === 'embajador') return 'A convenir';
   return plan === 'enterprise' ? 'Desde USD 149/mes' : 'USD 49/mes';
 }

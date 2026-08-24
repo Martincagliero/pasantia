@@ -155,6 +155,14 @@ export function Navbar() {
               </Link>
             </li>
           ))}
+          <li>
+            <Link
+              to="/#planes-desktop"
+              className="rounded-full px-4 py-2 text-sm font-medium text-white/60 transition-colors hover:text-white"
+            >
+              Planes
+            </Link>
+          </li>
         </ul>
 
         {/* CTA desktop */}
@@ -233,6 +241,17 @@ export function Navbar() {
                   </Link>
                 </motion.div>
               ))}
+              <motion.div
+                variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
+              >
+                <Link
+                  to="/#planes"
+                  onClick={() => setMenuOpen(false)}
+                  className="text-2xl font-medium tracking-tight text-white/60 transition-colors hover:text-white"
+                >
+                  Planes
+                </Link>
+              </motion.div>
             </motion.nav>
 
             {/* CTA abajo */}

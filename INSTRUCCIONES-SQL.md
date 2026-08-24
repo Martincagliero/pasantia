@@ -8,7 +8,9 @@ Para activar planes, límites, solicitudes al administrador y publicaciones dest
 supabase/migracion-freemium.sql
 ```
 
-Esta migración requiere que ya se hayan ejecutado `migracion-admin.sql`, `migracion-mensajes.sql` y `migracion-solicitudes-conexion.sql`. Es idempotente y puede volver a ejecutarse después de actualizarla.
+Esta migración requiere que ya se hayan ejecutado `migracion-admin.sql`, `migracion-promotores.sql`, `migracion-promotores-v2.sql`, `migracion-mensajes.sql` y `migracion-solicitudes-conexion.sql`. Es idempotente y puede volver a ejecutarse después de actualizarla.
+
+La versión actual también activa las solicitudes de promotor para Estudiante Pro. Al aprobarlas desde **Admin > Planes**, crea el enlace personal y conserva sin cambios a todos los promotores que ya existían.
 
 ## ⚠️ REGLA IMPORTANTE
 **NO ejecutar múltiples `ALTER TYPE` en una sola consulta.** Supabase las ejecuta en transacción, y PostgreSQL no permite eso.

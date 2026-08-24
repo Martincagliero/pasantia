@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bell, Briefcase, Check, MessageSquare, Newspaper, ShieldCheck, UserPlus } from 'lucide-react';
+import { Bell, Briefcase, Check, MessageSquare, Newspaper, Rocket, ShieldCheck, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { useMessages } from '../messages/MessagesProvider';
 import pasantiaLogo from '../../assets/logo.png';
 
-type NotificationKind = 'message' | 'internship' | 'post' | 'admin_post' | 'member' | 'connection';
+type NotificationKind = 'message' | 'internship' | 'post' | 'admin_post' | 'member' | 'connection' | 'promoter';
 
 interface ActivityNotification {
   id: string;
@@ -25,6 +25,7 @@ const ICONS = {
   admin_post: ShieldCheck,
   member: UserPlus,
   connection: UserPlus,
+  promoter: Rocket,
 };
 
 function relativeTime(value: string): string {
@@ -59,7 +60,7 @@ export function NotificationCenter() {
     setLoading(true);
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     try {
-      const [messagesResult, internshipsResult, postsResult, membersResult, connectionsResult] = await Promise.all([
+      const [messagesResult, internshipsResult, postsResult, membersResult, connectionsResult, promoterRequestsResult] = await Promise.all([
         supabase
           .from('messages')
           .select('id, sender_id, content, created_at')
@@ -94,6 +95,15 @@ export function NotificationCenter() {
           .eq('status', 'pending')
           .order('created_at', { ascending: false })
           .limit(8),
+        supabase
+          .from('plan_requests')
+          .select('id, status, resolved_at')
+          .eq('user_id', uid)
+          .eq('kind', 'promoter')
+          .neq('status', 'pending')
+          .gte('resolved_at', since)
+          .order('resolved_at', { ascending: false })
+          .limit(2),
       ]);
 
       const messageRows = (messagesResult.data ?? []) as {
@@ -212,6 +222,13 @@ export function NotificationCenter() {
           targetId: request.requester_id,
           avatarUrl: requesterAvatars.get(request.requester_id) ?? null,
         })),
+        ...((promoterRequestsResult.data ?? []) as { id: string; status: 'approved' | 'rejected'; resolved_at: string }[]).map((request) => ({
+          id: `promoter-${request.id}`,
+          kind: 'promoter' as const,
+          title: request.status === 'approved' ? 'Ya sos promotor/a de PasantIA' : 'Solicitud de promotor revisada',
+          detail: request.status === 'approved' ? 'Tu enlace personal ya está habilitado.' : 'Esta vez tu solicitud no fue aprobada.',
+          createdAt: request.resolved_at,
+        })),
       ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setItems(next.slice(0, 6));
@@ -229,9 +246,16 @@ export function NotificationCenter() {
         void load();
       })
       .subscribe();
+    const plansChannel = supabase
+      .channel(`notification-plan-requests-${uid}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'plan_requests', filter: `user_id=eq.${uid}` }, () => {
+        void load();
+      })
+      .subscribe();
     return () => {
       window.clearInterval(timer);
       void supabase.removeChannel(postsChannel);
+      void supabase.removeChannel(plansChannel);
     };
   }, [load, uid]);
 
@@ -274,6 +298,7 @@ export function NotificationCenter() {
       navigate(profile?.role === 'estudiante' ? '/app/inicio-estudiante' : '/app/novedades');
     }
     if (item.kind === 'connection') navigate('/app/explorar?tab=red&requests=1');
+    if (item.kind === 'promoter') navigate('/app/promotores');
     if (item.kind === 'member') navigate(`/app/explorar?u=${item.targetId}`);
     if (item.kind === 'internship') {
       navigate(

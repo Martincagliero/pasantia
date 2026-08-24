@@ -32,6 +32,7 @@ import { EarlyAccessCTA } from '../components/sections/EarlyAccessCTA';
 import { PlatformShowcase } from '../components/sections/PlatformShowcase';
 import { InteractiveAppPreview } from '../components/sections/InteractiveAppPreview';
 import { InstallAppSection } from '../components/sections/InstallAppSection';
+import { PricingPlans } from '../components/sections/PricingPlans';
 import { IMAGES, AVATARS } from '../lib/images';
 import estudianteImg from '../assets/images/estudiante.webp';
 import iconosHero from '../assets/images/iconos-hero.png';
@@ -95,7 +96,7 @@ const FAQ = [
   {
     question: '¿Tiene costo?',
     answer:
-      'Sumarte a la lista de acceso anticipado es gratis. Los detalles de planes se comunicarán más adelante, con condiciones especiales para quienes nos acompañen desde el inicio.',
+      'Podés empezar gratis. Estudiante Pro cuesta USD 5 por mes, Empresa Pro USD 49 por mes y el plan Empresa parte de USD 149 por mes.',
   },
   {
     question: '¿Es para estudiantes o para empresas?',
@@ -286,6 +287,10 @@ export default function Home() {
         <PlatformShowcase />
       </Section>
 
+      <div className="md:hidden">
+        <PricingPlans id="planes" />
+      </div>
+
       {/* ===================== TIRA DE RUBROS (estilo tira de marcas go-marz) ===================== */}
       <div className="py-12 sm:py-16">
         <p className="container-px mb-10 text-center text-xs font-bold uppercase tracking-[0.2em] text-white/50">
@@ -364,6 +369,10 @@ export default function Home() {
       <Section className="hidden bg-brand-950/30 md:block">
         <PlatformShowcase />
       </Section>
+
+      <div className="hidden md:block">
+        <PricingPlans id="planes-desktop" />
+      </div>
 
       {/* ===================== CÓMO VA A FUNCIONAR ===================== */}
       <Section id="como-funciona">

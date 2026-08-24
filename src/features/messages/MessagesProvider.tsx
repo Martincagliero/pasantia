@@ -36,6 +36,10 @@ import { useAnyModalOpen } from '../ui/modalGuard';
 interface MessagesContextValue {
   openChatWith: (userId: string, name: string, avatar?: string | null) => void;
   openMessages: () => void;
+  shareContacts: SuggestedContact[];
+  shareContactsLoading: boolean;
+  loadShareContacts: () => void;
+  shareWith: (userId: string, content: string) => Promise<string | null>;
   unreadTotal: number;
 }
 
@@ -89,7 +93,7 @@ interface SuggestedContact {
   id: string;
   name: string;
   avatar: string | null;
-  role: 'estudiante' | 'empresa';
+  role: 'estudiante' | 'empresa' | 'embajador';
 }
 
 interface MessageGroup {
@@ -127,6 +131,7 @@ type ComposerMode = 'menu' | 'contact' | 'group' | null;
 const suggestedRoleLabel: Record<SuggestedContact['role'], string> = {
   estudiante: 'Estudiante',
   empresa: 'Empresa',
+  embajador: 'Comunidad',
 };
 
 type EmbeddedProfile = { full_name: string } | Array<{ full_name: string }> | null;
@@ -248,7 +253,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     suggestionsLoadedRef.current = true;
     setLoadingSuggestions(true);
     try {
-      const [{ data: students }, { data: companies }] = await Promise.all([
+      const [{ data: students }, { data: companies }, { data: ambassadors }] = await Promise.all([
         supabase
           .from('student_profiles')
           .select('id, avatar_url, profile:profiles(full_name)')
@@ -257,6 +262,10 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
         supabase
           .from('company_profiles')
           .select('id, avatar_url, company_name, profile:profiles(full_name)')
+          .limit(100),
+        supabase
+          .from('ambassador_profiles')
+          .select('id, logo_url, org_name, profile:profiles(full_name)')
           .limit(100),
       ]);
 
@@ -290,10 +299,27 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
           });
         }
       }
+      for (const row of (ambassadors as unknown as Array<{
+        id: string;
+        logo_url: string | null;
+        org_name: string | null;
+        profile: EmbeddedProfile;
+      }>) ?? []) {
+        if (row.id !== uid) {
+          contacts.push({
+            id: row.id,
+            name: row.org_name || embeddedProfileName(row.profile) || 'Comunidad',
+            avatar: row.logo_url,
+            role: 'embajador',
+          });
+        }
+      }
       const priority: Record<SuggestedContact['role'], number> =
         profile?.role === 'empresa'
-          ? { estudiante: 0, empresa: 1 }
-          : { empresa: 0, estudiante: 1 };
+          ? { estudiante: 0, embajador: 1, empresa: 2 }
+          : profile?.role === 'embajador'
+            ? { empresa: 0, estudiante: 1, embajador: 2 }
+            : { empresa: 0, embajador: 1, estudiante: 2 };
       const roleOrder = (Object.keys(priority) as SuggestedContact['role'][]).sort(
         (a, b) => priority[a] - priority[b]
       );
@@ -494,6 +520,30 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     loadConversations();
     loadGroups();
   }, [loadConversations, loadGroups]);
+
+  const shareWith = useCallback(async (userId: string, content: string): Promise<string | null> => {
+    if (!uid || userId === uid || !content.trim()) return 'No se pudo preparar el envío.';
+    try {
+      const { data: message, error } = await supabase
+        .from('messages')
+        .insert({ sender_id: uid, recipient_id: userId, content: content.trim() })
+        .select('id')
+        .single();
+      if (error || !message) throw error ?? new Error('No se creó el mensaje');
+      void sendPushEvent('message', message.id);
+      void loadConversations();
+      return null;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      if (/row-level security|policy|not authorized|permission denied/i.test(message)) {
+        return 'Tu plan actual no permite enviar este mensaje.';
+      }
+      if (/messages|does not exist|relation|schema cache/i.test(message)) {
+        return 'La mensajería todavía no está disponible.';
+      }
+      return 'No se pudo enviar. Intentá nuevamente.';
+    }
+  }, [uid, loadConversations]);
 
   const openGroup = useCallback((group: MessageGroup) => {
     setActive(null);
@@ -829,8 +879,16 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     [convos, groupConvos]
   );
   const value = useMemo(
-    () => ({ openChatWith, openMessages, unreadTotal }),
-    [openChatWith, openMessages, unreadTotal]
+    () => ({
+      openChatWith,
+      openMessages,
+      shareContacts: suggestions,
+      shareContactsLoading: loadingSuggestions,
+      loadShareContacts: loadSuggestions,
+      shareWith,
+      unreadTotal,
+    }),
+    [openChatWith, openMessages, suggestions, loadingSuggestions, loadSuggestions, shareWith, unreadTotal]
   );
   const modalOpen = useAnyModalOpen();
   const activeGroupAdmin = groupMembers.some((member) => member.id === uid && member.isAdmin);

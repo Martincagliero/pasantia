@@ -387,7 +387,7 @@ export default function StudentHome() {
                   </p>
                   <SocialPostImages urls={item.post.image_urls} />
                   {item.post.link_url && <LinkPreview url={item.post.link_url} className="mt-3" />}
-                  <PostInteractions targetType="post" targetId={item.post.id} />
+                  <PostInteractions targetType="post" targetId={item.post.id} sharePost={item.post} />
                   </div>
                   {verified && (
                     <div className="h-1 bg-gradient-to-r from-brand-700 via-brand-400 to-cyan-300" aria-hidden />

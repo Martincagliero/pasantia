@@ -180,7 +180,7 @@ export default function Novedades() {
                     </a>
                   )}
                 </div>
-                <PostInteractions targetType="post" targetId={p.id} />
+                <PostInteractions targetType="post" targetId={p.id} sharePost={p} />
               </div>
             </Card>
           ))}

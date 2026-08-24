@@ -1218,7 +1218,7 @@ function FeedCard({ post, person, currentUserId, onDeleted }: { post: Post; pers
           <LinkPreview url={post.link_url} />
         </div>
       )}
-      <PostInteractions targetType="post" targetId={post.id} />
+      <PostInteractions targetType="post" targetId={post.id} sharePost={post} />
     </Card>
   );
 }

@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import { Check, Copy, Ellipsis, Share2, Smartphone, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Check, Copy, Ellipsis, Search, Share2, Trash2, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Post } from '../../lib/database.types';
 import { ReportButton } from '../ui/ReportButton';
 import { useModalGuard } from '../ui/modalGuard';
+import { useMessages } from '../messages/MessagesProvider';
 
 function WhatsAppLogo() {
   return (
@@ -29,31 +31,40 @@ function FacebookLogo() {
   );
 }
 
+export type ShareablePost = Pick<Post, 'id' | 'author_id' | 'author_name' | 'title' | 'body'>;
+
 interface PostActionsMenuProps {
-  post: Pick<Post, 'id' | 'author_id' | 'author_name' | 'title' | 'body'>;
+  post: ShareablePost;
   currentUserId?: string;
   onDeleted?: (postId: string) => void;
 }
 
-export function PostActionsMenu({ post, currentUserId, onDeleted }: PostActionsMenuProps) {
-  const [open, setOpen] = useState(false);
-  const [sharing, setSharing] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? 'U') + (parts[1]?.[0] ?? '')).toUpperCase();
+}
+
+export function PostShareSheet({ post, onClose }: { post: ShareablePost; onClose: () => void }) {
+  const { shareContacts, shareContactsLoading, loadShareContacts, shareWith } = useMessages();
+  const [query, setQuery] = useState('');
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const [sentIds, setSentIds] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const isOwner = currentUserId === post.author_id;
+  const [error, setError] = useState<string | null>(null);
   const shareUrl = `${window.location.origin}/app/publicacion/${post.id}`;
   const shareText = post.title || post.body.slice(0, 160) || `Publicación de ${post.author_name}`;
-  useModalGuard(sharing);
+  const encodedUrl = encodeURIComponent(shareUrl);
+  const encodedShare = encodeURIComponent(`${shareText}\n${shareUrl}`);
+  useModalGuard(true);
 
   useEffect(() => {
-    if (!open) return;
-    function closeMenu(event: MouseEvent) {
-      if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
-    }
-    document.addEventListener('mousedown', closeMenu);
-    return () => document.removeEventListener('mousedown', closeMenu);
-  }, [open]);
+    loadShareContacts();
+  }, [loadShareContacts]);
+
+  const contacts = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    return shareContacts.filter((contact) => !normalized || contact.name.toLowerCase().includes(normalized));
+  }, [query, shareContacts]);
 
   async function copyLink() {
     try {
@@ -72,12 +83,124 @@ export function PostActionsMenu({ post, currentUserId, onDeleted }: PostActionsM
     }
     try {
       await navigator.share({ title: 'PasantIA', text: shareText, url: shareUrl });
-      setSharing(false);
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return;
+      onClose();
+    } catch (shareError) {
+      if (shareError instanceof DOMException && shareError.name === 'AbortError') return;
       await copyLink();
     }
   }
+
+  async function sendToPasantia(userId: string) {
+    if (sendingId || sentIds.has(userId)) return;
+    setSendingId(userId);
+    setError(null);
+    const sendError = await shareWith(userId, `${shareText}\n${shareUrl}`);
+    setSendingId(null);
+    if (sendError) {
+      setError(sendError);
+      return;
+    }
+    setSentIds((current) => new Set(current).add(userId));
+  }
+
+  const actionClass = 'group flex min-w-0 flex-col items-center gap-2 text-[11px] font-medium !text-white/75';
+  const iconClass = 'flex h-12 w-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.07] !text-white transition group-hover:bg-white/15';
+
+  return createPortal(
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/65 sm:items-center sm:p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-md rounded-t-3xl border border-white/10 bg-[#202124] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl sm:rounded-3xl sm:p-5"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
+          <button type="button" onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full !text-white/80 transition hover:bg-white/10" aria-label="Cerrar">
+            <X className="h-6 w-6" />
+          </button>
+          <h2 className="text-sm font-semibold !text-white">Compartir</h2>
+          <span className="h-9 w-9" aria-hidden />
+        </div>
+
+        <label className="flex items-center gap-2 rounded-xl bg-white/[0.07] px-3 py-2.5">
+          <Search className="h-4 w-4 shrink-0 !text-white/45" />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Buscar en PasantIA"
+            className="min-w-0 flex-1 bg-transparent text-sm !text-white placeholder:!text-white/40 outline-none"
+          />
+        </label>
+
+        <div className="mt-4 min-h-[5.5rem]">
+          {shareContactsLoading ? (
+            <p className="py-7 text-center text-xs !text-white/45">Cargando contactos…</p>
+          ) : contacts.length > 0 ? (
+            <div className="flex gap-4 overflow-x-auto pb-2">
+              {contacts.map((contact) => {
+                const sent = sentIds.has(contact.id);
+                return (
+                  <button
+                    key={contact.id}
+                    type="button"
+                    onClick={() => void sendToPasantia(contact.id)}
+                    disabled={sendingId === contact.id || sent}
+                    className="group w-16 shrink-0 text-center disabled:opacity-80"
+                    title={`Enviar a ${contact.name}`}
+                  >
+                    <span className="relative mx-auto flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/10 text-sm font-semibold !text-white">
+                      {contact.avatar ? <img src={contact.avatar} alt="" className="h-full w-full object-cover" /> : initials(contact.name)}
+                      {sent && <span className="absolute inset-0 flex items-center justify-center bg-black/55"><Check className="h-6 w-6 !text-white" /></span>}
+                    </span>
+                    <span className="mt-1.5 block truncate text-[11px] !text-white/75">{sent ? 'Enviado' : contact.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="py-7 text-center text-xs !text-white/45">No encontramos perfiles.</p>
+          )}
+        </div>
+
+        {error && <p className="mt-1 text-center text-xs text-red-300">{error}</p>}
+
+        <div className="mt-3 grid grid-cols-5 gap-2 border-t border-white/10 pt-4">
+          <button type="button" onClick={() => void copyLink()} className={actionClass}>
+            <span className={iconClass}>{copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}</span>
+            <span className="truncate">{copied ? 'Copiado' : 'Copiar'}</span>
+          </button>
+          <a href={`https://wa.me/?text=${encodedShare}`} target="_blank" rel="noreferrer" aria-label="Compartir por WhatsApp" className={actionClass}>
+            <span className={iconClass}><WhatsAppLogo /></span><span className="truncate">WhatsApp</span>
+          </a>
+          <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`} target="_blank" rel="noreferrer" aria-label="Compartir en LinkedIn" className={actionClass}>
+            <span className={iconClass}><LinkedInLogo /></span><span className="truncate">LinkedIn</span>
+          </a>
+          <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`} target="_blank" rel="noreferrer" aria-label="Compartir en Facebook" className={actionClass}>
+            <span className={iconClass}><FacebookLogo /></span><span className="truncate">Facebook</span>
+          </a>
+          <button type="button" onClick={() => void nativeShare()} className={actionClass} aria-label="Más opciones para compartir">
+            <span className={iconClass}><Share2 className="h-5 w-5" /></span><span className="truncate">Más</span>
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+export function PostActionsMenu({ post, currentUserId, onDeleted }: PostActionsMenuProps) {
+  const [open, setOpen] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const isOwner = currentUserId === post.author_id;
+
+  useEffect(() => {
+    if (!open) return;
+    function closeMenu(event: MouseEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', closeMenu);
+    return () => document.removeEventListener('mousedown', closeMenu);
+  }, [open]);
 
   async function deletePost() {
     if (!isOwner || deleting || !window.confirm('¿Querés borrar esta publicación?')) return;
@@ -87,8 +210,6 @@ export function PostActionsMenu({ post, currentUserId, onDeleted }: PostActionsM
     if (!error) onDeleted?.(post.id);
   }
 
-  const encodedUrl = encodeURIComponent(shareUrl);
-  const encodedShare = encodeURIComponent(`${shareText}\n${shareUrl}`);
   return (
     <div ref={menuRef} className="relative ml-auto shrink-0">
       <button
@@ -129,35 +250,7 @@ export function PostActionsMenu({ post, currentUserId, onDeleted }: PostActionsM
         </div>
       )}
 
-      {sharing && (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/60 p-3 sm:items-center" onClick={() => setSharing(false)}>
-          <div className="w-full max-w-sm rounded-2xl border border-blue-400/30 bg-[#075aaa] p-5 text-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            <h2 className="text-base font-semibold !text-white">Compartir publicación</h2>
-            <p className="mt-1 line-clamp-2 text-sm !text-white/80">{shareText}</p>
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <a href={`https://wa.me/?text=${encodedShare}`} target="_blank" rel="noreferrer" aria-label="Compartir por WhatsApp" className="flex min-w-0 flex-col items-center gap-2 rounded-lg bg-[#25D366] p-3 text-xs font-semibold !text-white transition hover:brightness-90">
-                <WhatsAppLogo /> <span className="max-w-full truncate !text-white">WhatsApp</span>
-              </a>
-              <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`} target="_blank" rel="noreferrer" aria-label="Compartir en LinkedIn" className="flex min-w-0 flex-col items-center gap-2 rounded-lg bg-[#0A66C2] p-3 text-xs font-semibold !text-white transition hover:brightness-90">
-                <LinkedInLogo /> <span className="max-w-full truncate">LinkedIn</span>
-              </a>
-              <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`} target="_blank" rel="noreferrer" aria-label="Compartir en Facebook" className="flex min-w-0 flex-col items-center gap-2 rounded-lg bg-[#1877F2] p-3 text-xs font-semibold !text-white transition hover:brightness-90">
-                <FacebookLogo /> <span className="max-w-full truncate">Facebook</span>
-              </a>
-              <button type="button" onClick={() => void nativeShare()} className="flex min-w-0 flex-col items-center gap-2 rounded-lg bg-[#E1306C] p-3 text-xs font-semibold !text-white transition hover:brightness-90" aria-label="Compartir en Instagram u otra aplicación">
-                <Smartphone className="h-6 w-6" /> <span className="max-w-full truncate !text-white">Instagram y más</span>
-              </button>
-            </div>
-            <p className="mt-4 text-xs !text-white/75">
-              En el celular, “Instagram y más” abre las aplicaciones instaladas para elegir dónde compartir.
-            </p>
-            <button type="button" onClick={() => void copyLink()} className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-semibold !text-white transition hover:bg-white/20">
-              {copied ? <Check className="h-4 w-4 !text-white" /> : <Copy className="h-4 w-4" />}
-              {copied ? 'Enlace copiado' : 'Copiar enlace'}
-            </button>
-          </div>
-        </div>
-      )}
+      {sharing && <PostShareSheet post={post} onClose={() => setSharing(false)} />}
     </div>
   );
 }

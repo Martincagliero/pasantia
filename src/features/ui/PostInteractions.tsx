@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MessageCircle, Trash2, SmilePlus, Send } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
+import { PostShareSheet, type ShareablePost } from '../posts/PostActionsMenu';
 import likeIcon from '../../assets/images/emojis/red-social.svg';
 import careIcon from '../../assets/images/emojis/mano-sosteniendo-corazon.svg';
 import celebrateIcon from '../../assets/images/emojis/cuerno-de-fiesta.svg';
@@ -63,9 +64,11 @@ function timeAgo(d: string): string {
 export function PostInteractions({
   targetType,
   targetId,
+  sharePost,
 }: {
   targetType: InteractionTarget;
   targetId: string;
+  sharePost?: ShareablePost;
 }) {
   const { session, profile } = useAuth();
   const uid = session?.user.id;
@@ -80,6 +83,7 @@ export function PostInteractions({
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [seen, setSeen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
@@ -298,6 +302,16 @@ export function PostInteractions({
           <MessageCircle className="h-4 w-4" />
           {comments.length > 0 ? comments.length : ''} Comentar
         </button>
+        {sharePost && (
+          <button
+            onClick={() => setShareOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-white/60 transition hover:bg-white/10 hover:text-white"
+            aria-label="Enviar publicación"
+          >
+            <Send className="h-4 w-4" />
+            Enviar
+          </button>
+        )}
       </div>
 
       <div className="mt-2.5 space-y-2.5">
@@ -357,6 +371,9 @@ export function PostInteractions({
           </button>
         </div>
       </div>
+      {shareOpen && sharePost && (
+        <PostShareSheet post={sharePost} onClose={() => setShareOpen(false)} />
+      )}
     </div>
   );
 }

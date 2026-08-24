@@ -80,7 +80,7 @@ export default function SharedPost() {
           <SocialPostImages urls={post.image_urls} />
           {post.link_url && <LinkPreview url={post.link_url} className="mt-3" />}
           <div className="mt-4 border-t border-white/10 pt-3">
-            <PostInteractions targetType="post" targetId={post.id} />
+            <PostInteractions targetType="post" targetId={post.id} sharePost={post} />
           </div>
         </Card>
       )}

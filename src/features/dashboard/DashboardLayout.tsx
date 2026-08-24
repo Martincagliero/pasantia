@@ -42,7 +42,6 @@ interface NavItem {
 
 const studentNav: NavItem[] = [
   { to: '/app/inicio-estudiante', label: 'Inicio', icon: House },
-  { to: '/app/novedades', label: 'Novedades', icon: Newspaper },
   { to: '/app/pasantias', label: 'Buscar pasantías', icon: LayoutGrid },
   { to: '/app/explorar', label: 'Explorar perfiles', icon: Compass },
   { to: '/app/comunidades', label: 'Mis comunidades', icon: Users },
@@ -193,7 +192,7 @@ export function DashboardLayout() {
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     const q = searchQuery.trim();
-    navigate(`/app/explorar${q ? `?q=${encodeURIComponent(q)}` : ''}`);
+    navigate(`/app/buscar${q ? `?q=${encodeURIComponent(q)}` : ''}`);
   }
 
   return (
@@ -214,7 +213,7 @@ export function DashboardLayout() {
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar perfiles…"
+                placeholder="Buscar en PasantIA…"
                 className="w-full rounded-full border border-white/12 bg-white/5 py-2 pl-9 pr-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-brand-400/60"
               />
             </form>

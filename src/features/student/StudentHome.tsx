@@ -272,10 +272,9 @@ export default function StudentHome() {
               </span>
               <span className="flex-1 truncate text-sm text-white/50">Publicá algo para tu red…</span>
             </button>
-            <div className="mt-3 grid grid-cols-3 border-t border-white/10 pt-3">
+            <div className="mt-3 grid grid-cols-2 border-t border-white/10 pt-3">
               <Link to="/app/pasantias" className="text-center text-xs font-medium text-white/60 transition hover:text-brand-500">Pasantías</Link>
-              <Link to="/app/novedades" className="border-x border-white/10 text-center text-xs font-medium text-white/60 transition hover:text-brand-500">Novedades</Link>
-              <Link to="/app/explorar" className="text-center text-xs font-medium text-white/60 transition hover:text-brand-500">Mi red</Link>
+              <Link to="/app/explorar" className="border-l border-white/10 text-center text-xs font-medium text-white/60 transition hover:text-brand-500">Mi red</Link>
             </div>
           </Card>
 

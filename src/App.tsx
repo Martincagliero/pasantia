@@ -45,6 +45,7 @@ const AmbassadorDirectory = lazy(() => import('./features/ambassador/AmbassadorD
 const AmbassadorAnnouncements = lazy(() => import('./features/ambassador/AmbassadorAnnouncements'));
 const Novedades = lazy(() => import('./features/posts/Novedades'));
 const Explore = lazy(() => import('./features/directory/Explore'));
+const GlobalSearch = lazy(() => import('./features/search/GlobalSearch'));
 const StudentCommunities = lazy(() => import('./features/student/StudentCommunities'));
 const CommunityDetailPage = lazy(() => import('./pages/CommunityDetailPage'));
 const PublicCommunityPage = lazy(() => import('./pages/PublicCommunityPage'));
@@ -227,6 +228,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <Explore />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="buscar"
+              element={
+                <ProtectedRoute>
+                  <GlobalSearch />
                 </ProtectedRoute>
               }
             />

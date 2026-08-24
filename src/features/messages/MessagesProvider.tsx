@@ -829,6 +829,9 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   );
   const modalOpen = useAnyModalOpen();
   const activeGroupAdmin = groupMembers.some((member) => member.id === uid && member.isAdmin);
+  const mobileKeyboardOpen = mobileViewport
+    ? mobileViewport.height < window.innerHeight - 120
+    : false;
 
   return (
     <MessagesContext.Provider value={value}>
@@ -1088,7 +1091,13 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                       )}
                     </div>
 
-                    <div className="dash-panel relative z-10 flex shrink-0 items-center gap-2 border-t border-white/10 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
+                    <div
+                      className={`dash-panel relative z-10 flex shrink-0 items-center gap-2 border-t border-white/10 px-2 pt-2 ${
+                        mobileKeyboardOpen
+                          ? 'pb-0'
+                          : 'pb-[max(0.5rem,env(safe-area-inset-bottom))]'
+                      }`}
+                    >
                       <input
                         value={text}
                         onChange={(e) => setText(e.target.value)}

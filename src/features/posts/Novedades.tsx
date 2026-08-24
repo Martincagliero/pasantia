@@ -2,6 +2,7 @@
 // novedades, proyectos, búsquedas y recursos. Todos los logueados las ven.
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, Building2, GraduationCap, Mail, ChevronDown } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { Post, PostCategory } from '../../lib/database.types';
@@ -65,6 +66,10 @@ export default function Novedades() {
     () => (filter === 'todas' ? posts : posts.filter((p) => p.category === filter)),
     [posts, filter]
   );
+
+  if (profile?.role === 'estudiante' && !profile.is_admin) {
+    return <Navigate to="/app/inicio-estudiante" replace />;
+  }
 
   async function handleDelete(id: string) {
     const { error } = await supabase.from('posts').delete().eq('id', id);

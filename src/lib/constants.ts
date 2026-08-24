@@ -5,24 +5,6 @@ export const CONTACT = {
   email: 'holapasantia@gmail.com',
   instagram: 'pasant.ia',
   instagramUrl: 'https://www.instagram.com/pasant.ia/',
-  whatsappNumber: '5493493406303',
-} as const;
-
-/**
- * Construye un deep link a WhatsApp con mensaje predefinido.
- * El mensaje se codifica con encodeURIComponent.
- */
-export function whatsappLink(message: string): string {
-  return `https://wa.me/${CONTACT.whatsappNumber}?text=${encodeURIComponent(message)}`;
-}
-
-// Mensajes predefinidos por contexto de acceso anticipado.
-export const WHATSAPP_MESSAGES = {
-  general: '¡Hola! Quiero sumarme a la lista de acceso anticipado de PasantIA.',
-  student:
-    '¡Hola! Quiero sumarme a la lista de acceso anticipado de PasantIA como estudiante.',
-  company:
-    '¡Hola! Quiero sumar a mi empresa a la lista de acceso anticipado de PasantIA.',
 } as const;
 
 /**

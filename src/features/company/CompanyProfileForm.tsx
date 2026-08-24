@@ -5,7 +5,7 @@ import { Globe, ExternalLink, Briefcase } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { CompanyProfile } from '../../lib/database.types';
-import { whatsappLink } from '../../lib/constants';
+import { mailtoLink } from '../../lib/constants';
 import { Button } from '../../components/ui/Button';
 import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { Card, EmptyState, PageLoader } from '../ui/primitives';
@@ -92,11 +92,11 @@ export default function CompanyProfileForm() {
 
   async function requestVerification() {
     const msg =
-      `Hola! Quiero solicitar la verificación de mi cuenta de EMPRESA en PasantIA.\n` +
+      `Quiero solicitar la verificación de mi cuenta de EMPRESA en PasantIA.\n` +
       `Empresa: ${form.company_name || '-'}\n` +
       `Contacto: ${fullName || '-'}\n` +
       `Email: ${profile?.email || '-'}`;
-    window.open(whatsappLink(msg), '_blank');
+    window.location.href = mailtoLink('Solicitud de verificación de empresa', msg);
     try {
       await supabase
         .from('company_profiles')

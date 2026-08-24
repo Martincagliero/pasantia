@@ -1,6 +1,6 @@
 -- =============================================================================
 -- MIGRACIÓN: Instagram del estudiante
--- Permite que el estudiante cargue su Instagram (además del teléfono/WhatsApp
+-- Permite que el estudiante cargue su Instagram (además del teléfono
 -- y los links ya existentes). Visible para todos los roles en "Explorar perfiles".
 -- Ejecutar en Supabase -> SQL Editor -> Run.
 -- =============================================================================

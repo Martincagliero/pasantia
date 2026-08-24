@@ -11,7 +11,7 @@ import { AvatarUpload } from '../ui/AvatarUpload';
 import { ProfileHeader } from '../ui/ProfileHeader';
 import { ProfileCompletion } from '../ui/ProfileCompletion';
 import { StudentRecentActivity } from './StudentRecentActivity';
-import { whatsappLink } from '../../lib/constants';
+import { mailtoLink } from '../../lib/constants';
 import { UniversityAutocomplete } from '../ui/UniversityAutocomplete';
 import { AVAILABILITY_OPTIONS, CAREERS, suggestFor } from './suggestions';
 import { detectProfileLink, normalizeProfileUrl, normalizeUrl, profileLinkLabel, type ProfileLinkKind } from '../../lib/url';
@@ -175,11 +175,11 @@ export default function StudentProfileForm() {
 
   async function requestVerification() {
     const msg =
-      `Hola! Quiero solicitar la verificación de mi cuenta de ESTUDIANTE en PasantIA.\n` +
+      `Quiero solicitar la verificación de mi cuenta de ESTUDIANTE en PasantIA.\n` +
       `Nombre: ${fullName || '-'}\n` +
       `Universidad: ${form.university || '-'}\n` +
       `Email: ${profile?.email || '-'}`;
-    window.open(whatsappLink(msg), '_blank');
+    window.location.href = mailtoLink('Solicitud de verificación de estudiante', msg);
     try {
       await supabase
         .from('student_profiles')

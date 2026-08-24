@@ -13,7 +13,7 @@ import { ProfileHeader } from '../ui/ProfileHeader';
 import { ProfileCompletion } from '../ui/ProfileCompletion';
 import { UserPosts } from '../posts/UserPosts';
 import { EmojiText } from '../ui/EmojiText';
-import { whatsappLink } from '../../lib/constants';
+import { mailtoLink } from '../../lib/constants';
 import { Upload } from 'lucide-react';
 
 export default function AmbassadorProfile() {
@@ -124,11 +124,11 @@ export default function AmbassadorProfile() {
 
   async function requestVerification() {
     const msg =
-      `Hola! Quiero solicitar la verificación de mi comunidad (EMBAJADOR) en PasantIA.\n` +
+      `Quiero solicitar la verificación de mi comunidad (EMBAJADOR) en PasantIA.\n` +
       `Comunidad: ${form.org_name || '-'}\n` +
       `Instagram: ${form.instagram_url || '-'}\n` +
       `Email: ${session?.user.email || '-'}`;
-    window.open(whatsappLink(msg), '_blank');
+    window.location.href = mailtoLink('Solicitud de verificación de embajador', msg);
     try {
       await supabase
         .from('ambassador_profiles')

@@ -796,7 +796,6 @@ function StudentDetail({ row, onMessage, connectionState, onToggleConnection, ca
         <div className="mb-5 flex flex-wrap items-center gap-2 border-t border-white/10 pt-5">
           {!messageOnly && row.profile?.email && <a href={`mailto:${row.profile.email}`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs font-medium text-white/70"><Mail size={14} /> Email</a>}
           {!messageOnly && row.phone && <a href={`tel:${row.phone}`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs font-medium text-white/70"><Phone size={14} /> Llamar</a>}
-          {row.phone && <a href={`https://wa.me/${row.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs font-medium text-white/70"><MessageSquare size={14} /> WhatsApp</a>}
           <ReportButton targetType="profile" targetId={row.id} variant="button" className="!rounded-lg !px-3 !py-2 !text-xs" />
         </div>
 

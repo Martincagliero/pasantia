@@ -92,6 +92,13 @@
   );
 }
 
+/* El toolbar flotante del teclado móvil deja una franja transparente sobre la
+   página. Extendemos la superficie del chat por debajo del visual viewport para
+   que detrás del teclado solo se vea el bloque del compositor. */
+.messages-keyboard-cover {
+  box-shadow: 0 4rem 0 0 var(--dash-panel);
+}
+
 /* Neutralizar el fondo del autocompletado del navegador (evita el tinte azulado
    y el efecto "dos colores" en los inputs precargados). */
 input:-webkit-autofill,

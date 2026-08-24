@@ -842,7 +842,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
           style={mobileViewport ? { height: mobileViewport.height, top: mobileViewport.top } : undefined}
           className={
             open
-              ? 'fixed left-0 top-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[var(--dash-panel)] lg:inset-auto lg:bottom-0 lg:right-4 lg:block lg:h-auto lg:w-[320px] lg:bg-transparent'
+              ? `fixed left-0 top-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[var(--dash-panel)] lg:inset-auto lg:bottom-0 lg:right-4 lg:block lg:h-auto lg:w-[320px] lg:bg-transparent ${mobileKeyboardOpen ? 'messages-keyboard-cover' : ''}`
               : 'hidden lg:fixed lg:bottom-0 lg:right-4 lg:z-50 lg:block lg:w-[320px]'
           }
         >

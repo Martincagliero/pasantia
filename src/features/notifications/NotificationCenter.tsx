@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bell, Briefcase, Check, MessageSquare, Newspaper, Rocket, ShieldCheck, Sparkles, UserPlus, X } from 'lucide-react';
+import { Bell, Briefcase, Check, MessageSquare, Newspaper, Rocket, ShieldCheck, UserPlus, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
@@ -26,8 +26,16 @@ const ICONS = {
   member: UserPlus,
   connection: UserPlus,
   promoter: Rocket,
-  plan: Sparkles,
+  plan: Check,
 };
+
+function ProMark({ solid = false }: { solid?: boolean }) {
+  return (
+    <span className={`text-[9px] font-black leading-none ${solid ? '!text-white' : 'text-brand-600'}`}>
+      PRO
+    </span>
+  );
+}
 
 function relativeTime(value: string): string {
   const elapsed = Date.now() - new Date(value).getTime();
@@ -356,7 +364,7 @@ export function NotificationCenter() {
       {planNotice && (
         <div className="fixed right-3 top-[calc(env(safe-area-inset-top)+4rem)] z-[70] flex w-[calc(100vw-1.5rem)] max-w-sm items-start gap-3 rounded-xl border border-brand-500/25 bg-white p-4 text-slate-900 shadow-2xl" role="status">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white">
-            <Sparkles className="h-4 w-4" />
+            <ProMark solid />
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold">Plan activado</p>
@@ -427,6 +435,8 @@ export function NotificationCenter() {
                           loading="lazy"
                           decoding="async"
                         />
+                      ) : item.kind === 'plan' ? (
+                        <ProMark />
                       ) : (
                         <Icon className="h-4 w-4" />
                       )}

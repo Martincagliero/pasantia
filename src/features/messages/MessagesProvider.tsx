@@ -30,6 +30,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { sendPushEvent } from '../../lib/notify';
+import { isPro } from '../../lib/plans';
 import { useAuth } from '../auth/AuthProvider';
 import { useAnyModalOpen } from '../ui/modalGuard';
 
@@ -40,6 +41,7 @@ interface MessagesContextValue {
   shareContactsLoading: boolean;
   loadShareContacts: () => void;
   shareWith: (userId: string, content: string) => Promise<string | null>;
+  connectForSharing: (userId: string, state: SuggestedContact['connectionState']) => Promise<string | null>;
   unreadTotal: number;
 }
 
@@ -89,11 +91,13 @@ interface Conversation {
   unread: number;
 }
 
-interface SuggestedContact {
+export interface SuggestedContact {
   id: string;
   name: string;
   avatar: string | null;
   role: 'estudiante' | 'empresa' | 'embajador';
+  canMessage: boolean;
+  connectionState: 'none' | 'sent' | 'received' | 'connected' | 'unavailable';
 }
 
 interface MessageGroup {
@@ -269,6 +273,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
           .limit(100),
       ]);
 
+      const unrestricted = profile?.role === 'embajador' || isPro(profile);
       const contacts: SuggestedContact[] = [];
       for (const row of (students as unknown as Array<{
         id: string;
@@ -281,6 +286,8 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
             name: embeddedProfileName(row.profile) || 'Estudiante',
             avatar: row.avatar_url,
             role: 'estudiante',
+            canMessage: unrestricted,
+            connectionState: unrestricted ? 'connected' : 'none',
           });
         }
       }
@@ -296,6 +303,8 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
             name: row.company_name || embeddedProfileName(row.profile) || 'Empresa',
             avatar: row.avatar_url,
             role: 'empresa',
+            canMessage: unrestricted,
+            connectionState: unrestricted ? 'connected' : 'unavailable',
           });
         }
       }
@@ -311,8 +320,64 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
             name: row.org_name || embeddedProfileName(row.profile) || 'Comunidad',
             avatar: row.logo_url,
             role: 'embajador',
+            canMessage: unrestricted,
+            connectionState: unrestricted ? 'connected' : 'unavailable',
           });
         }
+      }
+      let eligibleContacts = contacts;
+      if (!unrestricted) {
+        const [{ data: directMessages }, { data: follows }, { data: connectionRequests }] = await Promise.all([
+          supabase
+            .from('messages')
+            .select('sender_id, recipient_id')
+            .or(`sender_id.eq.${uid},recipient_id.eq.${uid}`)
+            .limit(500),
+          profile?.role === 'estudiante'
+            ? supabase
+                .from('follows')
+                .select('follower_id, following_id')
+                .or(`follower_id.eq.${uid},following_id.eq.${uid}`)
+            : Promise.resolve({ data: [] }),
+            profile?.role === 'estudiante'
+            ? supabase
+              .from('connection_requests')
+              .select('requester_id, recipient_id, status')
+              .eq('status', 'pending')
+              .or(`requester_id.eq.${uid},recipient_id.eq.${uid}`)
+            : Promise.resolve({ data: [] }),
+        ]);
+        const allowedIds = new Set<string>();
+        for (const message of (directMessages ?? []) as Array<{ sender_id: string; recipient_id: string }>) {
+          allowedIds.add(message.sender_id === uid ? message.recipient_id : message.sender_id);
+        }
+        if (profile?.role === 'estudiante') {
+          const outgoing = new Set<string>();
+          const incoming = new Set<string>();
+          for (const follow of (follows ?? []) as Array<{ follower_id: string; following_id: string }>) {
+            if (follow.follower_id === uid) outgoing.add(follow.following_id);
+            if (follow.following_id === uid) incoming.add(follow.follower_id);
+          }
+          for (const id of outgoing) if (incoming.has(id)) allowedIds.add(id);
+        }
+        const requestState = new Map<string, SuggestedContact['connectionState']>();
+        for (const request of (connectionRequests ?? []) as Array<{
+          requester_id: string;
+          recipient_id: string;
+          status: string;
+        }>) {
+          const otherId = request.requester_id === uid ? request.recipient_id : request.requester_id;
+          requestState.set(otherId, request.requester_id === uid ? 'sent' : 'received');
+        }
+        eligibleContacts = contacts.map((contact) => {
+          if (allowedIds.has(contact.id)) {
+            return { ...contact, canMessage: true, connectionState: 'connected' };
+          }
+          if (profile?.role === 'estudiante' && contact.role === 'estudiante') {
+            return { ...contact, connectionState: requestState.get(contact.id) ?? 'none' };
+          }
+          return contact;
+        });
       }
       const priority: Record<SuggestedContact['role'], number> =
         profile?.role === 'empresa'
@@ -324,7 +389,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
         (a, b) => priority[a] - priority[b]
       );
       const balanced = roleOrder.flatMap((role) =>
-        contacts.filter((contact) => contact.role === role)
+        eligibleContacts.filter((contact) => contact.role === role)
       );
       setSuggestions(balanced);
     } catch {
@@ -332,7 +397,12 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoadingSuggestions(false);
     }
-  }, [uid, profile?.role]);
+  }, [uid, profile?.role, profile?.plan, profile?.plan_expires_at]);
+
+  useEffect(() => {
+    suggestionsLoadedRef.current = false;
+    setSuggestions([]);
+  }, [uid, profile?.role, profile?.plan, profile?.plan_expires_at]);
 
   const loadConversations = useCallback(async () => {
     if (!uid) return;
@@ -534,16 +604,65 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       void loadConversations();
       return null;
     } catch (error) {
-      const message = error instanceof Error ? error.message : '';
+      const message =
+        error && typeof error === 'object' && 'message' in error
+          ? String(error.message)
+          : error instanceof Error
+            ? error.message
+            : '';
       if (/row-level security|policy|not authorized|permission denied/i.test(message)) {
-        return 'Tu plan actual no permite enviar este mensaje.';
+        return 'Solo podés enviar a conversaciones o contactos habilitados por tu plan.';
       }
       if (/messages|does not exist|relation|schema cache/i.test(message)) {
         return 'La mensajería todavía no está disponible.';
       }
-      return 'No se pudo enviar. Intentá nuevamente.';
+      return message ? `No se pudo enviar: ${message}` : 'No se pudo enviar. Intentá nuevamente.';
     }
   }, [uid, loadConversations]);
+
+  const connectForSharing = useCallback(async (
+    userId: string,
+    state: SuggestedContact['connectionState']
+  ): Promise<string | null> => {
+    if (!uid || profile?.role !== 'estudiante') {
+      return 'Las conexiones están disponibles entre estudiantes.';
+    }
+    if (state === 'sent') return 'La solicitud ya fue enviada. Podrás compartir cuando la acepten.';
+    try {
+      if (state === 'received') {
+        const { data: requests, error: requestError } = await supabase
+          .from('connection_requests')
+          .select('id')
+          .eq('requester_id', userId)
+          .eq('recipient_id', uid)
+          .eq('status', 'pending')
+          .limit(1);
+        if (requestError || !requests?.[0]) throw requestError ?? new Error('Solicitud no disponible');
+        const { error } = await supabase.rpc('respond_connection_request', {
+          p_request_id: requests[0].id,
+          p_accept: true,
+        });
+        if (error) throw error;
+        void sendPushEvent('connection_accepted', requests[0].id);
+      } else {
+        const { data, error } = await supabase.rpc('request_connection', { p_recipient_id: userId });
+        if (error) throw error;
+        void sendPushEvent('connection_request', String(data));
+      }
+      suggestionsLoadedRef.current = false;
+      await loadSuggestions();
+      return null;
+    } catch (error) {
+      const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : '';
+      if (/FREE_CONNECTION_MONTHLY_LIMIT/i.test(message)) {
+        return 'Alcanzaste las 5 conexiones nuevas de este mes. Estudiante Pro permite conectar sin límite.';
+      }
+      if (/does not exist|schema cache|function/i.test(message)) {
+        return 'Las solicitudes de conexión todavía no están disponibles.';
+      }
+      return 'No se pudo actualizar la conexión. Intentá nuevamente.';
+    }
+  }, [uid, profile?.role, loadSuggestions]);
 
   const openGroup = useCallback((group: MessageGroup) => {
     setActive(null);
@@ -886,9 +1005,10 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       shareContactsLoading: loadingSuggestions,
       loadShareContacts: loadSuggestions,
       shareWith,
+      connectForSharing,
       unreadTotal,
     }),
-    [openChatWith, openMessages, suggestions, loadingSuggestions, loadSuggestions, shareWith, unreadTotal]
+    [openChatWith, openMessages, suggestions, loadingSuggestions, loadSuggestions, shareWith, connectForSharing, unreadTotal]
   );
   const modalOpen = useAnyModalOpen();
   const activeGroupAdmin = groupMembers.some((member) => member.id === uid && member.isAdmin);

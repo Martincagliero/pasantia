@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, Copy, Ellipsis, Search, Share2, Trash2, X } from 'lucide-react';
+import { Check, CircleAlert, Copy, Ellipsis, Search, Share2, Trash2, UserPlus, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Post } from '../../lib/database.types';
 import { ReportButton } from '../ui/ReportButton';
 import { useModalGuard } from '../ui/modalGuard';
-import { useMessages } from '../messages/MessagesProvider';
+import { useMessages, type SuggestedContact } from '../messages/MessagesProvider';
 
 function WhatsAppLogo() {
   return (
@@ -45,9 +45,11 @@ function initials(name: string): string {
 }
 
 export function PostShareSheet({ post, onClose }: { post: ShareablePost; onClose: () => void }) {
-  const { shareContacts, shareContactsLoading, loadShareContacts, shareWith } = useMessages();
+  const { shareContacts, shareContactsLoading, loadShareContacts, shareWith, connectForSharing } = useMessages();
   const [query, setQuery] = useState('');
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
+  const [connectionTargetId, setConnectionTargetId] = useState<string | null>(null);
   const [sentIds, setSentIds] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +67,7 @@ export function PostShareSheet({ post, onClose }: { post: ShareablePost; onClose
     const normalized = query.trim().toLowerCase();
     return shareContacts.filter((contact) => !normalized || contact.name.toLowerCase().includes(normalized));
   }, [query, shareContacts]);
+  const connectionTarget = shareContacts.find((contact) => contact.id === connectionTargetId) ?? null;
 
   async function copyLink() {
     try {
@@ -90,17 +93,44 @@ export function PostShareSheet({ post, onClose }: { post: ShareablePost; onClose
     }
   }
 
-  async function sendToPasantia(userId: string) {
-    if (sendingId || sentIds.has(userId)) return;
-    setSendingId(userId);
+  async function sendToPasantia(contact: SuggestedContact) {
+    if (sendingId || sentIds.has(contact.id)) return;
+    if (!contact.canMessage) {
+      setConnectionTargetId(contact.id);
+      setError(null);
+      return;
+    }
+    setConnectionTargetId(null);
+    setSendingId(contact.id);
     setError(null);
-    const sendError = await shareWith(userId, `${shareText}\n${shareUrl}`);
+    const sendError = await shareWith(contact.id, `${shareText}\n${shareUrl}`);
     setSendingId(null);
     if (sendError) {
       setError(sendError);
       return;
     }
-    setSentIds((current) => new Set(current).add(userId));
+    setSentIds((current) => new Set(current).add(contact.id));
+  }
+
+  async function connectAndContinue(contact: SuggestedContact) {
+    if (connectingId || contact.connectionState === 'sent' || contact.connectionState === 'unavailable') return;
+    setConnectingId(contact.id);
+    setError(null);
+    const connectionError = await connectForSharing(contact.id, contact.connectionState);
+    setConnectingId(null);
+    if (connectionError) {
+      setError(connectionError);
+      return;
+    }
+    if (contact.connectionState === 'received') {
+      const sendError = await shareWith(contact.id, `${shareText}\n${shareUrl}`);
+      if (sendError) {
+        setError(sendError);
+        return;
+      }
+      setSentIds((current) => new Set(current).add(contact.id));
+      setConnectionTargetId(null);
+    }
   }
 
   const actionClass = 'group flex min-w-0 flex-col items-center gap-2 text-[11px] font-medium !text-white/75';
@@ -141,7 +171,7 @@ export function PostShareSheet({ post, onClose }: { post: ShareablePost; onClose
                   <button
                     key={contact.id}
                     type="button"
-                    onClick={() => void sendToPasantia(contact.id)}
+                    onClick={() => void sendToPasantia(contact)}
                     disabled={sendingId === contact.id || sent}
                     className="group w-16 shrink-0 text-center disabled:opacity-80"
                     title={`Enviar a ${contact.name}`}
@@ -156,9 +186,47 @@ export function PostShareSheet({ post, onClose }: { post: ShareablePost; onClose
               })}
             </div>
           ) : (
-            <p className="py-7 text-center text-xs !text-white/45">No encontramos perfiles.</p>
+            <p className="px-5 py-6 text-center text-xs leading-relaxed !text-white/45">
+              Podés enviar a conversaciones existentes y conexiones habilitadas por tu plan.
+            </p>
           )}
         </div>
+
+        {connectionTarget && !connectionTarget.canMessage && (
+          <div className="mt-1 rounded-xl border border-amber-300/20 bg-amber-300/[0.08] p-3">
+            <div className="flex items-start gap-2.5">
+              <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-200" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs leading-relaxed !text-white/80">
+                  {connectionTarget.connectionState === 'received'
+                    ? `${connectionTarget.name} quiere conectar con vos. Aceptá para compartirle la publicación.`
+                    : connectionTarget.connectionState === 'sent'
+                      ? `Tu solicitud a ${connectionTarget.name} está pendiente. Podrás compartir cuando la acepte.`
+                      : connectionTarget.connectionState === 'none'
+                        ? `Todavía no conectaste con ${connectionTarget.name}. En el plan Gratis, primero tiene que aceptar tu solicitud.`
+                        : 'Tu plan Gratis no permite iniciar esta conversación. Necesitás una conversación previa o un plan superior.'}
+                </p>
+                {connectionTarget.connectionState !== 'unavailable' && (
+                  <button
+                    type="button"
+                    onClick={() => void connectAndContinue(connectionTarget)}
+                    disabled={connectingId === connectionTarget.id || connectionTarget.connectionState === 'sent'}
+                    className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-[#202124] transition hover:bg-white/90 disabled:cursor-default disabled:opacity-55"
+                  >
+                    {connectionTarget.connectionState === 'sent' ? <Check className="h-3.5 w-3.5" /> : <UserPlus className="h-3.5 w-3.5" />}
+                    {connectingId === connectionTarget.id
+                      ? 'Procesando…'
+                      : connectionTarget.connectionState === 'received'
+                        ? 'Aceptar y enviar'
+                        : connectionTarget.connectionState === 'sent'
+                          ? 'Solicitud enviada'
+                          : 'Conectar'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {error && <p className="mt-1 text-center text-xs text-red-300">{error}</p>}
 

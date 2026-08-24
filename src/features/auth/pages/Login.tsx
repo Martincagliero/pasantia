@@ -10,6 +10,8 @@ import { useEarlyAccess } from '../../../components/early-access/EarlyAccess';
 import loginLogo from '../../../assets/images/logoingresar.png';
 import logoP from '../../../assets/images/logo-p-blanco.png';
 
+const AUTH_RETURN_TO_KEY = 'pasantia_auth_return_to';
+
 export default function Login() {
   const { signIn, signInWithGoogle } = useAuth();
   const { open: openEarlyAccess } = useEarlyAccess();
@@ -74,8 +76,10 @@ export default function Login() {
   async function handleGoogleSignIn() {
     setError(null);
     setLoading(true);
+    if (from.startsWith('/app/')) sessionStorage.setItem(AUTH_RETURN_TO_KEY, from);
     const { error } = await signInWithGoogle();
     if (error) {
+      sessionStorage.removeItem(AUTH_RETURN_TO_KEY);
       setError(error);
       setLoading(false);
     }

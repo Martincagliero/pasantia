@@ -45,6 +45,7 @@ const AmbassadorProfile = lazy(() => import('./features/ambassador/AmbassadorPro
 const AmbassadorDirectory = lazy(() => import('./features/ambassador/AmbassadorDirectory'));
 const AmbassadorAnnouncements = lazy(() => import('./features/ambassador/AmbassadorAnnouncements'));
 const Novedades = lazy(() => import('./features/posts/Novedades'));
+const SharedPost = lazy(() => import('./features/posts/SharedPost'));
 const Explore = lazy(() => import('./features/directory/Explore'));
 const GlobalSearch = lazy(() => import('./features/search/GlobalSearch'));
 const StudentCommunities = lazy(() => import('./features/student/StudentCommunities'));
@@ -251,6 +252,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="publicacion/:id" element={<SharedPost />} />
             <Route path="perfil" element={<ProfileByRole />} />
             <Route path="ayuda" element={<HelpCenter />} />
             <Route

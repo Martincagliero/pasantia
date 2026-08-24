@@ -64,7 +64,9 @@ export default function AuthCallback() {
             /* la notificación es best-effort: no debe bloquear el ingreso */
           }
         }
-        navigate('/app', { replace: true });
+        const returnTo = sessionStorage.getItem('pasantia_auth_return_to');
+        sessionStorage.removeItem('pasantia_auth_return_to');
+        navigate(returnTo?.startsWith('/app/') ? returnTo : '/app', { replace: true });
       })
       .catch((err) => {
         console.warn('[AuthCallback] Falló la validación del enlace:', err);

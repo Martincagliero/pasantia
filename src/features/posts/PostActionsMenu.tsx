@@ -1,9 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Copy, Ellipsis, Share2, Trash2 } from 'lucide-react';
+import { Check, Copy, Ellipsis, Share2, Smartphone, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Post } from '../../lib/database.types';
 import { ReportButton } from '../ui/ReportButton';
 import { useModalGuard } from '../ui/modalGuard';
+
+function WhatsAppLogo() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 fill-current">
+      <path d="M12.04 2a9.84 9.84 0 0 0-8.42 14.92L2 22l5.24-1.58A9.93 9.93 0 1 0 12.04 2Zm0 17.86a8 8 0 0 1-4.08-1.12l-.3-.18-3.1.94.96-3.02-.2-.31a7.86 7.86 0 1 1 6.72 3.69Zm4.31-5.89c-.24-.12-1.4-.69-1.62-.77-.22-.08-.38-.12-.54.12-.16.24-.61.77-.75.93-.14.16-.28.18-.52.06-.24-.12-1-.37-1.91-1.18a7.2 7.2 0 0 1-1.32-1.64c-.14-.24-.01-.37.1-.49.11-.1.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.19-.47-.39-.41-.54-.42h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.39 1.37.5.58.18 1.1.16 1.51.1.46-.07 1.4-.58 1.6-1.13.2-.55.2-1.03.14-1.13-.06-.1-.22-.16-.46-.28Z" />
+    </svg>
+  );
+}
 
 function LinkedInLogo() {
   return (
@@ -34,7 +42,7 @@ export function PostActionsMenu({ post, currentUserId, onDeleted }: PostActionsM
   const [copied, setCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const isOwner = currentUserId === post.author_id;
-  const shareUrl = `${window.location.origin}/app/inicio?post=${post.id}`;
+  const shareUrl = `${window.location.origin}/app/publicacion/${post.id}`;
   const shareText = post.title || post.body.slice(0, 160) || `Publicación de ${post.author_name}`;
   useModalGuard(sharing);
 
@@ -48,9 +56,27 @@ export function PostActionsMenu({ post, currentUserId, onDeleted }: PostActionsM
   }, [open]);
 
   async function copyLink() {
-    await navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1800);
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      window.prompt('Copiá este enlace:', shareUrl);
+    }
+  }
+
+  async function nativeShare() {
+    if (!navigator.share) {
+      await copyLink();
+      return;
+    }
+    try {
+      await navigator.share({ title: 'PasantIA', text: shareText, url: shareUrl });
+      setSharing(false);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      await copyLink();
+    }
   }
 
   async function deletePost() {
@@ -62,6 +88,7 @@ export function PostActionsMenu({ post, currentUserId, onDeleted }: PostActionsM
   }
 
   const encodedUrl = encodeURIComponent(shareUrl);
+  const encodedShare = encodeURIComponent(`${shareText}\n${shareUrl}`);
   return (
     <div ref={menuRef} className="relative ml-auto shrink-0">
       <button
@@ -104,19 +131,28 @@ export function PostActionsMenu({ post, currentUserId, onDeleted }: PostActionsM
 
       {sharing && (
         <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/60 p-3 sm:items-center" onClick={() => setSharing(false)}>
-          <div className="w-full max-w-sm rounded-2xl border border-white/12 bg-[#171a1f] p-5 shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            <h2 className="text-base font-semibold text-white">Compartir publicación</h2>
-            <p className="mt-1 line-clamp-2 text-sm text-white/50">{shareText}</p>
+          <div className="w-full max-w-sm rounded-2xl border border-blue-400/30 bg-[#075aaa] p-5 text-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <h2 className="text-base font-semibold !text-white">Compartir publicación</h2>
+            <p className="mt-1 line-clamp-2 text-sm !text-white/80">{shareText}</p>
             <div className="mt-5 grid grid-cols-2 gap-3">
+              <a href={`https://wa.me/?text=${encodedShare}`} target="_blank" rel="noreferrer" aria-label="Compartir por WhatsApp" className="flex min-w-0 flex-col items-center gap-2 rounded-lg bg-[#25D366] p-3 text-xs font-semibold !text-white transition hover:brightness-90">
+                <WhatsAppLogo /> <span className="max-w-full truncate !text-white">WhatsApp</span>
+              </a>
               <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`} target="_blank" rel="noreferrer" aria-label="Compartir en LinkedIn" className="flex min-w-0 flex-col items-center gap-2 rounded-lg bg-[#0A66C2] p-3 text-xs font-semibold !text-white transition hover:brightness-90">
                 <LinkedInLogo /> <span className="max-w-full truncate">LinkedIn</span>
               </a>
               <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`} target="_blank" rel="noreferrer" aria-label="Compartir en Facebook" className="flex min-w-0 flex-col items-center gap-2 rounded-lg bg-[#1877F2] p-3 text-xs font-semibold !text-white transition hover:brightness-90">
                 <FacebookLogo /> <span className="max-w-full truncate">Facebook</span>
               </a>
+              <button type="button" onClick={() => void nativeShare()} className="flex min-w-0 flex-col items-center gap-2 rounded-lg bg-[#E1306C] p-3 text-xs font-semibold !text-white transition hover:brightness-90" aria-label="Compartir en Instagram u otra aplicación">
+                <Smartphone className="h-6 w-6" /> <span className="max-w-full truncate !text-white">Instagram y más</span>
+              </button>
             </div>
-            <button type="button" onClick={() => void copyLink()} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-white/12 px-4 py-2.5 text-sm font-semibold text-white/80 transition hover:bg-white/6">
-              {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+            <p className="mt-4 text-xs !text-white/75">
+              En el celular, “Instagram y más” abre las aplicaciones instaladas para elegir dónde compartir.
+            </p>
+            <button type="button" onClick={() => void copyLink()} className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-semibold !text-white transition hover:bg-white/20">
+              {copied ? <Check className="h-4 w-4 !text-white" /> : <Copy className="h-4 w-4" />}
               {copied ? 'Enlace copiado' : 'Copiar enlace'}
             </button>
           </div>

@@ -196,7 +196,11 @@ BEGIN
   IF v_id IS NOT NULL THEN RETURN v_id; END IF;
   IF public.current_plan(auth.uid()) = 'free' THEN
     SELECT count(*) INTO v_count FROM public.connection_requests
-    WHERE requester_id = auth.uid() AND created_at >= date_trunc('month', now());
+    WHERE requester_id = auth.uid()
+      AND created_at >= GREATEST(
+        date_trunc('month', now()),
+        TIMESTAMPTZ '2026-08-24 00:09:25-03'
+      );
     IF v_count >= 5 THEN RAISE EXCEPTION 'FREE_CONNECTION_MONTHLY_LIMIT'; END IF;
   END IF;
   INSERT INTO public.connection_requests(requester_id, recipient_id)

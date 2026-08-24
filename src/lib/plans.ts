@@ -4,6 +4,7 @@ export const FREE_COMPANY_POSTS_PER_MONTH = 3;
 export const FREE_COMPANY_APPLICANTS_PER_INTERNSHIP = 3;
 export const FREE_STUDENT_CONNECTIONS_PER_MONTH = 5;
 export const FREE_STUDENT_APPLICATIONS_PER_MONTH = 1;
+export const CONNECTION_USAGE_RESET_AT = '2026-08-24T00:09:25-03:00';
 
 export function activePlan(profile: Profile | null | undefined): SubscriptionPlan {
   if (!profile?.plan || profile.plan === 'free') return 'free';

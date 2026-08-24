@@ -44,7 +44,7 @@ import { LinkPreview } from '../ui/LinkPreview';
 import { PostInteractions } from '../ui/PostInteractions';
 import { EmojiText } from '../ui/EmojiText';
 import { ReportButton } from '../ui/ReportButton';
-import { FREE_STUDENT_CONNECTIONS_PER_MONTH, isPro } from '../../lib/plans';
+import { CONNECTION_USAGE_RESET_AT, FREE_STUDENT_CONNECTIONS_PER_MONTH, isPro } from '../../lib/plans';
 import { PostActionsMenu } from '../posts/PostActionsMenu';
 
 type Tab = 'estudiantes' | 'empresas' | 'embajadores' | 'red';
@@ -401,8 +401,9 @@ export default function Explore() {
   const monthStart = new Date();
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
+  const connectionUsageStart = new Date(Math.max(monthStart.getTime(), new Date(CONNECTION_USAGE_RESET_AT).getTime()));
   const monthlyConnections = connectionRequests.filter(
-    (request) => request.requester_id === uid && new Date(request.created_at) >= monthStart
+    (request) => request.requester_id === uid && new Date(request.created_at) >= connectionUsageStart
   ).length;
 
   return (
@@ -617,16 +618,21 @@ function DetailModal({
   useModalGuard();
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="dash-panel relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-white/15 p-6 shadow-2xl"
+        className="dash-panel relative h-[94dvh] w-full max-w-xl overflow-y-auto rounded-t-2xl border border-white/15 shadow-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
+          className={`absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full transition ${
+            selected.type === 'estudiantes'
+              ? 'bg-black/10 text-[#fff] hover:bg-black/20'
+              : 'text-white/70 hover:bg-white/10 hover:text-white'
+          }`}
+          aria-label="Cerrar perfil"
         >
           <X size={20} />
         </button>
@@ -635,10 +641,10 @@ function DetailModal({
           <StudentDetail row={selected.row} onMessage={onMessage} connectionState={connectionState} onToggleConnection={onToggleConnection} canConnect={canConnect} messageOnly={messageOnly} />
         )}
         {selected.type === 'empresas' && (
-          <CompanyDetail row={selected.row} onMessage={onMessage} isFollowing={isFollowing} onToggleFollow={onToggleFollow} />
+          <div className="p-5 sm:p-6"><CompanyDetail row={selected.row} onMessage={onMessage} isFollowing={isFollowing} onToggleFollow={onToggleFollow} /></div>
         )}
         {selected.type === 'embajadores' && (
-          <AmbassadorDetail row={selected.row} onMessage={onMessage} isFollowing={isFollowing} onToggleFollow={onToggleFollow} />
+          <div className="p-5 sm:p-6"><AmbassadorDetail row={selected.row} onMessage={onMessage} isFollowing={isFollowing} onToggleFollow={onToggleFollow} /></div>
         )}
       </div>
     </div>
@@ -725,111 +731,87 @@ function LinkChip({ href, label, icon }: { href: string; label: string; icon: Re
 function StudentDetail({ row, onMessage, connectionState, onToggleConnection, canConnect, messageOnly }: { row: StudentRow; onMessage: (id: string, name: string, avatar?: string | null) => void; connectionState: ConnectionState; onToggleConnection: () => void; canConnect: boolean; messageOnly: boolean }) {
   const name = row.profile?.full_name || 'Estudiante';
   return (
-    <>
-      <div className="mb-5 flex items-center gap-4">
-        <Avatar url={row.avatar_url} name={name} className="h-16 w-16" />
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-white">{name}</h2>
+    <div>
+      <header className="bg-brand-600 px-5 pb-6 pt-7 sm:px-6 sm:pb-7">
+        <div className="flex items-center gap-4 pr-10">
+          <Avatar url={row.avatar_url} name={name} className="h-20 w-20 !border-2 !border-[rgba(255,255,255,0.32)] !bg-white/15 !text-[#fff] shadow-lg" />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="truncate text-xl font-bold text-[#fff] sm:text-2xl">{name}</h2>
             {row.verified && <VerifiedBadge verified />}
+            </div>
+            <p className="mt-1 line-clamp-2 text-sm leading-5 text-[rgba(255,255,255,0.72)]">
+              {[row.career, row.year && `${row.year} año`, row.university].filter(Boolean).join(' · ') || 'Estudiante'}
+            </p>
           </div>
-          <p className="mt-0.5 text-sm text-white/60">
-            {[row.career, row.year && `${row.year}° año`, row.university].filter(Boolean).join(' · ') || 'Estudiante'}
-          </p>
         </div>
-      </div>
+      </header>
 
-      <div className="mb-5 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-white/60">
-        {row.location && (
-          <span className="inline-flex items-center gap-1.5">
-            <MapPin size={15} /> {row.location}
-          </span>
-        )}
-        {row.area && (
-          <span className="inline-flex items-center gap-1.5">
-            <Briefcase size={15} /> {row.area}
-          </span>
-        )}
-      </div>
-
-      <div className="mb-5 flex flex-wrap gap-3">
-        {canConnect && <ConnectionButton state={connectionState} onClick={onToggleConnection} />}
-        <button
-          onClick={() => onMessage(row.id, name, row.avatar_url)}
-          className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-brand-600 transition hover:bg-brand-950 hover:text-white"
-        >
-          <MessageSquare size={16} /> Enviar mensaje
-        </button>
-        {!messageOnly && row.profile?.email && (
-          <a
-            href={`mailto:${row.profile.email}`}
-            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
-          >
-            <Mail size={16} /> Email
-          </a>
-        )}
-        {!messageOnly && row.phone && (
-          <a
-            href={`tel:${row.phone}`}
-            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
-          >
-            <Phone size={16} /> {row.phone}
-          </a>
-        )}
-        {row.phone && (
-          <a
-            href={`https://wa.me/${row.phone.replace(/[^0-9]/g, '')}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
-          >
-            <MessageSquare size={16} /> WhatsApp
-          </a>
-        )}
-        <ReportButton targetType="profile" targetId={row.id} variant="button" />
-      </div>
-
-      {row.skills && row.skills.length > 0 && (
-        <Section title="Habilidades">
-          <div className="flex flex-wrap gap-2">
-            {row.skills.map((s) => (
-              <span key={s} className="rounded-full border border-white/20 bg-white/5 px-3 py-1 text-sm text-white/80">
-                {s}
-              </span>
-            ))}
+      <div className="p-5 sm:p-6">
+        {(row.area || row.location || row.availability) && (
+          <div className="mb-5 grid grid-cols-2 gap-x-5 gap-y-4 border-b border-white/10 pb-5">
+            {row.area && <ProfileDatum icon={<Briefcase size={15} />} label="Área" value={row.area} />}
+            {row.location && <ProfileDatum icon={<MapPin size={15} />} label="Ubicación" value={row.location} />}
+            {row.availability && <ProfileDatum icon={<Clock3 size={15} />} label="Disponibilidad" value={row.availability} />}
           </div>
-        </Section>
-      )}
+        )}
 
-      {row.bio && (
-        <Section title="Sobre el estudiante">
-          <p className="text-sm leading-relaxed text-white/70"><EmojiText text={row.bio} /></p>
-        </Section>
-      )}
+        <div className="mb-6 grid grid-cols-2 gap-2">
+          {canConnect && <ConnectionButton state={connectionState} onClick={onToggleConnection} />}
+          <button
+            onClick={() => onMessage(row.id, name, row.avatar_url)}
+            className={`${canConnect ? '' : 'col-span-2'} inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-3 text-sm font-semibold !text-white transition hover:bg-brand-400`}
+          >
+            <MessageSquare size={16} /> Mensaje
+          </button>
+        </div>
 
-      {(safeHref(row.linkedin_url) || safeHref(row.github_url) || safeHref(row.portfolio_url) || instaHref(row.instagram_url)) && (
-        <Section title="Links">
-          <div className="flex flex-wrap gap-3">
-            {instaHref(row.instagram_url) && (
-              <LinkChip href={instaHref(row.instagram_url)!} label="Instagram" icon={<Link2 size={15} />} />
-            )}
-            {safeHref(row.linkedin_url) && (
-              <LinkChip href={safeHref(row.linkedin_url)!} label="LinkedIn" icon={<Link2 size={15} />} />
-            )}
-            {safeHref(row.github_url) && (
-              <LinkChip href={safeHref(row.github_url)!} label="GitHub" icon={<Link2 size={15} />} />
-            )}
-            {safeHref(row.portfolio_url) && (
-              <LinkChip href={safeHref(row.portfolio_url)!} label="Portfolio" icon={<Globe size={15} />} />
-            )}
-          </div>
-        </Section>
-      )}
+        {row.bio && (
+          <Section title="Sobre mí">
+            <p className="text-sm leading-6 text-white/70"><EmojiText text={row.bio} /></p>
+          </Section>
+        )}
 
-      <div className="mt-5">
+        {row.skills && row.skills.length > 0 && (
+          <Section title="Habilidades">
+            <div className="flex flex-wrap gap-1.5">
+              {row.skills.map((skill) => (
+                <span key={skill} className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-xs text-white/75">{skill}</span>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {(safeHref(row.linkedin_url) || safeHref(row.github_url) || safeHref(row.portfolio_url) || instaHref(row.instagram_url)) && (
+          <Section title="Links">
+            <div className="flex flex-wrap gap-2">
+              {instaHref(row.instagram_url) && <LinkChip href={instaHref(row.instagram_url)!} label="Instagram" icon={<Link2 size={15} />} />}
+              {safeHref(row.linkedin_url) && <LinkChip href={safeHref(row.linkedin_url)!} label="LinkedIn" icon={<Link2 size={15} />} />}
+              {safeHref(row.github_url) && <LinkChip href={safeHref(row.github_url)!} label="GitHub" icon={<Link2 size={15} />} />}
+              {safeHref(row.portfolio_url) && <LinkChip href={safeHref(row.portfolio_url)!} label="Portfolio" icon={<Globe size={15} />} />}
+            </div>
+          </Section>
+        )}
+
+        <div className="mb-5 flex flex-wrap items-center gap-2 border-t border-white/10 pt-5">
+          {!messageOnly && row.profile?.email && <a href={`mailto:${row.profile.email}`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs font-medium text-white/70"><Mail size={14} /> Email</a>}
+          {!messageOnly && row.phone && <a href={`tel:${row.phone}`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs font-medium text-white/70"><Phone size={14} /> Llamar</a>}
+          {row.phone && <a href={`https://wa.me/${row.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs font-medium text-white/70"><MessageSquare size={14} /> WhatsApp</a>}
+          <ReportButton targetType="profile" targetId={row.id} variant="button" className="!rounded-lg !px-3 !py-2 !text-xs" />
+        </div>
+
         <UserPosts authorId={row.id} />
       </div>
-    </>
+    </div>
+  );
+}
+
+function ProfileDatum({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/40">{icon}{label}</p>
+      <p className="mt-1 line-clamp-2 text-sm font-medium text-white/80">{value}</p>
+    </div>
   );
 }
 

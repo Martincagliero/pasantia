@@ -54,7 +54,7 @@ export function Navbar() {
       <nav
         className={`relative z-50 mx-auto mt-3 flex w-[min(1180px,92vw)] items-center justify-between rounded-full px-4 sm:px-6 transition-[background-color,border-color,box-shadow] duration-200 ${scrolled ? 'py-2.5' : 'py-[18px]'} ${
           scrolled
-            ? 'border border-white/15 bg-brand-600/70 shadow-lg shadow-brand-950/20 backdrop-blur-md md:bg-white/[0.07] md:backdrop-blur-2xl'
+            ? 'border border-slate-200/90 bg-white shadow-lg shadow-slate-900/15'
             : 'border border-transparent bg-transparent'
         }`}
       >
@@ -73,7 +73,9 @@ export function Navbar() {
               marginLeft: collapseWordmark ? 0 : 4,
             }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden whitespace-nowrap text-lg font-semibold tracking-tight"
+            className={`overflow-hidden whitespace-nowrap text-lg font-semibold tracking-tight transition-colors ${
+              scrolled ? 'text-brand-700' : 'text-white'
+            }`}
           >
             asantIA
           </motion.span>
@@ -88,9 +90,13 @@ export function Navbar() {
                 end={link.to === '/'}
                 className={({ isActive }) =>
                   `rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'text-white'
-                      : 'text-white/60 hover:text-white'
+                    scrolled
+                      ? isActive
+                        ? 'text-brand-700'
+                        : 'text-slate-600 hover:text-brand-700'
+                      : isActive
+                        ? 'text-white'
+                        : 'text-white/60 hover:text-white'
                   }`
                 }
               >
@@ -101,7 +107,11 @@ export function Navbar() {
           <li className="group relative">
             <button
               type="button"
-              className="flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-white/60 transition-colors hover:text-white focus:text-white focus:outline-none"
+              className={`flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium transition-colors focus:outline-none ${
+                scrolled
+                  ? 'text-slate-600 hover:text-brand-700 focus:text-brand-700'
+                  : 'text-white/60 hover:text-white focus:text-white'
+              }`}
               aria-haspopup="menu"
             >
               Para quién
@@ -138,7 +148,9 @@ export function Navbar() {
           <li>
             <Link
               to="/#planes-desktop"
-              className="rounded-full px-4 py-2 text-sm font-medium text-white/60 transition-colors hover:text-white"
+              className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                scrolled ? 'text-slate-600 hover:text-brand-700' : 'text-white/60 hover:text-white'
+              }`}
             >
               Planes
             </Link>
@@ -147,7 +159,9 @@ export function Navbar() {
             <li key={link.to}>
               <Link
                 to={link.to}
-                className="rounded-full px-4 py-2 text-sm font-medium text-white/60 transition-colors hover:text-white"
+                className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                  scrolled ? 'text-slate-600 hover:text-brand-700' : 'text-white/60 hover:text-white'
+                }`}
               >
                 {link.label}
               </Link>
@@ -157,10 +171,21 @@ export function Navbar() {
 
         {/* CTA desktop */}
         <div className="hidden items-center gap-2 md:flex">
-          <Button as="link" to="/ingresar" variant="secondary" size="sm">
+          <Button
+            as="link"
+            to="/ingresar"
+            variant="secondary"
+            size="sm"
+            className={scrolled ? '!border-brand-200 !bg-white !text-brand-700 hover:!bg-brand-50' : ''}
+          >
             Ingresar
           </Button>
-          <Button onClick={() => open()} variant="landing" size="sm">
+          <Button
+            onClick={() => open()}
+            variant="landing"
+            size="sm"
+            className={scrolled ? '!bg-brand-500 !text-white hover:!bg-brand-700' : ''}
+          >
             Registrarse
           </Button>
         </div>
@@ -168,7 +193,11 @@ export function Navbar() {
         {/* Botón menú mobile */}
         <button
           type="button"
-          className="relative z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 text-white transition-transform active:scale-90 md:hidden"
+          className={`relative z-50 flex h-10 w-10 items-center justify-center rounded-xl border transition-[color,border-color,transform] active:scale-90 md:hidden ${
+            scrolled && !menuOpen
+              ? 'border-slate-300 text-brand-700'
+              : 'border-white/20 text-white'
+          }`}
           onClick={() => setMenuOpen((v) => !v)}
           aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
           aria-expanded={menuOpen}

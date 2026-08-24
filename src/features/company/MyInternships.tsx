@@ -213,8 +213,8 @@ export default function MyInternships() {
                       className="rounded-full border border-brand-400/25 bg-white/5 px-3 py-2 text-xs text-white outline-none"
                     >
                       <option value="" disabled>Destacar</option>
-                      <option value="15">15 días · USD 25</option>
-                      <option value="30">30 días · USD 40</option>
+                      <option value="15">15 días · $37.500</option>
+                      <option value="30">30 días · $60.000</option>
                     </select>
                   )}
                   <Link

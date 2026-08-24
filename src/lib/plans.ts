@@ -23,8 +23,8 @@ export function planLabel(plan: SubscriptionPlan, role?: Role): string {
 }
 
 export function planPrice(role: Role, plan: SubscriptionPlan): string {
-  if (plan === 'free') return 'USD 0';
-  if (role === 'estudiante') return 'USD 5/mes';
+  if (plan === 'free') return '$0';
+  if (role === 'estudiante') return '$7.500/mes';
   if (role === 'embajador') return 'A convenir';
-  return plan === 'enterprise' ? 'Desde USD 149/mes' : 'USD 49/mes';
+  return plan === 'enterprise' ? 'Desde $223.500/mes' : '$73.500/mes';
 }

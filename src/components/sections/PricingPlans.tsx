@@ -11,30 +11,30 @@ type Audience = 'estudiantes' | 'empresas';
 const studentPlans = [
   {
     name: 'Gratis',
-    price: 'USD 0',
+    price: '$0',
     description: 'Para empezar a construir tu red y encontrar oportunidades.',
     features: ['5 postulaciones por mes', '5 conexiones nuevas por mes', 'Mensajes con conexiones aceptadas', 'Perfil público, comunidades y red'],
   },
   {
     name: 'Pro',
-    price: 'USD 5',
+    price: '$7.500',
     suffix: '/mes',
     description: 'Para moverte sin límites y contactar antes que nadie.',
     featured: true,
-    features: ['Postulaciones ilimitadas', 'Conexiones sin límite', 'Mensajes sin conexión previa', 'Promotor/a con enlace personal incluido', 'Mayor visibilidad del perfil'],
+    features: ['Postulaciones ilimitadas', 'Conexiones sin límite', 'Mensajes sin conexión previa', 'Ser promotor', 'Mayor visibilidad del perfil'],
   },
 ];
 
 const companyPlans = [
   {
     name: 'Gratis',
-    price: 'USD 0',
+    price: '$0',
     description: 'Para publicar las primeras búsquedas y conocer PasantIA.',
     features: ['3 pasantías por mes', 'Primeros 10 postulados por pasantía', 'Perfil de empresa'],
   },
   {
     name: 'Pro',
-    price: 'USD 49',
+    price: '$73.500',
     suffix: '/mes',
     description: 'Para contratar talento joven de forma continua.',
     featured: true,
@@ -42,10 +42,10 @@ const companyPlans = [
   },
   {
     name: 'Empresa',
-    price: 'Desde USD 149',
+    price: 'Desde $223.500',
     suffix: '/mes',
     description: 'Para equipos con procesos y marca empleadora propios.',
-    features: ['Múltiples usuarios', 'Marca empleadora', 'Soporte prioritario', 'Reportes personalizados'],
+    features: ['Matching con IA', 'Múltiples usuarios', 'Marca empleadora', 'Soporte prioritario', 'Reportes personalizados'],
   },
 ];
 
@@ -145,7 +145,7 @@ export function PricingPlans({ id }: { id: string }) {
       {audience === 'empresas' && (
         <Reveal delay={0.15} className="mx-auto mt-5 flex max-w-3xl items-start justify-center gap-2 text-center text-sm text-white/55">
           <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand-300" />
-          <p>También podés destacar una pasantía por 15 días a USD 25 o por 30 días a USD 40.</p>
+          <p>También podés destacar una pasantía por 15 días a $37.500 o por 30 días a $60.000.</p>
         </Reveal>
       )}
       </div>

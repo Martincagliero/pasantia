@@ -14,7 +14,7 @@ const STUDENT_PLANS = [
   {
     plan: 'pro' as const,
     name: 'Estudiante Pro',
-    features: ['Postulaciones ilimitadas', 'Conexiones sin límite', 'Mensajes sin conexión previa', 'Promotor/a con enlace personal incluido', 'Mayor visibilidad del perfil'],
+    features: ['Postulaciones ilimitadas', 'Conexiones sin límite', 'Mensajes sin conexión previa', 'Ser promotor', 'Mayor visibilidad del perfil'],
   },
 ];
 
@@ -32,7 +32,7 @@ const COMPANY_PLANS = [
   {
     plan: 'enterprise' as const,
     name: 'Plan Empresa',
-    features: ['Múltiples usuarios', 'Marca empleadora', 'Soporte prioritario', 'Reportes personalizados'],
+    features: ['Matching con IA', 'Múltiples usuarios', 'Marca empleadora', 'Soporte prioritario', 'Reportes personalizados'],
   },
 ];
 
@@ -59,7 +59,7 @@ export default function PlansPage() {
     <div>
       <PageHeader
         title="Planes PasantIA"
-        description="Elegí las herramientas que necesitás. Los precios se cobran en pesos al valor de referencia en USD."
+        description="Elegí las herramientas que necesitás. Todos los precios están expresados en pesos argentinos."
       />
       <div className={`grid gap-4 ${plans.length === 3 ? 'lg:grid-cols-3' : 'mx-auto max-w-3xl sm:grid-cols-2'}`}>
         {plans.map((item) => (
@@ -72,7 +72,7 @@ export default function PlansPage() {
             <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-brand-500" />
             <div>
               <h2 className="font-semibold text-white">Publicaciones destacadas</h2>
-              <p className="mt-1 text-sm text-white/60">Ubicá una pasantía primero en Inicio, búsquedas y comunidades: USD 25 por 15 días o USD 40 por 30 días.</p>
+              <p className="mt-1 text-sm text-white/60">Ubicá una pasantía primero en Inicio, búsquedas y comunidades: $37.500 por 15 días o $60.000 por 30 días.</p>
               <p className="mt-2 text-xs text-white/45">Podés solicitar el destacado desde “Mis pasantías”.</p>
             </div>
           </div>

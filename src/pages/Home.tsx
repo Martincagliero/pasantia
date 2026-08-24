@@ -97,7 +97,7 @@ const FAQ = [
   {
     question: '¿Tiene costo?',
     answer:
-      'Podés empezar gratis. Estudiante Pro cuesta USD 5 por mes, Empresa Pro USD 49 por mes y el plan Empresa parte de USD 149 por mes.',
+      'Podés empezar gratis. Estudiante Pro cuesta $7.500 por mes, Empresa Pro $73.500 por mes y el plan Empresa parte de $223.500 por mes.',
   },
   {
     question: '¿Es para estudiantes o para empresas?',

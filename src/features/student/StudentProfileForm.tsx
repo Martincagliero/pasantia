@@ -1,6 +1,6 @@
 // Estudiante: edita su perfil (nombre + datos académicos, links y CV).
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
-import { UploadCloud, FileText, Loader2, Plus, Check, BriefcaseBusiness, GraduationCap, MapPin, Clock3 } from 'lucide-react';
+import { UploadCloud, FileText, Loader2, Plus, Check, BriefcaseBusiness, GraduationCap, MapPin, Clock3, ChevronDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { StudentProfile } from '../../lib/database.types';
@@ -14,7 +14,7 @@ import { StudentRecentActivity } from './StudentRecentActivity';
 import { whatsappLink } from '../../lib/constants';
 import { UniversityAutocomplete } from '../ui/UniversityAutocomplete';
 import { AVAILABILITY_OPTIONS, CAREERS, suggestFor } from './suggestions';
-import { normalizeUrl } from '../../lib/url';
+import { detectProfileLink, normalizeProfileUrl, normalizeUrl, profileLinkLabel, type ProfileLinkKind } from '../../lib/url';
 
 const MAX_CV_MB = 20;
 
@@ -64,6 +64,18 @@ export default function StudentProfileForm() {
       if (!active) return;
       if (data) {
         const s = data as StudentProfile;
+        const socialLinks = new Map<ProfileLinkKind, string>();
+        ([
+          [s.instagram_url, 'instagram'],
+          [s.linkedin_url, 'linkedin'],
+          [s.github_url, 'github'],
+          [s.portfolio_url, 'portfolio'],
+        ] as const).forEach(([value, fallbackKind]) => {
+          if (!value) return;
+          const detected = detectProfileLink(value);
+          const kind = detected?.kind === 'portfolio' && !/[./]/.test(value) ? fallbackKind : detected?.kind ?? fallbackKind;
+          if (!socialLinks.has(kind)) socialLinks.set(kind, normalizeProfileUrl(value, kind));
+        });
         setForm({
           avatar_url: s.avatar_url ?? '',
           university: s.university ?? '',
@@ -74,14 +86,14 @@ export default function StudentProfileForm() {
           availability: s.availability ?? '',
           bio: s.bio ?? '',
           cv_url: s.cv_url ?? '',
-          linkedin_url: s.linkedin_url ?? '',
-          portfolio_url: s.portfolio_url ?? '',
+          linkedin_url: socialLinks.get('linkedin') ?? '',
+          portfolio_url: socialLinks.get('portfolio') ?? '',
           phone: s.phone ?? '',
           location: s.location ?? '',
           gpa: s.gpa ?? '',
           transcript_url: s.transcript_url ?? '',
-          github_url: s.github_url ?? '',
-          instagram_url: s.instagram_url ?? '',
+          github_url: socialLinks.get('github') ?? '',
+          instagram_url: socialLinks.get('instagram') ?? '',
           is_public: s.is_public ?? false,
         });
         setVerified(!!s.verified);
@@ -183,6 +195,8 @@ export default function StudentProfileForm() {
     e.preventDefault();
     if (!(form.avatar_url ?? '').trim()) {
       alert('Tenés que subir una foto de perfil para guardar tu perfil.');
+      const photoSection = document.querySelector<HTMLDetailsElement>('#student-profile-photo');
+      if (photoSection) photoSection.open = true;
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -204,14 +218,14 @@ export default function StudentProfileForm() {
           availability: form.availability || null,
           bio: form.bio || null,
           cv_url: normalizeUrl(form.cv_url ?? '') || null,
-          linkedin_url: normalizeUrl(form.linkedin_url ?? '') || null,
-          portfolio_url: normalizeUrl(form.portfolio_url ?? '') || null,
+          linkedin_url: normalizeProfileUrl(form.linkedin_url ?? '', 'linkedin') || null,
+          portfolio_url: normalizeProfileUrl(form.portfolio_url ?? '', 'portfolio') || null,
           phone: form.phone || null,
           location: form.location || null,
           gpa: form.gpa || null,
           transcript_url: form.transcript_url || null,
-          github_url: normalizeUrl(form.github_url ?? '') || null,
-          instagram_url: form.instagram_url || null,
+          github_url: normalizeProfileUrl(form.github_url ?? '', 'github') || null,
+          instagram_url: normalizeProfileUrl(form.instagram_url ?? '', 'instagram') || null,
           is_public: form.is_public,
         })
         .eq('id', uid),
@@ -227,32 +241,31 @@ export default function StudentProfileForm() {
   if (editing) {
     return (
       <div className="max-w-6xl">
-        <div className="mb-5 flex items-center justify-between gap-3">
-          <h1 className="text-xl font-bold tracking-tight text-white lg:text-2xl">Editar perfil</h1>
-          <div className="flex items-center gap-3">
+        <div className="mb-4 flex items-center justify-between gap-2 sm:mb-5 sm:gap-3">
+          <h1 className="text-lg font-bold tracking-tight text-white sm:text-xl lg:text-2xl">Editar perfil</h1>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             {saved && <span className="text-sm text-emerald-300">Guardado</span>}
-            <Button as="button" variant="secondary" size="sm" onClick={() => setEditing(false)}>
+            <Button as="button" variant="secondary" size="sm" className="!h-9 !px-3 !text-xs sm:!h-10 sm:!px-5 sm:!text-sm" onClick={() => setEditing(false)}>
               Cancelar
             </Button>
-            <Button type="submit" form="student-profile-form" variant="primary" size="sm" disabled={saving}>
-              {saving ? 'Guardando…' : 'Guardar cambios'}
+            <Button type="submit" form="student-profile-form" variant="primary" size="sm" className="!h-9 !px-3 !text-xs sm:!h-10 sm:!px-5 sm:!text-sm" disabled={saving}>
+              {saving ? 'Guardando…' : <><span className="sm:hidden">Guardar</span><span className="hidden sm:inline">Guardar cambios</span></>}
             </Button>
           </div>
         </div>
 
       <form id="student-profile-form" onSubmit={handleSubmit}>
-        <Card className="mb-6 lg:p-6">
+        <EditSection id="student-profile-photo" title="Foto de perfil" className="mb-4 sm:mb-6">
           <AvatarUpload
             uid={session!.user.id}
             value={form.avatar_url ?? ''}
             onChange={(url) => set('avatar_url', url)}
             hint="Tu cara ayuda a que las empresas te reconozcan. JPG, PNG o WEBP · máx 5 MB."
           />
-        </Card>
-        <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
+        </EditSection>
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 lg:gap-8">
           {/* ── Columna izquierda: datos académicos ── */}
-          <Card className="lg:p-8">
-            <h3 className="mb-5 text-base font-semibold text-white lg:text-lg">Datos académicos</h3>
+          <EditSection title="Datos académicos">
             <div className="space-y-4 lg:space-y-5">
               <FormRow label="Nombre completo" htmlFor="name">
                 <TextField
@@ -361,11 +374,10 @@ export default function StudentProfileForm() {
                 />
               </FormRow>
             </div>
-          </Card>
+          </EditSection>
 
           {/* ── Columna derecha: contacto, links y archivos ── */}
-          <Card className="lg:p-8">
-            <h3 className="mb-5 text-base font-semibold text-white lg:text-lg">Links y archivos</h3>
+          <EditSection title="Links y archivos">
             <div className="space-y-4 lg:space-y-5">
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormRow label="Teléfono (opcional)" htmlFor="phone">
@@ -432,6 +444,9 @@ export default function StudentProfileForm() {
                 <TextField
                   id="cv"
                   type="text"
+                  value={form.cv_url ?? ''}
+                  onChange={(e) => set('cv_url', e.target.value)}
+                  placeholder="https://…"
                 />
               </FormRow>
 
@@ -544,7 +559,7 @@ export default function StudentProfileForm() {
                 </span>
               </label>
             </div>
-          </Card>
+          </EditSection>
         </div>
       </form>
       </div>
@@ -668,9 +683,22 @@ function SuggestChips({
   );
 }
 
+function EditSection({ id, title, className = '', children }: { id?: string; title: string; className?: string; children: ReactNode }) {
+  return (
+    <details id={id} className={`group rounded-xl border border-white/10 bg-white/[0.03] ${className}`}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-semibold text-white marker:content-none sm:px-5 sm:py-4 sm:text-base">
+        {title}
+        <ChevronDown className="h-4 w-4 shrink-0 text-white/45 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="border-t border-white/8 px-4 py-4 sm:px-5 sm:py-5 lg:px-6">{children}</div>
+    </details>
+  );
+}
+
 function safeHref(url: string | null | undefined): string | null {
   if (!url) return null;
   const u = url.trim();
+  if (u.startsWith('@')) return normalizeProfileUrl(u, 'instagram');
   return /^https?:\/\//i.test(u) ? u : `https://${u}`;
 }
 
@@ -694,7 +722,7 @@ function linkChip(url: string | null | undefined, label: string) {
       rel="noopener noreferrer"
       className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/5 px-2.5 py-1 text-xs text-white/75 transition hover:bg-white/10"
     >
-      {label}
+      {profileLinkLabel(url ?? '', label)}
     </a>
   );
 }

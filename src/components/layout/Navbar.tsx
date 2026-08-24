@@ -196,6 +196,13 @@ export function Navbar() {
                 {link.label}
               </NavLink>
             ))}
+            <Link
+              to="/#planes"
+              onClick={() => setMenuOpen(false)}
+              className="text-2xl font-medium tracking-tight text-white/60 transition-colors hover:text-white"
+            >
+              Planes
+            </Link>
             {HASH_LINKS.map((link) => (
               <Link
                 key={link.to}
@@ -206,13 +213,6 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <Link
-              to="/#planes"
-              onClick={() => setMenuOpen(false)}
-              className="text-2xl font-medium tracking-tight text-white/60 transition-colors hover:text-white"
-            >
-              Planes
-            </Link>
           </nav>
 
           <div className="flex w-full items-center justify-center gap-2 px-6 pb-[max(3rem,env(safe-area-inset-bottom))]">

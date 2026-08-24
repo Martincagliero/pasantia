@@ -36,6 +36,7 @@ import {
 import { sendPushEvent } from '../../lib/notify';
 import estudianteImg from '../../assets/images/estudiante.webp';
 import logo from '../../assets/images/logosinfobndo-ui.png';
+import { detectProfileLink } from '../../lib/url';
 
 type Role = 'estudiante' | 'empresa' | 'embajador';
 
@@ -318,7 +319,6 @@ function Onboarding({
           data.nombre.trim().length > 1 &&
           isEmail(data.email) &&
           (googleAuth || data.password.trim().length >= 6) &&
-          (data.role === 'embajador' || data.instagram_link.trim() !== '') &&
           // La fecha de nacimiento y ser mayor de 18 sólo se exige a estudiantes.
           (data.role !== 'estudiante' || isAdultStudent(data.fecha_nacimiento))
         );
@@ -494,6 +494,8 @@ function Onboarding({
               }
             };
 
+            const profileLink = detectProfileLink(data.instagram_link);
+
             if (data.role === 'empresa') {
               await saveSub('company_profiles', {
                 id: uid,
@@ -501,6 +503,7 @@ function Onboarding({
                 industry: data.rubro.trim() || null,
                 size: data.tamano.trim() || null,
                 description: data.perfil.trim() || data.mensaje.trim() || null,
+                website: profileLink?.url || null,
                 avatar_url: avatarUrl,
               });
             } else if (data.role === 'embajador') {
@@ -524,7 +527,10 @@ function Onboarding({
                 availability: data.disponibilidad.trim() || null,
                 phone: data.telefono.trim() || null,
                 bio: data.perfil.trim() || data.mensaje.trim() || null,
-                instagram_url: data.instagram_link.trim() || null,
+                instagram_url: profileLink?.kind === 'instagram' ? profileLink.url : null,
+                linkedin_url: profileLink?.kind === 'linkedin' ? profileLink.url : null,
+                github_url: profileLink?.kind === 'github' ? profileLink.url : null,
+                portfolio_url: profileLink?.kind === 'portfolio' ? profileLink.url : null,
                 avatar_url: avatarUrl,
                 // Público por defecto: quien se registra en el acceso anticipado
                 // quiere ser encontrado en "Explorar perfiles". Puede ocultarse
@@ -1013,12 +1019,15 @@ function StepContacto({
           </div>
         )}
         {data.role !== 'embajador' && (
-          <Input
-            label="Instagram u otra red"
-            value={data.instagram_link}
-            onChange={(v) => set({ instagram_link: v })}
-            placeholder="@tuusuario o link (instagram.com/tuusuario)"
-          />
+          <div>
+            <Input
+              label="Enlace de perfil (opcional)"
+              value={data.instagram_link}
+              onChange={(v) => set({ instagram_link: v })}
+              placeholder="LinkedIn, GitHub, Instagram o portfolio"
+            />
+            <p className="mt-1.5 text-left text-[11px] text-white/45">Recomendado para que puedan conocer mejor tu perfil.</p>
+          </div>
         )}
         <Input
           label="Teléfono (opcional)"

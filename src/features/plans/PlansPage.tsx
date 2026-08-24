@@ -9,7 +9,7 @@ const STUDENT_PLANS = [
   {
     plan: 'free' as const,
     name: 'Estudiante Gratis',
-    features: ['1 postulación por mes', 'Hasta 5 conexiones nuevas por mes', 'Mensajes con conexiones aceptadas', 'Perfil público, comunidades y red'],
+    features: ['5 postulaciones por mes', 'Hasta 5 conexiones nuevas por mes', 'Mensajes con conexiones aceptadas', 'Perfil público, comunidades y red'],
   },
   {
     plan: 'pro' as const,
@@ -22,7 +22,7 @@ const COMPANY_PLANS = [
   {
     plan: 'free' as const,
     name: 'Empresa Gratis',
-    features: ['3 pasantías por mes', 'Primeros 3 postulados por pasantía', 'Perfil de empresa'],
+    features: ['3 pasantías por mes', 'Primeros 10 postulados por pasantía', 'Perfil de empresa'],
   },
   {
     plan: 'pro' as const,

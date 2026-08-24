@@ -127,7 +127,7 @@ BEGIN
     FROM public.student_application_usage
     WHERE student_id = NEW.student_id
       AND created_at >= date_trunc('month', now());
-    IF v_count >= 1 THEN RAISE EXCEPTION 'FREE_STUDENT_MONTHLY_APPLICATION_LIMIT'; END IF;
+    IF v_count >= 5 THEN RAISE EXCEPTION 'FREE_STUDENT_MONTHLY_APPLICATION_LIMIT'; END IF;
   END IF;
   INSERT INTO public.student_application_usage(application_id, student_id, created_at)
   VALUES (NEW.id, NEW.student_id, COALESCE(NEW.created_at, now()));
@@ -138,7 +138,7 @@ DROP TRIGGER IF EXISTS applications_freemium_limit ON public.applications;
 CREATE TRIGGER applications_freemium_limit BEFORE INSERT ON public.applications
 FOR EACH ROW EXECUTE FUNCTION public.enforce_student_monthly_application_limit();
 
--- Empresa Gratis puede revisar y gestionar los primeros 3 postulados de cada pasantía.
+-- Empresa Gratis puede revisar y gestionar los primeros 10 postulados de cada pasantía.
 CREATE OR REPLACE FUNCTION public.company_can_view_application(
   p_application_id UUID, p_internship_id UUID
 ) RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
@@ -151,7 +151,7 @@ CREATE OR REPLACE FUNCTION public.company_can_view_application(
           SELECT a.id FROM public.applications a
           WHERE a.internship_id = p_internship_id
           ORDER BY a.created_at ASC, a.id ASC
-          LIMIT 3
+          LIMIT 10
         )
       )
   );
@@ -178,7 +178,7 @@ DROP TRIGGER IF EXISTS internships_freemium_limit ON public.internships;
 CREATE TRIGGER internships_freemium_limit BEFORE INSERT ON public.internships
 FOR EACH ROW EXECUTE FUNCTION public.enforce_company_monthly_post_limit();
 
--- Candidatos: el estudiante conserva acceso propio; Empresa Gratis ve 3 por pasantía y Pro ve todos.
+-- Candidatos: el estudiante conserva acceso propio; Empresa Gratis ve 10 por pasantía y Pro ve todos.
 DROP POLICY IF EXISTS applications_select ON public.applications;
 DROP POLICY IF EXISTS applications_select_student ON public.applications;
 DROP POLICY IF EXISTS applications_select_company ON public.applications;
@@ -271,6 +271,81 @@ RETURNS TABLE (
   WHERE public.is_admin()
   ORDER BY r.created_at DESC;
 $$;
+
+CREATE OR REPLACE FUNCTION public.admin_list_users_with_plans()
+RETURNS TABLE (
+  id UUID,
+  role TEXT,
+  full_name TEXT,
+  email TEXT,
+  plan TEXT,
+  plan_expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ
+) LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT p.id, p.role::TEXT, p.full_name, p.email, public.current_plan(p.id), p.plan_expires_at, p.created_at
+  FROM public.profiles p
+  WHERE public.is_admin()
+  ORDER BY p.created_at DESC;
+$$;
+
+CREATE OR REPLACE FUNCTION public.admin_set_user_plan(p_user_id UUID, p_plan TEXT)
+RETURNS UUID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_role TEXT;
+  v_name TEXT;
+  v_email TEXT;
+  v_base TEXT;
+  v_code TEXT;
+  v_event_id UUID;
+BEGIN
+  IF NOT public.is_admin() THEN RAISE EXCEPTION 'no autorizado'; END IF;
+  IF p_plan NOT IN ('free', 'pro', 'enterprise') THEN RAISE EXCEPTION 'plan inválido'; END IF;
+
+  SELECT role::TEXT, full_name, email INTO v_role, v_name, v_email
+  FROM public.profiles WHERE id = p_user_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'perfil inexistente'; END IF;
+  IF p_plan = 'enterprise' AND v_role <> 'empresa' THEN
+    RAISE EXCEPTION 'enterprise solo está disponible para empresas';
+  END IF;
+
+  UPDATE public.profiles
+  SET plan = p_plan,
+      plan_expires_at = CASE WHEN p_plan = 'free' THEN NULL ELSE now() + interval '30 days' END
+  WHERE id = p_user_id;
+
+  IF v_role = 'estudiante' AND p_plan = 'pro' THEN
+    IF NOT EXISTS (SELECT 1 FROM public.promoters WHERE profile_id = p_user_id) THEN
+      v_base := left(regexp_replace(lower(COALESCE(v_name, 'promotor')), '[^a-z0-9]+', '', 'g'), 12);
+      IF v_base = '' THEN v_base := 'promotor'; END IF;
+      v_code := v_base || substr(md5(p_user_id::TEXT), 1, 8);
+      INSERT INTO public.promoters(code, profile_id, nombre, email)
+      VALUES (v_code, p_user_id, v_name, v_email);
+    END IF;
+  ELSIF v_role = 'estudiante' AND p_plan = 'free' THEN
+    DELETE FROM public.promoters WHERE profile_id = p_user_id;
+  END IF;
+
+  UPDATE public.plan_requests
+  SET status = 'rejected', resolved_at = now(), admin_note = 'Reemplazada por cambio manual del admin'
+  WHERE user_id = p_user_id AND kind = 'subscription' AND status = 'pending';
+
+  IF p_plan <> 'free' THEN
+    INSERT INTO public.plan_requests(
+      user_id, requested_plan, kind, message, status, admin_note, resolved_at
+    ) VALUES (
+      p_user_id, p_plan, 'subscription', 'Cambio manual desde Administración',
+      'approved', 'Asignado manualmente por el admin', now()
+    ) RETURNING id INTO v_event_id;
+  END IF;
+
+  RETURN v_event_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.admin_list_users_with_plans() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.admin_set_user_plan(UUID, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.admin_list_users_with_plans() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_set_user_plan(UUID, TEXT) TO authenticated;
 
 -- Compatibilidad: bloquea altas manuales nuevas que no sean de Estudiante Pro.
 -- Los promotores ya existentes se conservan y pueden mantener su código.

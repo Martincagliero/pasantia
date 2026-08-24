@@ -13,7 +13,7 @@ const studentPlans = [
     name: 'Gratis',
     price: 'USD 0',
     description: 'Para empezar a construir tu red y encontrar oportunidades.',
-    features: ['1 postulación por mes', '5 conexiones nuevas por mes', 'Mensajes con conexiones aceptadas', 'Perfil público, comunidades y red'],
+    features: ['5 postulaciones por mes', '5 conexiones nuevas por mes', 'Mensajes con conexiones aceptadas', 'Perfil público, comunidades y red'],
   },
   {
     name: 'Pro',
@@ -30,7 +30,7 @@ const companyPlans = [
     name: 'Gratis',
     price: 'USD 0',
     description: 'Para publicar las primeras búsquedas y conocer PasantIA.',
-    features: ['3 pasantías por mes', 'Primeros 3 postulados por pasantía', 'Perfil de empresa'],
+    features: ['3 pasantías por mes', 'Primeros 10 postulados por pasantía', 'Perfil de empresa'],
   },
   {
     name: 'Pro',

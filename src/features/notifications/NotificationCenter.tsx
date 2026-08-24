@@ -272,7 +272,7 @@ export function NotificationCenter() {
       .subscribe();
     const plansChannel = supabase
       .channel(`notification-plan-requests-${uid}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'plan_requests', filter: `user_id=eq.${uid}` }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'plan_requests', filter: `user_id=eq.${uid}` }, (payload) => {
         const request = payload.new as { kind?: string; requested_plan?: string; status?: string };
         if (request.kind === 'subscription' && request.status === 'approved') {
           setPlanNotice(

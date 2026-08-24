@@ -339,7 +339,7 @@ export function ApplyModal({
     if (error) {
       if (/FREE_STUDENT_MONTHLY_APPLICATION_LIMIT/i.test(error.message)) {
         setLimitReached(true);
-        setError('Ya usaste tu postulación gratis de este mes. Estudiante Pro incluye postulaciones ilimitadas.');
+        setError('Ya usaste tus 5 postulaciones gratis de este mes. Estudiante Pro incluye postulaciones ilimitadas.');
         return;
       }
       setError(

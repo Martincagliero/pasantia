@@ -21,7 +21,8 @@ import {
 import { supabase } from '../../lib/supabase';
 import { sendPushEvent } from '../../lib/notify';
 import { useAuth } from '../auth/AuthProvider';
-import type { Role } from '../../lib/database.types';
+import type { Role, SubscriptionPlan } from '../../lib/database.types';
+import { planLabel } from '../../lib/plans';
 import { Button } from '../../components/ui/Button';
 import { Card, PageHeader, PageLoader } from '../ui/primitives';
 
@@ -31,6 +32,8 @@ interface UserRow {
   role: Role;
   full_name: string;
   email: string;
+  plan: SubscriptionPlan;
+  plan_expires_at: string | null;
   created_at: string;
 }
 
@@ -142,7 +145,7 @@ export default function AdminPanel() {
     setLoading(true);
     setError(null);
     const [u, r, p, plans, reportList] = await Promise.all([
-      supabase.rpc('admin_list_users'),
+      supabase.rpc('admin_list_users_with_plans'),
       supabase.rpc('admin_list_requests'),
       supabase.rpc('admin_promoter_stats'),
       supabase.rpc('admin_list_plan_requests'),
@@ -428,6 +431,24 @@ function UsersTab({ users, onChanged }: { users: UserRow[]; onChanged: () => voi
   const [q, setQ] = useState('');
   const [roleFilter, setRoleFilter] = useState<'todos' | Role>('todos');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [changingPlanId, setChangingPlanId] = useState<string | null>(null);
+
+  async function handlePlanChange(user: UserRow, plan: SubscriptionPlan) {
+    if (plan === user.plan || changingPlanId) return;
+    if (plan === 'free' && !window.confirm(`¿Bajar a ${user.full_name || user.email} al plan Gratis? Los beneficios pagos se desactivarán al instante.`)) return;
+    setChangingPlanId(user.id);
+    const { data, error } = await supabase.rpc('admin_set_user_plan', {
+      p_user_id: user.id,
+      p_plan: plan,
+    });
+    setChangingPlanId(null);
+    if (error) {
+      alert(`No se pudo cambiar el plan: ${error.message}`);
+      return;
+    }
+    if (data) void sendPushEvent('plan_resolved', String(data));
+    onChanged();
+  }
 
   async function handleDelete(u: UserRow) {
     const ok = window.confirm(
@@ -491,12 +512,13 @@ function UsersTab({ users, onChanged }: { users: UserRow[]; onChanged: () => voi
       </div>
 
       <Card className="overflow-x-auto p-0">
-        <table className="w-full min-w-[520px] text-left text-sm">
+        <table className="w-full min-w-[680px] text-left text-sm">
           <thead className="border-b border-white/10 text-xs uppercase tracking-wide text-white/45">
             <tr>
               <th className="px-4 py-3 font-medium">Nombre</th>
               <th className="px-4 py-3 font-medium">Email</th>
               <th className="px-4 py-3 font-medium">Rol</th>
+              <th className="px-4 py-3 font-medium">Plan</th>
               <th className="px-4 py-3 font-medium">Alta</th>
               <th className="px-4 py-3 font-medium" />
             </tr>
@@ -510,6 +532,20 @@ function UsersTab({ users, onChanged }: { users: UserRow[]; onChanged: () => voi
                   <span className={`rounded-full border px-2.5 py-1 text-xs ${roleBadge[u.role] ?? ''}`}>
                     {roleLabel[u.role] ?? u.role}
                   </span>
+                </td>
+                <td className="px-4 py-3">
+                  <select
+                    value={u.plan}
+                    onChange={(event) => void handlePlanChange(u, event.target.value as SubscriptionPlan)}
+                    disabled={changingPlanId === u.id}
+                    className="rounded-lg border border-white/12 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-white outline-none focus:border-brand-400/60 disabled:opacity-50"
+                    aria-label={`Plan de ${u.full_name || u.email}`}
+                    title={u.plan_expires_at ? `Vence ${fmtDate(u.plan_expires_at)}` : 'Sin vencimiento'}
+                  >
+                    <option value="free">Gratis / Básico</option>
+                    <option value="pro">{planLabel('pro', u.role)}</option>
+                    {u.role === 'empresa' && <option value="enterprise">Empresa</option>}
+                  </select>
                 </td>
                 <td className="px-4 py-3 text-white/50">{fmtDate(u.created_at)}</td>
                 <td className="px-4 py-3 text-right">
@@ -526,7 +562,7 @@ function UsersTab({ users, onChanged }: { users: UserRow[]; onChanged: () => voi
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-white/45">
+                <td colSpan={6} className="px-4 py-8 text-center text-white/45">
                   Sin resultados.
                 </td>
               </tr>

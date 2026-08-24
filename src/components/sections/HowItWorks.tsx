@@ -16,6 +16,7 @@ interface HowItWorksProps {
   heading: ReactNode;
   subheading?: string;
   steps: Step[];
+  inverted?: boolean;
 }
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -26,7 +27,7 @@ const EASE = [0.22, 1, 0.36, 1] as const;
  * de progreso que se llena y el paso activo resaltado. En mobile, los pasos
  * se apilan con su imagen y animaciones de entrada.
  */
-export function HowItWorks({ eyebrow, heading, subheading, steps }: HowItWorksProps) {
+export function HowItWorks({ eyebrow, heading, subheading, steps, inverted = false }: HowItWorksProps) {
   const reduce = useReducedMotion();
   const [active, setActive] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
@@ -39,14 +40,14 @@ export function HowItWorks({ eyebrow, heading, subheading, steps }: HowItWorksPr
   return (
     <div className="container-px">
       <Reveal className="mx-auto max-w-2xl text-center">
-        <span className="text-sm font-semibold uppercase tracking-[0.16em] text-white/50">
+        <span className={`text-sm font-semibold uppercase tracking-[0.16em] ${inverted ? 'text-brand-700/55' : 'text-white/50'}`}>
           {eyebrow}
         </span>
         <h2 className="mt-4 text-4xl font-semibold tracking-tighter sm:text-5xl">
           {heading}
         </h2>
         {subheading && (
-          <p className="mt-5 text-lg font-light text-white/70">{subheading}</p>
+          <p className={`mt-5 text-lg font-light ${inverted ? 'text-brand-800/70' : 'text-white/70'}`}>{subheading}</p>
         )}
       </Reveal>
 
@@ -113,9 +114,9 @@ export function HowItWorks({ eyebrow, heading, subheading, steps }: HowItWorksPr
         {/* ---- Lista de pasos ---- */}
         <div ref={listRef} className="relative mt-12 lg:mt-0">
           {/* Línea de progreso vertical (desktop) */}
-          <div className="absolute left-6 top-6 bottom-6 hidden w-px bg-white/12 lg:block">
+          <div className={`absolute left-6 top-6 bottom-6 hidden w-px lg:block ${inverted ? 'bg-brand-700/15' : 'bg-white/12'}`}>
             <motion.div
-              className="h-full w-full origin-top rounded-full bg-white/70"
+              className={`h-full w-full origin-top rounded-full ${inverted ? 'bg-brand-600' : 'bg-white/70'}`}
               style={{ scaleY: lineScale }}
             />
           </div>
@@ -137,8 +138,12 @@ export function HowItWorks({ eyebrow, heading, subheading, steps }: HowItWorksPr
                     transition={{ type: 'spring', stiffness: 300, damping: 22 }}
                     className={`relative z-10 inline-flex h-12 w-12 items-center justify-center rounded-2xl border text-lg font-bold tabular-nums transition-colors duration-500 lg:absolute lg:left-0 lg:top-0 ${
                       activeNow
-                        ? 'border-white bg-white text-brand-600 shadow-lg shadow-brand-950/40'
-                        : 'border-white/15 bg-white/[0.06] text-white/70'
+                        ? inverted
+                          ? 'border-brand-700 bg-brand-700 text-white shadow-lg shadow-brand-700/20'
+                          : 'border-white bg-white text-brand-600 shadow-lg shadow-brand-950/40'
+                        : inverted
+                          ? 'border-brand-700/20 bg-brand-50 text-brand-700/65'
+                          : 'border-white/15 bg-white/[0.06] text-white/70'
                     }`}
                   >
                     {String(i + 1).padStart(2, '0')}
@@ -150,7 +155,9 @@ export function HowItWorks({ eyebrow, heading, subheading, steps }: HowItWorksPr
                     viewport={viewportOnce}
                     transition={{ duration: 0.6, ease: EASE }}
                     className={`mt-5 text-2xl font-semibold tracking-tight transition-colors duration-500 xs:text-3xl sm:text-4xl lg:mt-0 ${
-                      activeNow ? 'text-white' : 'lg:text-white/45'
+                      activeNow
+                        ? inverted ? 'text-brand-800' : 'text-white'
+                        : inverted ? 'text-brand-800 lg:text-brand-800/45' : 'lg:text-white/45'
                     }`}
                   >
                     {s.title}
@@ -162,7 +169,9 @@ export function HowItWorks({ eyebrow, heading, subheading, steps }: HowItWorksPr
                     viewport={viewportOnce}
                     transition={{ duration: 0.6, delay: 0.06, ease: EASE }}
                     className={`mt-3 max-w-md text-base font-light leading-relaxed transition-colors duration-500 sm:text-lg ${
-                      activeNow ? 'text-white/70' : 'lg:text-white/40'
+                      activeNow
+                        ? inverted ? 'text-brand-800/70' : 'text-white/70'
+                        : inverted ? 'text-brand-800/65 lg:text-brand-800/40' : 'lg:text-white/40'
                     }`}
                   >
                     {s.description}
@@ -176,7 +185,7 @@ export function HowItWorks({ eyebrow, heading, subheading, steps }: HowItWorksPr
                     transition={{ duration: 0.7, ease: EASE }}
                     className="mt-6 lg:hidden"
                   >
-                    <div className="relative overflow-hidden rounded-[1.5rem] border border-white/10 shadow-2xl shadow-brand-950/40">
+                    <div className={`relative overflow-hidden rounded-[1.5rem] border shadow-2xl ${inverted ? 'border-brand-700/10 shadow-brand-700/15' : 'border-white/10 shadow-brand-950/40'}`}>
                       <div className="pointer-events-none absolute -inset-4 -z-10 rounded-[2rem] bg-white/5 blur-2xl" />
                       <img
                         src={s.image}

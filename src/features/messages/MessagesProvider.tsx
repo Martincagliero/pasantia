@@ -25,6 +25,7 @@ import {
   Check,
   Pencil,
   Trash2,
+  ArrowUpRight,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
@@ -218,6 +219,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const [groupThread, setGroupThread] = useState<GroupMessage[]>([]);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const [upgradeNotice, setUpgradeNotice] = useState<'student' | 'company' | null>(null);
   const [suggestions, setSuggestions] = useState<SuggestedContact[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [composerMode, setComposerMode] = useState<ComposerMode>(null);
@@ -477,6 +479,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const openChatWith = useCallback(
     (userId: string, name: string, avatar: string | null = null) => {
       if (userId === uid) return;
+      setUpgradeNotice(null);
       setActiveGroup(null);
       setGroupSettingsOpen(false);
       setActive({ id: userId, name, avatar });
@@ -735,11 +738,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       if (activeGroup && /group_messages|message_group|does not exist|relation|schema cache|function/i.test(msg)) {
         alert('Falta crear las tablas de grupos. Ejecutá supabase/migracion-mensajes-grupos.sql en Supabase.');
       } else if (/row-level security|policy|not authorized|permission denied/i.test(msg)) {
-        alert(
-          profile?.role === 'estudiante'
-            ? 'Para enviar este mensaje primero conectate con la persona o solicitá Estudiante Pro.'
-            : 'La mensajería con talento está disponible en Empresa Pro.'
-        );
+        setUpgradeNotice(profile?.role === 'estudiante' ? 'student' : 'company');
       } else if (/messages|does not exist|relation|schema cache/i.test(msg)) {
         alert(
           'Falta crear la tabla de mensajes.\nEjecutá supabase/migracion-mensajes.sql en el SQL Editor de Supabase.'
@@ -1097,6 +1096,37 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                       )}
                     </div>
 
+                    {upgradeNotice && (
+                      <div className="mx-3 mb-2 rounded-lg border border-white/15 bg-white/[0.06] p-3">
+                        <p className="text-xs leading-relaxed text-white/70">
+                          {upgradeNotice === 'student'
+                            ? 'Para enviar mensajes sin conexión necesitás Estudiante Pro. También podés solicitar conexión desde el perfil.'
+                            : 'La mensajería directa con talento está disponible en Empresa Pro.'}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {upgradeNotice === 'student' && active && (
+                            <button
+                              type="button"
+                              onClick={() => goToProfile(active.id)}
+                              className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/75 transition hover:bg-white/10"
+                            >
+                              Solicitar conexión
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigate('/app/planes');
+                              setOpen(false);
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 transition hover:bg-white/90"
+                          >
+                            Ver plan Pro <ArrowUpRight className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <div
                       className={`dash-panel relative z-10 flex shrink-0 items-center gap-2 border-t border-white/10 px-2 pt-2 ${
                         mobileKeyboardOpen
@@ -1106,7 +1136,10 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                     >
                       <input
                         value={text}
-                        onChange={(e) => setText(e.target.value)}
+                        onChange={(e) => {
+                          setText(e.target.value);
+                          if (upgradeNotice) setUpgradeNotice(null);
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();

@@ -4,7 +4,7 @@
 // - Si no lo es, ve un botón para solicitar ser promotor por Instagram.
 // Los códigos NO se autogeneran: los asigna el admin.
 import { useEffect, useState } from 'react';
-import { Copy, Check, Share2, Trophy, Send, Trash2, GraduationCap, Building2, Users, Link2, Info, X, Gift, Rocket, Loader2, ChevronDown, Crown } from 'lucide-react';
+import { Copy, Check, Share2, Trophy, Send, Trash2, GraduationCap, Building2, Users, Link2, Info, X, Gift, Rocket, Loader2, ChevronDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { createAchievementStory, shareAchievementFile } from '../../lib/achievementStory';
@@ -392,7 +392,7 @@ export default function Promoters() {
       ) : activePlan(profile) !== 'pro' ? (
         <Card className="mb-6 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-brand-500">
-            <Crown className="h-6 w-6" />
+            <Rocket className="h-6 w-6" />
           </div>
           <h3 className="text-base font-semibold text-white">Promotores es un beneficio Pro</h3>
           <p className="mx-auto mt-2 max-w-md text-sm text-white/60">

@@ -85,6 +85,58 @@ RETURNS TEXT LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   FROM public.profiles p WHERE p.id = p_user;
 $$;
 
+-- Registro durable de postulaciones iniciadas: retirar una postulación no recupera el cupo mensual.
+CREATE TABLE IF NOT EXISTS public.student_application_usage (
+  application_id UUID PRIMARY KEY,
+  student_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE public.student_application_usage ENABLE ROW LEVEL SECURITY;
+CREATE INDEX IF NOT EXISTS student_application_usage_month_idx
+  ON public.student_application_usage(student_id, created_at);
+INSERT INTO public.student_application_usage(application_id, student_id, created_at)
+SELECT id, student_id, created_at FROM public.applications
+ON CONFLICT (application_id) DO NOTHING;
+
+CREATE OR REPLACE FUNCTION public.enforce_student_monthly_application_limit()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_count INTEGER;
+BEGIN
+  IF public.current_plan(NEW.student_id) = 'free' THEN
+    SELECT count(*) INTO v_count
+    FROM public.student_application_usage
+    WHERE student_id = NEW.student_id
+      AND created_at >= date_trunc('month', now());
+    IF v_count >= 1 THEN RAISE EXCEPTION 'FREE_STUDENT_MONTHLY_APPLICATION_LIMIT'; END IF;
+  END IF;
+  INSERT INTO public.student_application_usage(application_id, student_id, created_at)
+  VALUES (NEW.id, NEW.student_id, COALESCE(NEW.created_at, now()));
+  RETURN NEW;
+END;
+$$;
+DROP TRIGGER IF EXISTS applications_freemium_limit ON public.applications;
+CREATE TRIGGER applications_freemium_limit BEFORE INSERT ON public.applications
+FOR EACH ROW EXECUTE FUNCTION public.enforce_student_monthly_application_limit();
+
+-- Empresa Gratis puede revisar y gestionar los primeros 3 postulados de cada pasantía.
+CREATE OR REPLACE FUNCTION public.company_can_view_application(
+  p_application_id UUID, p_internship_id UUID
+) RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.internships i
+    WHERE i.id = p_internship_id AND i.company_id = auth.uid()
+      AND (
+        public.current_plan(auth.uid()) IN ('pro', 'enterprise')
+        OR p_application_id IN (
+          SELECT a.id FROM public.applications a
+          WHERE a.internship_id = p_internship_id
+          ORDER BY a.created_at ASC, a.id ASC
+          LIMIT 3
+        )
+      )
+  );
+$$;
+
 -- Gratis empresa: hasta 3 publicaciones creadas dentro del mes calendario.
 CREATE OR REPLACE FUNCTION public.enforce_company_monthly_post_limit()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
@@ -106,7 +158,7 @@ DROP TRIGGER IF EXISTS internships_freemium_limit ON public.internships;
 CREATE TRIGGER internships_freemium_limit BEFORE INSERT ON public.internships
 FOR EACH ROW EXECUTE FUNCTION public.enforce_company_monthly_post_limit();
 
--- Candidatos: el estudiante conserva acceso propio; solo empresas pagas acceden a los recibidos.
+-- Candidatos: el estudiante conserva acceso propio; Empresa Gratis ve 3 por pasantía y Pro ve todos.
 DROP POLICY IF EXISTS applications_select ON public.applications;
 DROP POLICY IF EXISTS applications_select_student ON public.applications;
 DROP POLICY IF EXISTS applications_select_company ON public.applications;
@@ -114,30 +166,16 @@ DROP POLICY IF EXISTS applications_select_freemium ON public.applications;
 CREATE POLICY applications_select_freemium ON public.applications
   FOR SELECT USING (
     student_id = auth.uid()
-    OR (
-      public.current_plan(auth.uid()) IN ('pro', 'enterprise')
-      AND EXISTS (
-        SELECT 1 FROM public.internships i
-        WHERE i.id = internship_id AND i.company_id = auth.uid()
-      )
-    )
+    OR public.company_can_view_application(id, internship_id)
   );
 DROP POLICY IF EXISTS applications_update ON public.applications;
 DROP POLICY IF EXISTS applications_update_company ON public.applications;
 DROP POLICY IF EXISTS applications_update_freemium ON public.applications;
 CREATE POLICY applications_update_freemium ON public.applications
   FOR UPDATE USING (
-    public.current_plan(auth.uid()) IN ('pro', 'enterprise')
-    AND EXISTS (
-      SELECT 1 FROM public.internships i
-      WHERE i.id = internship_id AND i.company_id = auth.uid()
-    )
+    public.company_can_view_application(id, internship_id)
   ) WITH CHECK (
-    public.current_plan(auth.uid()) IN ('pro', 'enterprise')
-    AND EXISTS (
-      SELECT 1 FROM public.internships i
-      WHERE i.id = internship_id AND i.company_id = auth.uid()
-    )
+    public.company_can_view_application(id, internship_id)
   );
 
 -- Gratis estudiante: hasta 5 solicitudes nuevas por mes.
@@ -282,6 +320,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.current_plan(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.can_message(UUID, UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.company_can_view_application(UUID, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_list_plan_requests() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_resolve_plan_request(UUID, BOOLEAN, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_assign_promoter(UUID, TEXT) TO authenticated;

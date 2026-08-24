@@ -324,10 +324,12 @@ export function ApplyModal({
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [limitReached, setLimitReached] = useState(false);
 
   async function handleApply() {
     setLoading(true);
     setError(null);
+    setLimitReached(false);
     const { error } = await supabase.from('applications').insert({
       internship_id: internship.id,
       student_id: studentId,
@@ -335,6 +337,11 @@ export function ApplyModal({
     });
     setLoading(false);
     if (error) {
+      if (/FREE_STUDENT_MONTHLY_APPLICATION_LIMIT/i.test(error.message)) {
+        setLimitReached(true);
+        setError('Ya usaste tu postulación gratis de este mes. Estudiante Pro incluye postulaciones ilimitadas.');
+        return;
+      }
       setError(
         error.code === '23505'
           ? 'Ya te postulaste a esta pasantía.'
@@ -376,9 +383,14 @@ export function ApplyModal({
         </div>
 
         {error && (
-          <p className="mt-3 rounded-2xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-200">
-            {error}
-          </p>
+          <div className="mt-3 rounded-lg border border-white/15 bg-white/[0.06] px-4 py-3">
+            <p className="text-sm text-white/75">{error}</p>
+            {limitReached && (
+              <Button as="link" to="/app/planes" variant="secondary" size="sm" className="mt-3">
+                Solicitar Estudiante Pro
+              </Button>
+            )}
+          </div>
         )}
 
         <div className="mt-6 flex justify-end gap-3">

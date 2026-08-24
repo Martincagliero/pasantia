@@ -283,7 +283,7 @@ export default function Home() {
       </section>
 
       {/* ===================== POR QUÉ PASANTIA (solo mobile: 2da sección) ===================== */}
-      <Section className="bg-brand-950/30 md:hidden">
+      <Section className="md:hidden">
         <PlatformShowcase />
       </Section>
 
@@ -292,8 +292,8 @@ export default function Home() {
       </div>
 
       {/* ===================== TIRA DE RUBROS (estilo tira de marcas go-marz) ===================== */}
-      <div className="py-12 sm:py-16">
-        <p className="container-px mb-10 text-center text-xs font-bold uppercase tracking-[0.2em] text-white/50">
+      <div className="bg-white py-12 text-brand-700 sm:py-16 md:bg-transparent md:text-white">
+        <p className="container-px mb-10 text-center text-xs font-bold uppercase tracking-[0.2em] text-brand-700/55 md:text-white/50">
           Pasantías en todos los rubros
         </p>
         <Marquee
@@ -301,7 +301,7 @@ export default function Home() {
           items={MARQUEE_ITEMS.map(({ icon: Icon, label }) => (
             <div
               key={label}
-              className="flex items-center gap-2.5 px-8 text-white/45 transition-colors duration-300 hover:text-white"
+              className="flex items-center gap-2.5 px-8 text-brand-700/55 transition-colors duration-300 hover:text-brand-900 md:text-white/45 md:hover:text-white"
             >
               <Icon size={26} strokeWidth={1.75} />
               <span className="text-2xl font-semibold tracking-tight">{label}</span>
@@ -311,23 +311,23 @@ export default function Home() {
       </div>
 
       {/* ===================== EL PROBLEMA ===================== */}
-      <Section>
+      <Section className="bg-white text-brand-800 md:bg-transparent md:text-white">
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
           <Reveal>
-            <span className="text-sm font-semibold uppercase tracking-[0.16em] text-white/50">
+            <span className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-700/55 md:text-white/50">
               El problema
             </span>
             <h2 className="mt-4 text-4xl font-semibold tracking-tighter sm:text-5xl">
               Encontrar una pasantía real{' '}
-              <Accent>cuesta demasiado.</Accent>
+              <Accent className="!text-brand-600 md:!text-white/95">cuesta demasiado.</Accent>
             </h2>
-            <p className="mt-6 text-lg font-light leading-relaxed text-white/70">
+            <p className="mt-6 text-lg font-light leading-relaxed text-brand-800/70 md:text-white/70">
               A los estudiantes les cuesta encontrar pasantías relevantes: mandan
               CVs a ciegas y casi nunca reciben respuesta. A las empresas les cuesta
               encontrar talento joven de forma ágil, perdiendo tiempo entre cientos
               de perfiles que no encajan.
             </p>
-            <p className="mt-4 text-lg font-light leading-relaxed text-white/70">
+            <p className="mt-4 text-lg font-light leading-relaxed text-brand-800/70 md:text-white/70">
               PasantIA existe para cerrar esa brecha con una conexión directa,
               simple y pensada para los dos lados.
             </p>
@@ -348,16 +348,16 @@ export default function Home() {
       </Section>
 
       {/* ===================== STATEMENT GIGANTE (estilo go-marz) ===================== */}
-      <Section>
+      <Section className="bg-white text-brand-800 md:bg-transparent md:text-white">
         <Reveal className="mx-auto max-w-5xl text-center">
           <h2 className="text-6xl font-semibold leading-[0.92] tracking-tightest sm:text-8xl lg:text-[8.5rem]">
             No más
             <br />
             CVs
             <br />
-            <Accent>a ciegas.</Accent>
+            <Accent className="!text-brand-600 md:!text-white/95">a ciegas.</Accent>
           </h2>
-          <p className="mx-auto mt-10 max-w-xl text-lg font-light text-white/65">
+          <p className="mx-auto mt-10 max-w-xl text-lg font-light text-brand-800/65 md:text-white/65">
             Basta de mandar tu currículum al vacío o de revisar cientos de perfiles
             que no encajan. PasantIA conecta a los dos lados de forma directa.
           </p>
@@ -366,7 +366,7 @@ export default function Home() {
 
       {/* ===================== POR QUÉ PASANTIA ===================== */}
       {/* ===================== POR QUÉ PASANTIA (desktop: en su posición original) ===================== */}
-      <Section className="hidden bg-brand-950/30 md:block">
+      <Section className="hidden md:block">
         <PlatformShowcase />
       </Section>
 
@@ -375,17 +375,18 @@ export default function Home() {
       </div>
 
       {/* ===================== CÓMO VA A FUNCIONAR ===================== */}
-      <Section id="como-funciona">
+      <Section id="como-funciona" className="bg-white text-brand-800">
         <HowItWorks
           eyebrow="Cómo va a funcionar"
           heading={
             <>
               De registrarte a arrancar,{' '}
-              <Accent>en 4 pasos.</Accent>
+              <Accent className="!text-brand-600">en 4 pasos.</Accent>
             </>
           }
           subheading="El sistema completo con perfiles, matching y postulación está en camino. Así se va a sentir."
           steps={STEPS}
+          inverted
         />
       </Section>
 
@@ -393,12 +394,12 @@ export default function Home() {
       <InstallAppSection />
 
       {/* ===================== DOBLE CTA ESTUDIANTE / EMPRESA ===================== */}
-      <Section className="bg-brand-950/30">
+      <Section className="bg-white text-brand-800">
         <Reveal className="mx-auto mb-12 max-w-2xl text-center">
           <h2 className="text-4xl font-semibold tracking-tighter sm:text-5xl">
-            ¿De qué lado <Accent>estás?</Accent>
+            ¿De qué lado <Accent className="!text-brand-600">estás?</Accent>
           </h2>
-          <p className="mt-5 text-lg font-light text-white/70">
+          <p className="mt-5 text-lg font-light text-brand-800/70">
             Elegí tu camino y descubrí cómo PasantIA trabaja para vos.
           </p>
         </Reveal>
@@ -448,7 +449,7 @@ export default function Home() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-brand-950 via-brand-950/40 to-transparent" />
                   <div className="absolute inset-0 flex flex-col justify-end p-8 sm:p-10">
-                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-white backdrop-blur">
                       <card.icon size={22} />
                     </span>
                     <h3 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -480,7 +481,7 @@ export default function Home() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-brand-950 via-brand-950/40 to-transparent" />
                   <div className="absolute inset-0 flex flex-col justify-end p-8 sm:p-10">
-                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-white backdrop-blur">
                       <card.icon size={22} />
                     </span>
                     <h3 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -505,16 +506,16 @@ export default function Home() {
       </Section>
 
       {/* ===================== FAQ ===================== */}
-      <Section id="faqs">
+      <Section id="faqs" className="bg-white text-brand-800">
         <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
           <Reveal>
-            <span className="text-sm font-semibold uppercase tracking-[0.16em] text-white/50">
+            <span className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-700/55">
               Preguntas frecuentes
             </span>
             <h2 className="mt-4 text-4xl font-semibold tracking-tighter sm:text-5xl">
-              Lo que <Accent>querés saber.</Accent>
+              Lo que <Accent className="!text-brand-600">querés saber.</Accent>
             </h2>
-            <p className="mt-5 text-lg font-light text-white/70">
+            <p className="mt-5 text-lg font-light text-brand-800/70">
               ¿Te quedó una duda? Escribinos a nuestro mail.
             </p>
           </Reveal>
@@ -525,14 +526,15 @@ export default function Home() {
       </Section>
 
       {/* ===================== CTA FINAL ===================== */}
-      <Section contained={false}>
+      <Section contained={false} className="bg-white text-brand-800">
         <EarlyAccessCTA
           heading={
             <>
-              Sumate al <Accent>acceso anticipado.</Accent>
+              Sumate al <Accent className="!text-brand-600">acceso anticipado.</Accent>
             </>
           }
           subheading="Sé de los primeros en entrar cuando lancemos. Dejanos tus datos y te contactamos apenas abramos el acceso."
+          inverted
         />
       </Section>
     </>

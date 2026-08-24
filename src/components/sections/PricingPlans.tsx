@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { Building2, Check, Crown, GraduationCap, Sparkles } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
+import { ArrowUpRight, Building2, CheckCircle2, GraduationCap, Sparkles } from 'lucide-react';
 import { Reveal } from '../ui/Reveal';
 import { Section } from '../ui/Section';
-import { Button } from '../ui/Button';
 import { Accent } from '../ui/Accent';
 import { useEarlyAccess } from '../early-access/EarlyAccess';
 
@@ -13,7 +13,7 @@ const studentPlans = [
     name: 'Gratis',
     price: 'USD 0',
     description: 'Para empezar a construir tu red y encontrar oportunidades.',
-    features: ['5 conexiones nuevas por mes', 'Mensajes con conexiones aceptadas', 'Postulaciones y perfil público', 'Comunidades y red'],
+    features: ['1 postulación por mes', '5 conexiones nuevas por mes', 'Mensajes con conexiones aceptadas', 'Perfil público, comunidades y red'],
   },
   {
     name: 'Pro',
@@ -21,7 +21,7 @@ const studentPlans = [
     suffix: '/mes',
     description: 'Para moverte sin límites y contactar antes que nadie.',
     featured: true,
-    features: ['Conexiones sin límite', 'Mensajes sin conexión previa', 'Podés solicitar ser promotor/a', 'Mayor visibilidad del perfil', 'Soporte prioritario'],
+    features: ['Postulaciones ilimitadas', 'Conexiones sin límite', 'Mensajes sin conexión previa', 'Podés solicitar ser promotor/a', 'Mayor visibilidad del perfil'],
   },
 ];
 
@@ -30,7 +30,7 @@ const companyPlans = [
     name: 'Gratis',
     price: 'USD 0',
     description: 'Para publicar las primeras búsquedas y conocer PasantIA.',
-    features: ['3 pasantías por mes', 'Perfil de empresa', 'Recepción básica de postulaciones'],
+    features: ['3 pasantías por mes', 'Primeros 3 postulados por pasantía', 'Perfil de empresa'],
   },
   {
     name: 'Pro',
@@ -38,7 +38,7 @@ const companyPlans = [
     suffix: '/mes',
     description: 'Para contratar talento joven de forma continua.',
     featured: true,
-    features: ['Publicaciones ilimitadas', 'Gestión y filtros de candidatos', 'Búsqueda y contacto de talento', 'Mensajería y estadísticas'],
+    features: ['Publicaciones ilimitadas', 'Todos los postulados y gestión completa', 'Búsqueda y contacto de talento', 'Mensajería y estadísticas'],
   },
   {
     name: 'Empresa',
@@ -50,12 +50,35 @@ const companyPlans = [
 ];
 
 export function PricingPlans({ id }: { id: string }) {
+  const transitionRef = useRef<HTMLDivElement>(null);
+  const wipeRef = useRef<HTMLDivElement>(null);
   const [audience, setAudience] = useState<Audience>('estudiantes');
   const { open } = useEarlyAccess();
   const plans = audience === 'estudiantes' ? studentPlans : companyPlans;
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    const updateWipe = () => {
+      if (!transitionRef.current || !wipeRef.current) return;
+      const rect = transitionRef.current.getBoundingClientRect();
+      const travel = window.innerHeight + rect.height;
+      const progress = Math.min(Math.max((window.innerHeight - rect.top) / travel, 0), 1);
+      const eased = progress * progress * (3 - 2 * progress);
+      wipeRef.current.style.clipPath = `circle(${reduceMotion ? 150 : eased * 150}% at 50% 100%)`;
+    };
+    updateWipe();
+    window.addEventListener('scroll', updateWipe, { passive: true });
+    window.addEventListener('resize', updateWipe);
+    return () => {
+      window.removeEventListener('scroll', updateWipe);
+      window.removeEventListener('resize', updateWipe);
+    };
+  }, [reduceMotion]);
 
   return (
-    <Section id={id} className="bg-white/[0.035] scroll-mt-24">
+    <div className="relative bg-brand-500">
+    <Section id={id} className="scroll-mt-24">
+      <div>
       <Reveal className="mx-auto max-w-3xl text-center">
         <span className="text-sm font-semibold uppercase tracking-[0.16em] text-white/50">Planes</span>
         <h2 className="mt-4 text-4xl font-semibold tracking-tighter sm:text-5xl">
@@ -80,35 +103,40 @@ export function PricingPlans({ id }: { id: string }) {
       <div className={`mx-auto mt-8 grid max-w-6xl gap-4 ${plans.length === 3 ? 'lg:grid-cols-3' : 'max-w-4xl sm:grid-cols-2'}`}>
         {plans.map((plan, index) => (
           <Reveal key={`${audience}-${plan.name}`} delay={0.05 * index} className="h-full">
-            <article className={`relative flex h-full flex-col rounded-lg border p-6 sm:p-7 ${plan.featured ? 'border-brand-300/55 bg-white/[0.1] shadow-xl shadow-brand-950/25' : 'border-white/12 bg-white/[0.045]'}`}>
+            <article className={`relative flex h-full flex-col rounded-lg bg-white p-6 text-slate-950 sm:p-7 ${plan.featured ? 'border-[3px] border-slate-900' : 'border border-white'}`}>
               {plan.featured && (
-                <span className="mb-5 inline-flex w-fit items-center gap-1.5 text-xs font-semibold uppercase text-brand-200">
-                  <Crown className="h-3.5 w-3.5" /> Más elegido
+                <span className="absolute right-0 top-0 rounded-bl-lg bg-slate-900 px-4 py-2 text-[11px] font-semibold uppercase text-white">
+                  Popular
                 </span>
               )}
-              <h3 className="text-xl font-semibold text-white">
+              <h3 className="pr-20 text-xl font-semibold text-slate-950">
                 {audience === 'estudiantes'
                   ? `Estudiante ${plan.name}`
                   : plan.name === 'Empresa'
                     ? 'Plan Empresa'
                     : `Empresa ${plan.name}`}
               </h3>
-              <p className="mt-3 text-3xl font-semibold tracking-tight text-white">
-                {plan.price}<span className="ml-1 text-sm font-normal text-white/45">{plan.suffix}</span>
+              <p className="mt-7 text-4xl font-semibold tracking-tight text-slate-950">
+                {plan.price}<span className="ml-1 text-sm font-normal text-slate-600">{plan.suffix}</span>
               </p>
-              <p className="mt-3 min-h-12 text-sm leading-relaxed text-white/55">{plan.description}</p>
-              <div className="my-6 h-px bg-white/10" />
+              <p className="mt-3 min-h-12 text-sm leading-relaxed text-slate-600">{plan.description}</p>
+              <button
+                type="button"
+                onClick={() => open()}
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-600"
+              >
+                {plan.name === 'Gratis' ? 'Empezar gratis' : 'Solicitar plan'}
+                <ArrowUpRight className="h-4 w-4" />
+              </button>
+              <div className="my-6 h-px bg-slate-200" />
               <ul className="flex-1 space-y-3">
                 {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2.5 text-sm text-white/75">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
+                  <li key={feature} className="flex items-start gap-2.5 text-sm text-slate-800">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-slate-900" />
                     <span>{feature}</span>
                   </li>
                 ))}
               </ul>
-              <Button onClick={() => open()} variant={plan.featured ? 'landing' : 'secondary'} size="md" className="mt-7 w-full">
-                {plan.name === 'Gratis' ? 'Empezar gratis' : 'Solicitar plan'}
-              </Button>
             </article>
           </Reveal>
         ))}
@@ -120,7 +148,15 @@ export function PricingPlans({ id }: { id: string }) {
           <p>También podés destacar una pasantía por 15 días a USD 25 o por 30 días a USD 40.</p>
         </Reveal>
       )}
+      </div>
     </Section>
+    <div ref={transitionRef} className="relative h-[70svh] min-h-[30rem] overflow-hidden bg-brand-500 sm:h-[80svh]" aria-hidden>
+      <div
+        ref={wipeRef}
+        className="absolute inset-0 bg-white [clip-path:circle(0%_at_50%_100%)] will-change-[clip-path]"
+      />
+    </div>
+    </div>
   );
 }
 

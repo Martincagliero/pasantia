@@ -16,7 +16,7 @@ export function Accordion({ items }: AccordionProps) {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <div className="divide-y divide-white/10 border-y border-white/10">
+    <div className="divide-y divide-brand-700/15 border-y border-brand-700/15">
       {items.map((item, i) => {
         const isOpen = open === i;
         const num = String(i + 1).padStart(2, '0');
@@ -25,18 +25,18 @@ export function Accordion({ items }: AccordionProps) {
             <button
               onClick={() => setOpen(isOpen ? null : i)}
               aria-expanded={isOpen}
-              className="flex w-full items-center gap-3 py-5 text-left transition-colors hover:text-white sm:gap-5 sm:py-6"
+              className="flex w-full items-center gap-3 py-5 text-left transition-colors hover:text-brand-500 sm:gap-5 sm:py-6"
             >
-              <span className="text-sm font-medium tabular-nums text-white/40">
+              <span className="text-sm font-medium tabular-nums text-brand-700/40">
                 {num}
               </span>
-              <span className="flex-1 text-base font-semibold tracking-tight text-white xs:text-lg sm:text-xl">
+              <span className="flex-1 text-base font-semibold tracking-tight text-brand-800 xs:text-lg sm:text-xl">
                 {item.question}
               </span>
               <motion.span
                 animate={{ rotate: isOpen ? 45 : 0 }}
                 transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                className="shrink-0 text-white/70"
+                className="shrink-0 text-brand-700/70"
               >
                 <Plus size={22} />
               </motion.span>
@@ -51,7 +51,7 @@ export function Accordion({ items }: AccordionProps) {
                   transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                   className="overflow-hidden"
                 >
-                  <p className="max-w-3xl pb-7 pl-8 pr-2 text-[15px] font-light leading-relaxed text-white/70 sm:pl-11 sm:pr-6 sm:text-base">
+                  <p className="max-w-3xl pb-7 pl-8 pr-2 text-[15px] font-light leading-relaxed text-brand-800/70 sm:pl-11 sm:pr-6 sm:text-base">
                     {item.answer}
                   </p>
                 </motion.div>

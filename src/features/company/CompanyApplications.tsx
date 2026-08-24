@@ -1,6 +1,7 @@
 // Empresa: centro de candidatos. Buscador, contadores por estado, favoritos,
 // estados de un clic, tarjetas modernas y vista de perfil con preview de CV.
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Search,
   Star,
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
+import { FREE_COMPANY_APPLICANTS_PER_INTERNSHIP, isPro } from '../../lib/plans';
 import type { StudentProfile } from '../../lib/database.types';
 import { Card, EmptyState, PageHeader, PageLoader, StatusBadge } from '../ui/primitives';
 import { TextField, SelectField } from '../ui/Field';
@@ -100,7 +102,7 @@ function ApplicationStatusSelect({
 }
 
 export default function CompanyApplications() {
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -193,6 +195,20 @@ export default function CompanyApplications() {
         title="Candidatos"
         description="Gestioná las postulaciones: estados, favoritos y perfiles."
       />
+
+      {!isPro(profile) && (
+        <Card className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+          <div>
+            <p className="text-sm font-semibold text-white">Vista incluida en Empresa Gratis</p>
+            <p className="mt-1 text-sm text-white/55">
+              Podés revisar los primeros {FREE_COMPANY_APPLICANTS_PER_INTERNSHIP} postulados de cada pasantía. Empresa Pro muestra todos.
+            </p>
+          </div>
+          <Link to="/app/planes" className="shrink-0 text-sm font-semibold text-brand-400 hover:text-brand-300">
+            Ver Empresa Pro →
+          </Link>
+        </Card>
+      )}
 
       {/* Buscador */}
       <div className="relative mb-4 max-w-md">

@@ -1,7 +1,7 @@
 // Empresa: lista sus pasantías, con acciones de activar/pausar, editar, ver postulantes.
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Pencil, Trash2, Eye, EyeOff, Plus, Sparkles, Crown } from 'lucide-react';
+import { Users, Pencil, Trash2, Eye, EyeOff, Plus, Sparkles } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { Internship, Modality } from '../../lib/database.types';
@@ -127,7 +127,7 @@ export default function MyInternships() {
         <Card className="mb-5">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div>
-              <p className="flex items-center gap-2 text-sm font-semibold text-white"><Crown className="h-4 w-4 text-brand-500" /> Plan Gratis</p>
+              <p className="text-sm font-semibold text-white">Plan Gratis</p>
               <p className="mt-1 text-sm text-white/55">Usaste {monthlyPosts} de {FREE_COMPANY_POSTS_PER_MONTH} publicaciones este mes.</p>
             </div>
             <Link to="/app/planes" className="text-sm font-semibold text-brand-500 hover:text-brand-400">Ver Empresa Pro</Link>
@@ -135,7 +135,7 @@ export default function MyInternships() {
         </Card>
       )}
 
-      {!canPublish && <UpgradePrompt title="Publicaciones mensuales agotadas" description="Empresa Pro permite publicar pasantías sin límite y gestionar todos sus candidatos." compact />}
+      {!canPublish && <UpgradePrompt title="Publicaciones mensuales agotadas" description="Empresa Pro permite publicar pasantías sin límite y ver todos los postulados." compact />}
 
       {formOpen && (
         <InternshipForm
@@ -221,7 +221,7 @@ export default function MyInternships() {
                     to={`/app/pasantia/${i.id}`}
                     className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-white/10"
                   >
-                    <Users className="h-4 w-4" /> {count} postulante{count === 1 ? '' : 's'}
+                    <Users className="h-4 w-4" /> {!unlimited && count === 3 ? '3+' : count} postulante{count === 1 ? '' : 's'}
                   </Link>
                   <button
                     onClick={() => toggleActive(i)}

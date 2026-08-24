@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Crown, Loader2 } from 'lucide-react';
+import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { SubscriptionPlan } from '../../lib/database.types';
 import { useAuth } from '../auth/AuthProvider';
@@ -49,10 +49,7 @@ export function UpgradePrompt({
 
   const content = (
     <>
-      <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/15 text-brand-500">
-        <Crown className="h-5 w-5" />
-      </span>
-      <h2 className="mt-3 text-lg font-semibold text-white">{title}</h2>
+      <h2 className="text-lg font-semibold text-white">{title}</h2>
       <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-white/60">{description}</p>
       <button
         type="button"
@@ -62,6 +59,7 @@ export function UpgradePrompt({
       >
         {sending && <Loader2 className="h-4 w-4 animate-spin" />}
         {sent ? 'Solicitud enviada' : `Solicitar plan ${planName ?? (plan === 'enterprise' ? 'Empresa' : 'Pro')}`}
+        {!sending && !sent && <ArrowUpRight className="h-4 w-4" />}
       </button>
       {sent && <p className="mt-2 text-xs text-white/50">La solicitud ya aparece en el panel de PasantIA.</p>}
       {error && <p className="mt-2 text-xs text-red-500">{error}</p>}

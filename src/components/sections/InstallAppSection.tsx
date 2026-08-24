@@ -30,32 +30,32 @@ export function InstallAppSection() {
   const isIos = platform === 'ios';
 
   return (
-    <Section id="instalar-app" className="bg-brand-950/35">
+    <Section id="instalar-app" className="bg-white text-brand-800">
       <div className="grid items-center gap-12 lg:grid-cols-[1fr_0.85fr] lg:gap-20">
         <Reveal>
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-white/50">
+          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-brand-700/55">
             <Download className="h-4 w-4" /> PasantIA en tu celular
           </span>
           <h2 className="mt-5 text-4xl font-semibold tracking-tighter sm:text-6xl">
-            Convertí la plataforma <Accent>en una app.</Accent>
+            Convertí la plataforma <Accent className="!text-brand-600">en una app.</Accent>
           </h2>
-          <p className="mt-5 max-w-xl text-base font-light leading-relaxed text-white/70 sm:text-lg">
+          <p className="mt-5 max-w-xl text-base font-light leading-relaxed text-brand-800/70 sm:text-lg">
             No necesitás buscarla en una tienda. Agregá PasantIA a tu pantalla de inicio,
             abrila como cualquier app y recibí avisos de mensajes, conexiones y actividad.
           </p>
 
-          <div className="mt-7 flex w-fit rounded-xl border border-white/15 bg-white/[0.05] p-1">
+          <div className="mt-7 flex w-fit rounded-xl border border-brand-700/15 bg-brand-50 p-1">
             <button
               type="button"
               onClick={() => setPlatform('android')}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${platform === 'android' ? 'bg-white text-brand-600' : 'text-white/60'}`}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${platform === 'android' ? 'bg-brand-700 text-white' : 'text-brand-700/60'}`}
             >
               Android
             </button>
             <button
               type="button"
               onClick={() => setPlatform('ios')}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${platform === 'ios' ? 'bg-white text-brand-600' : 'text-white/60'}`}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${platform === 'ios' ? 'bg-brand-700 text-white' : 'text-brand-700/60'}`}
             >
               iPhone
             </button>
@@ -63,8 +63,8 @@ export function InstallAppSection() {
 
           <ol className="mt-7 max-w-xl space-y-3">
             {STEPS[platform].map((step, index) => (
-              <li key={step} className="flex items-start gap-3 text-sm leading-relaxed text-white/70">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-brand-600">
+              <li key={step} className="flex items-start gap-3 text-sm leading-relaxed text-brand-800/70">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white">
                   {index + 1}
                 </span>
                 <span>{step}</span>
@@ -73,8 +73,8 @@ export function InstallAppSection() {
           </ol>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Button onClick={() => open()} variant="landing">Registrarme</Button>
-            <span className="text-xs text-white/45">Instalable en Android y iPhone.</span>
+            <Button onClick={() => open()} variant="landing" className="!bg-brand-700 !text-white">Registrarme</Button>
+            <span className="text-xs text-brand-700/50">Instalable en Android y iPhone.</span>
           </div>
         </Reveal>
 
@@ -123,7 +123,7 @@ export function InstallAppSection() {
                 </div>
               </div>
             </div>
-            <p className="mt-4 text-center font-['Caveat'] text-lg font-semibold text-white/80">
+            <p className="mt-4 text-center font-['Caveat'] text-lg font-semibold text-brand-700/80">
               se siente como una app, porque lo es
             </p>
           </div>

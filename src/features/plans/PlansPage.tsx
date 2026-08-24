@@ -1,4 +1,4 @@
-import { Check, Crown, Sparkles } from 'lucide-react';
+import { CheckCircle2, Sparkles } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { Card, PageHeader } from '../ui/primitives';
 import { activePlan, planLabel, planPrice } from '../../lib/plans';
@@ -9,12 +9,12 @@ const STUDENT_PLANS = [
   {
     plan: 'free' as const,
     name: 'Estudiante Gratis',
-    features: ['Hasta 5 conexiones nuevas por mes', 'Mensajes con conexiones aceptadas', 'Postulaciones y perfil público', 'Comunidades y red'],
+    features: ['1 postulación por mes', 'Hasta 5 conexiones nuevas por mes', 'Mensajes con conexiones aceptadas', 'Perfil público, comunidades y red'],
   },
   {
     plan: 'pro' as const,
     name: 'Estudiante Pro',
-    features: ['Conexiones sin límite', 'Mensajes sin conexión previa', 'Podés solicitar ser promotor/a', 'Mayor visibilidad del perfil', 'Soporte prioritario'],
+    features: ['Postulaciones ilimitadas', 'Conexiones sin límite', 'Mensajes sin conexión previa', 'Podés solicitar ser promotor/a', 'Mayor visibilidad del perfil'],
   },
 ];
 
@@ -22,12 +22,12 @@ const COMPANY_PLANS = [
   {
     plan: 'free' as const,
     name: 'Empresa Gratis',
-    features: ['3 pasantías por mes', 'Perfil de empresa', 'Recepción básica de postulaciones'],
+    features: ['3 pasantías por mes', 'Primeros 3 postulados por pasantía', 'Perfil de empresa'],
   },
   {
     plan: 'pro' as const,
     name: 'Empresa Pro',
-    features: ['Publicaciones ilimitadas', 'Gestión y filtros de candidatos', 'Búsqueda y contacto de talento', 'Mensajería y estadísticas'],
+    features: ['Publicaciones ilimitadas', 'Todos los postulados y gestión completa', 'Búsqueda y contacto de talento', 'Mensajería y estadísticas'],
   },
   {
     plan: 'enterprise' as const,
@@ -97,16 +97,14 @@ function PlanCard({
 }) {
   const active = plan === current;
   return (
-    <Card className={`flex flex-col ${plan !== 'free' ? 'border-brand-400/30' : ''}`}>
-      <div className="flex items-center gap-2">
-        {plan !== 'free' && <Crown className="h-5 w-5 text-brand-500" />}
-        <h2 className="text-lg font-semibold text-white">{name}</h2>
-      </div>
+    <Card className={`relative flex flex-col ${plan !== 'free' ? 'border-2 border-white/30' : ''}`}>
+      {plan !== 'free' && <span className="absolute right-4 top-4 text-[10px] font-semibold uppercase text-white/45">Recomendado</span>}
+      <h2 className="pr-24 text-lg font-semibold text-white">{name}</h2>
       <p className="mt-2 text-2xl font-bold text-white">{planPrice(role, plan)}</p>
       <div className="mt-4 flex-1 space-y-2.5">
         {features.map((feature) => (
           <p key={feature} className="flex items-start gap-2 text-sm text-white/65">
-            <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" /> {feature}
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-white/65" /> {feature}
           </p>
         ))}
       </div>

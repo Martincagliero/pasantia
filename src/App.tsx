@@ -164,9 +164,7 @@ export default function App() {
               path="postulaciones-recibidas"
               element={
                 <ProtectedRoute role="empresa">
-                  <PlanGate title="Gestión de candidatos" description="Compará postulantes, aplicá filtros y gestioná el proceso con Empresa Pro.">
-                    <CompanyApplications />
-                  </PlanGate>
+                  <CompanyApplications />
                 </ProtectedRoute>
               }
             />
@@ -182,9 +180,7 @@ export default function App() {
               path="pasantia/:id"
               element={
                 <ProtectedRoute role="empresa">
-                  <PlanGate title="Candidatos de la pasantía" description="Revisá perfiles y administrá candidatos con Empresa Pro.">
-                    <InternshipApplicants />
-                  </PlanGate>
+                  <InternshipApplicants />
                 </ProtectedRoute>
               }
             />

@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Mail, GraduationCap, FileText, Link2, Globe } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../auth/AuthProvider';
 import type { ApplicationStatus, StudentProfile } from '../../lib/database.types';
 import { Card, EmptyState, PageHeader, PageLoader, StatusBadge } from '../ui/primitives';
 import { STATUS_META, STATUS_ORDER, normalizeStatus } from '../ui/applicationStatus';
+import { FREE_COMPANY_APPLICANTS_PER_INTERNSHIP, isPro } from '../../lib/plans';
 
 interface ApplicantRow {
   id: string;
@@ -44,6 +46,7 @@ function Avatar({ url, name, className = '' }: { url?: string | null; name: stri
 }
 
 export default function InternshipApplicants() {
+  const { profile } = useAuth();
   const { id } = useParams<{ id: string }>();
   const [title, setTitle] = useState('');
   const [rows, setRows] = useState<ApplicantRow[]>([]);
@@ -97,6 +100,20 @@ export default function InternshipApplicants() {
         title="Postulantes"
         description={title}
       />
+
+      {!isPro(profile) && (
+        <Card className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+          <div>
+            <p className="text-sm font-semibold text-white">Vista incluida en Empresa Gratis</p>
+            <p className="mt-1 text-sm text-white/55">
+              Estás viendo hasta {FREE_COMPANY_APPLICANTS_PER_INTERNSHIP} postulados. Empresa Pro habilita la lista completa.
+            </p>
+          </div>
+          <Link to="/app/planes" className="shrink-0 text-sm font-semibold text-brand-400 hover:text-brand-300">
+            Ver Empresa Pro →
+          </Link>
+        </Card>
+      )}
 
       {rows.length === 0 ? (
         <EmptyState

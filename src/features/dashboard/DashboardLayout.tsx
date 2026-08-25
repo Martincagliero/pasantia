@@ -373,17 +373,17 @@ export function DashboardLayout() {
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl overflow-x-hidden px-4 py-6 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:px-6 lg:pb-6">
+        <main className="mx-auto max-w-7xl overflow-x-hidden px-4 py-6 pb-[calc(4rem+env(safe-area-inset-bottom))] sm:px-6 lg:pb-6">
           <Outlet />
         </main>
 
         {/* La envoltura fixed nunca se transforma: la pastilla conserva el diseño
             flotante sin perder su posición cuando cambia el viewport de iOS. */}
         <nav
-          className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] lg:hidden"
+          className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] lg:hidden"
           aria-label="Navegación principal"
         >
-          <div className="dash-panel pointer-events-auto mx-auto flex h-14 max-w-md items-center justify-around overflow-hidden rounded-2xl border border-white/12 bg-white px-2 shadow-xl shadow-black/20">
+          <div className="dash-panel pointer-events-auto mx-auto flex h-12 max-w-sm items-center justify-around overflow-hidden rounded-xl border border-white/12 bg-white px-1.5 shadow-lg shadow-black/15">
             {bottomNav.map(({ to, label, icon: Icon, end }) => (
               <NavLink
                 key={to}
@@ -395,12 +395,12 @@ export function DashboardLayout() {
                 onFocus={() => prefetchAppRoute(to)}
                 onTouchStart={() => prefetchAppRoute(to)}
                 onClick={() => handleBottomNavClick(to)}
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors active:bg-white/8"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors active:bg-white/8"
               >
                 {({ isActive }) => (
                   <Icon
-                    className={`h-6 w-6 shrink-0 transition-colors ${isActive ? 'text-brand-500' : 'text-white/55'}`}
-                    strokeWidth={isActive ? 2.6 : 2}
+                    className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-brand-500' : 'text-white/55'}`}
+                    strokeWidth={isActive ? 2.5 : 2}
                   />
                 )}
               </NavLink>

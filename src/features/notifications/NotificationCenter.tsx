@@ -153,16 +153,20 @@ export function NotificationCenter() {
       }[];
       const memberIds = memberRows.map((member) => member.id);
       const avatarById = new Map<string, string>();
+      const companyNameById = new Map<string, string>();
       if (memberIds.length > 0) {
         const [{ data: students }, { data: companies }] = await Promise.all([
           supabase.from('student_profiles').select('id, avatar_url').in('id', memberIds),
-          supabase.from('company_profiles').select('id, avatar_url').in('id', memberIds),
+          supabase.from('company_profiles').select('id, avatar_url, company_name').in('id', memberIds),
         ]);
         for (const row of [...(students ?? []), ...(companies ?? [])] as {
           id: string;
           avatar_url: string | null;
         }[]) {
           if (row.avatar_url) avatarById.set(row.id, row.avatar_url);
+        }
+        for (const row of (companies ?? []) as { id: string; company_name: string | null }[]) {
+          if (row.company_name) companyNameById.set(row.id, row.company_name);
         }
       }
 
@@ -225,15 +229,20 @@ export function NotificationCenter() {
         }),
         ...memberRows
           .filter((member) => member.id !== uid)
-          .map((member) => ({
-            id: `member-${member.id}`,
-            kind: 'member' as const,
-            title: `${member.role === 'empresa' ? 'Nueva empresa' : 'Nuevo estudiante'} en PasantIA`,
-            detail: `${member.full_name} se sumó a la plataforma`,
-            createdAt: member.created_at,
-            targetId: member.id,
-            avatarUrl: avatarById.get(member.id) ?? null,
-          })),
+          .map((member) => {
+            const displayName = member.role === 'empresa'
+              ? companyNameById.get(member.id) || member.full_name
+              : member.full_name;
+            return {
+              id: `member-${member.id}`,
+              kind: 'member' as const,
+              title: `${member.role === 'empresa' ? 'Nueva empresa' : 'Nuevo estudiante'} en PasantIA`,
+              detail: `${displayName} se sumó a la plataforma`,
+              createdAt: member.created_at,
+              targetId: member.id,
+              avatarUrl: avatarById.get(member.id) ?? null,
+            };
+          }),
         ...connectionRows.map((request) => ({
           id: `connection-${request.id}`,
           kind: 'connection' as const,

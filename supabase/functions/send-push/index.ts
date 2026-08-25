@@ -169,8 +169,17 @@ Deno.serve(async (req) => {
       if (!member || member.id !== caller.id || !['estudiante', 'empresa'].includes(member.role)) {
         return json({ error: 'evento inválido' }, 403);
       }
+      let memberName = member.full_name || 'Un nuevo usuario';
+      if (member.role === 'empresa') {
+        const { data: company } = await admin
+          .from('company_profiles')
+          .select('company_name')
+          .eq('id', member.id)
+          .maybeSingle();
+        memberName = company?.company_name || memberName;
+      }
       title = member.role === 'empresa' ? 'Nueva empresa en PasantIA' : 'Nuevo estudiante en PasantIA';
-      body = `${member.full_name || 'Un nuevo usuario'} se sumó a la plataforma.`;
+      body = `${memberName} se sumó a la plataforma.`;
       url = `/app/explorar?u=${member.id}`;
       broadcast = true;
     } else if (event_type === 'plan_resolved') {

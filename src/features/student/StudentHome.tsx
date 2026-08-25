@@ -22,6 +22,7 @@ interface HomePost extends Post {
 
 interface HomeMember extends Pick<Profile, 'id' | 'full_name' | 'role' | 'created_at'> {
   avatarUrl: string | null;
+  displayName: string;
 }
 
 type ConnectionState = 'none' | 'sent' | 'received' | 'connected';
@@ -108,25 +109,30 @@ export default function StudentHome() {
         supabase.from('saved_internships').select('internship_id').eq('student_id', profile?.id ?? ''),
       ]);
       if (!active) return;
-      const memberRows = (membersResult.data as Omit<HomeMember, 'avatarUrl'>[] | null) ?? [];
+      const memberRows = (membersResult.data as Omit<HomeMember, 'avatarUrl' | 'displayName'>[] | null) ?? [];
       const memberIds = memberRows.map((member) => member.id);
       const avatarById = new Map<string, string>();
+      const companyNameById = new Map<string, string>();
       const internshipRows = (internshipsResult.data as InternshipWithCompany[] | null) ?? [];
       const companyIds = Array.from(new Set(internshipRows.map((internship) => internship.company_id)));
-      const companyById = new Map<string, { company_name: string; industry: string | null }>();
+      const companyById = new Map<string, { company_name: string | null; industry: string | null; avatar_url: string | null }>();
       if (companyIds.length > 0) {
         const { data: internshipCompanies } = await supabase
           .from('company_profiles')
-          .select('id, company_name, industry')
+          .select('id, company_name, industry, avatar_url')
           .in('id', companyIds);
         for (const company of internshipCompanies ?? []) {
-          companyById.set(company.id, { company_name: company.company_name, industry: company.industry });
+          companyById.set(company.id, {
+            company_name: company.company_name,
+            industry: company.industry,
+            avatar_url: company.avatar_url,
+          });
         }
       }
       if (memberIds.length > 0) {
         const [{ data: students }, { data: companies }, { data: ambassadors }] = await Promise.all([
           supabase.from('student_profiles').select('id, avatar_url').in('id', memberIds),
-          supabase.from('company_profiles').select('id, avatar_url').in('id', memberIds),
+          supabase.from('company_profiles').select('id, avatar_url, company_name').in('id', memberIds),
           supabase.from('ambassador_profiles').select('id, logo_url').in('id', memberIds),
         ]);
         for (const row of [...(students ?? []), ...(companies ?? [])] as { id: string; avatar_url: string | null }[]) {
@@ -135,11 +141,20 @@ export default function StudentHome() {
         for (const row of (ambassadors ?? []) as { id: string; logo_url: string | null }[]) {
           if (row.logo_url) avatarById.set(row.id, row.logo_url);
         }
+        for (const row of (companies ?? []) as { id: string; company_name: string | null }[]) {
+          if (row.company_name) companyNameById.set(row.id, row.company_name);
+        }
       }
       if (!active) return;
       setPosts((postsResult.data as unknown as HomePost[] | null) ?? []);
       setInternships(internshipRows.map((internship) => ({ ...internship, company: companyById.get(internship.company_id) ?? null })));
-      setMembers(memberRows.map((member) => ({ ...member, avatarUrl: avatarById.get(member.id) ?? null })));
+      setMembers(memberRows.map((member) => ({
+        ...member,
+        avatarUrl: avatarById.get(member.id) ?? null,
+        displayName: member.role === 'empresa'
+          ? companyNameById.get(member.id) || member.full_name
+          : member.full_name,
+      })));
       setFollowingIds(new Set((followsResult.data ?? []).map((row) => (row as { following_id: string }).following_id)));
       setConnectionRequests((requestsResult.data as ConnectionRequest[] | null) ?? []);
       setAppliedIds(new Set((applicationsResult.data ?? []).map((row) => row.internship_id)));
@@ -242,6 +257,31 @@ export default function StudentHome() {
     }
   }
 
+  async function toggleFollow(targetId: string) {
+    if (!profile?.id || targetId === profile.id) return;
+    const followed = followingIds.has(targetId);
+    setConnectingId(targetId);
+    setFollowingIds((current) => {
+      const next = new Set(current);
+      if (followed) next.delete(targetId);
+      else next.add(targetId);
+      return next;
+    });
+    const { error } = followed
+      ? await supabase.from('follows').delete().eq('follower_id', profile.id).eq('following_id', targetId)
+      : await supabase.from('follows').insert({ follower_id: profile.id, following_id: targetId });
+    if (error) {
+      setFollowingIds((current) => {
+        const next = new Set(current);
+        if (followed) next.add(targetId);
+        else next.delete(targetId);
+        return next;
+      });
+      alert('No se pudo actualizar el seguimiento.');
+    }
+    setConnectingId(null);
+  }
+
   async function toggleSave(internshipId: string) {
     if (!profile?.id) return;
     const saved = savedIds.has(internshipId);
@@ -299,17 +339,25 @@ export default function StudentHome() {
                   <div key={member.id} className="flex min-w-[12rem] items-center gap-2.5 rounded-lg border border-white/8 p-2">
                     <Link to={`/app/explorar?u=${member.id}`} className="shrink-0">
                       {member.avatarUrl ? (
-                        <img src={member.avatarUrl} alt={member.full_name} className="h-9 w-9 rounded-full object-cover" loading="lazy" decoding="async" />
+                        <img src={member.avatarUrl} alt={member.displayName} className="h-9 w-9 rounded-full object-cover" loading="lazy" decoding="async" />
                       ) : (
                         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/8 text-[11px] font-bold text-white/70">
-                          {initials(member.full_name)}
+                          {initials(member.displayName)}
                         </span>
                       )}
                     </Link>
                     <Link to={`/app/explorar?u=${member.id}`} className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-semibold text-white">{member.full_name || 'Nuevo integrante'}</p>
+                      <p className="truncate text-xs font-semibold text-white">{member.displayName || 'Nuevo integrante'}</p>
                       <p className="truncate text-[11px] text-white/45">{roleLabel[member.role]}</p>
                     </Link>
+                    {member.role === 'empresa' && (
+                      <FollowButton
+                        followed={followingIds.has(member.id)}
+                        loading={connectingId === member.id}
+                        compact
+                        onClick={() => void toggleFollow(member.id)}
+                      />
+                    )}
                     {member.role === 'estudiante' && isStudent && (
                       <ConnectionButton
                         state={state}
@@ -410,11 +458,23 @@ export default function StudentHome() {
                   )}
                   <div className="p-3 sm:p-5">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-500/10 text-brand-500">
-                      <Building2 className="h-4 w-4" />
-                    </div>
+                    {item.internship.company?.avatar_url ? (
+                      <img
+                        src={item.internship.company.avatar_url}
+                        alt=""
+                        className="h-10 w-10 shrink-0 rounded-full object-cover"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-500/10 text-brand-500">
+                        <Building2 className="h-4 w-4" />
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-white">{item.internship.company_name || 'Empresa en PasantIA'}</p>
+                      <p className="truncate text-sm font-semibold text-white">
+                        {item.internship.company_name || item.internship.company?.company_name || 'Empresa en PasantIA'}
+                      </p>
                       <p className="mt-0.5 text-[11px] text-white/40">Publicó una oportunidad · {relativeTime(item.createdAt)}</p>
                     </div>
                   </div>
@@ -487,18 +547,25 @@ export default function StudentHome() {
                     <div className="flex items-center gap-3">
                       <Link to={`/app/explorar?u=${member.id}`} className="shrink-0">
                         {member.avatarUrl ? (
-                          <img src={member.avatarUrl} alt={member.full_name} className="h-10 w-10 rounded-full object-cover" loading="lazy" decoding="async" />
+                          <img src={member.avatarUrl} alt={member.displayName} className="h-10 w-10 rounded-full object-cover" loading="lazy" decoding="async" />
                         ) : (
                           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/8 text-xs font-bold text-white/70">
-                            {initials(member.full_name)}
+                            {initials(member.displayName)}
                           </span>
                         )}
                       </Link>
                       <Link to={`/app/explorar?u=${member.id}`} className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-white">{member.full_name || 'Nuevo integrante'}</p>
+                        <p className="truncate text-sm font-semibold text-white">{member.displayName || 'Nuevo integrante'}</p>
                         <p className="truncate text-xs text-white/45">{roleLabel[member.role]}</p>
                       </Link>
                     </div>
+                    {member.role === 'empresa' && (
+                      <FollowButton
+                        followed={followingIds.has(member.id)}
+                        loading={connectingId === member.id}
+                        onClick={() => void toggleFollow(member.id)}
+                      />
+                    )}
                     {member.role === 'estudiante' && isStudent && (
                       <ConnectionButton
                         state={state}
@@ -622,6 +689,44 @@ function ConnectionButton({
     >
       <Icon className="h-3.5 w-3.5" />
       {!compact && (loading ? 'Cargando' : label)}
+    </button>
+  );
+}
+
+function FollowButton({
+  followed,
+  loading,
+  compact = false,
+  onClick,
+}: {
+  followed: boolean;
+  loading: boolean;
+  compact?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={loading}
+      title={followed ? 'Dejar de seguir' : 'Seguir empresa'}
+      aria-label={followed ? 'Dejar de seguir empresa' : 'Seguir empresa'}
+      className={
+        compact
+          ? `flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition disabled:opacity-60 ${
+              followed
+                ? 'border-emerald-500/20 text-emerald-600'
+                : 'border-brand-500/25 text-brand-500 hover:bg-brand-500/8'
+            }`
+          : `mt-2 flex w-full items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
+              followed
+                ? 'border-emerald-500/20 text-emerald-600'
+                : 'border-brand-500/25 text-brand-500 hover:bg-brand-500/8'
+            }`
+      }
+    >
+      {followed ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+      {!compact && (loading ? 'Cargando' : followed ? 'Siguiendo' : 'Seguir')}
     </button>
   );
 }

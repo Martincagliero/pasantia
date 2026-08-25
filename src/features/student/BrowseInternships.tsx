@@ -32,12 +32,12 @@ async function fetchActiveInternships(): Promise<InternshipWithCompany[]> {
   const ids = Array.from(new Set(items.map((i) => i.company_id)));
   const { data: comps } = await supabase
     .from('company_profiles')
-    .select('id, company_name, industry')
+    .select('id, company_name, industry, avatar_url')
     .in('id', ids);
   const map = new Map(
-    (comps as { id: string; company_name: string; industry: string | null }[] | null ?? []).map((c) => [
+    (comps as { id: string; company_name: string | null; industry: string | null; avatar_url: string | null }[] | null ?? []).map((c) => [
       c.id,
-      { company_name: c.company_name, industry: c.industry },
+      { company_name: c.company_name, industry: c.industry, avatar_url: c.avatar_url },
     ])
   );
   return items
@@ -192,7 +192,19 @@ export default function BrowseInternships() {
                 )}
                 <div className="mb-3 flex items-center justify-between gap-2 text-sm text-white/60">
                   <div className="flex min-w-0 items-center gap-2">
-                    <Building2 className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+                    {i.company?.avatar_url ? (
+                      <img
+                        src={i.company.avatar_url}
+                        alt=""
+                        className="h-7 w-7 shrink-0 rounded-full object-cover"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-500/10 text-brand-500">
+                        <Building2 className="h-4 w-4" strokeWidth={1.75} />
+                      </span>
+                    )}
                     <span className="truncate">{i.company_name || i.company?.company_name || 'Empresa'}</span>
                     {i.featured_until && new Date(i.featured_until) > new Date() && (
                       <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-brand-400">

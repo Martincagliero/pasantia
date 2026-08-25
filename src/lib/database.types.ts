@@ -128,7 +128,7 @@ export interface PlanRequest {
 
 /** Pasantía con datos de la empresa que la publicó (join). */
 export interface InternshipWithCompany extends Internship {
-  company: Pick<CompanyProfile, 'company_name' | 'industry'> | null;
+  company: (Pick<CompanyProfile, 'company_name' | 'industry'> & Partial<Pick<CompanyProfile, 'avatar_url'>>) | null;
 }
 
 export interface Application {

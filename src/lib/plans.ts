@@ -21,10 +21,3 @@ export function planLabel(plan: SubscriptionPlan, role?: Role): string {
   if (role === 'embajador' && plan === 'pro') return 'Premium';
   return plan === 'enterprise' ? 'Empresa' : 'Pro';
 }
-
-export function planPrice(role: Role, plan: SubscriptionPlan): string {
-  if (plan === 'free') return '$0';
-  if (role === 'estudiante') return '$7.500/mes';
-  if (role === 'embajador') return 'A convenir';
-  return plan === 'enterprise' ? 'Desde $223.500/mes' : '$73.500/mes';
-}

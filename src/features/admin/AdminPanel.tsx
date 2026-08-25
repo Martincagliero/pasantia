@@ -435,7 +435,7 @@ function UsersTab({ users, onChanged }: { users: UserRow[]; onChanged: () => voi
 
   async function handlePlanChange(user: UserRow, plan: SubscriptionPlan) {
     if (plan === user.plan || changingPlanId) return;
-    if (plan === 'free' && !window.confirm(`¿Bajar a ${user.full_name || user.email} al plan Gratis? Los beneficios pagos se desactivarán al instante.`)) return;
+    if (plan === 'free' && !window.confirm(`¿Bajar a ${user.full_name || user.email} al plan Gratis? Los beneficios del plan actual se desactivarán al instante.`)) return;
     setChangingPlanId(user.id);
     const { data, error } = await supabase.rpc('admin_set_user_plan', {
       p_user_id: user.id,

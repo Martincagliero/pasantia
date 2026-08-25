@@ -108,18 +108,17 @@ export default function Terminos() {
           ),
         },
         {
-          heading: 'Planes, funciones y tarifas',
+          heading: 'Planes y funciones',
           body: (
             <>
               <p>
-                PasantIA puede ofrecer planes gratuitos y pagos con diferentes límites y funciones. Las
-                características, vigencia, precio e impuestos aplicables serán los informados al momento de
-                solicitar o contratar cada plan.
+                PasantIA puede ofrecer distintos planes con diferentes límites y funciones. Las
+                características y vigencia aplicables serán las informadas al momento de solicitar o activar
+                cada plan.
               </p>
               <p>
-                PasantIA puede modificar, discontinuar o actualizar planes, funciones, límites y tarifas,
-                notificando los cambios relevantes a través de la plataforma. Los cambios de precio no se
-                aplicarán retroactivamente a períodos ya abonados y se respetarán los derechos irrenunciables
+                PasantIA puede modificar, discontinuar o actualizar planes, funciones y límites, notificando
+                los cambios relevantes a través de la plataforma y respetando los derechos irrenunciables
                 reconocidos por la normativa aplicable.
               </p>
             </>

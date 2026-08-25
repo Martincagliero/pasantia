@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
-import { ArrowUpRight, Building2, CheckCircle2, GraduationCap, Sparkles } from 'lucide-react';
+import { ArrowUpRight, Building2, CheckCircle2, GraduationCap } from 'lucide-react';
 import { Reveal } from '../ui/Reveal';
 import { Section } from '../ui/Section';
 import { Accent } from '../ui/Accent';
@@ -11,14 +11,11 @@ type Audience = 'estudiantes' | 'empresas';
 const studentPlans = [
   {
     name: 'Gratis',
-    price: '$0',
     description: 'Para empezar a construir tu red y encontrar oportunidades.',
     features: ['5 postulaciones por mes', '5 conexiones nuevas por mes', 'Mensajes con conexiones aceptadas', 'Perfil público, comunidades y red'],
   },
   {
     name: 'Pro',
-    price: '$7.500',
-    suffix: '/mes',
     description: 'Para moverte sin límites y contactar antes que nadie.',
     featured: true,
     features: ['Postulaciones ilimitadas', 'Conexiones sin límite', 'Mensajes sin conexión previa', 'Ser promotor', 'Mayor visibilidad del perfil'],
@@ -28,22 +25,17 @@ const studentPlans = [
 const companyPlans = [
   {
     name: 'Gratis',
-    price: '$0',
     description: 'Para publicar las primeras búsquedas y conocer PasantIA.',
     features: ['3 pasantías por mes', 'Primeros 10 postulados por pasantía', 'Perfil de empresa'],
   },
   {
     name: 'Pro',
-    price: '$73.500',
-    suffix: '/mes',
     description: 'Para contratar talento joven de forma continua.',
     featured: true,
     features: ['Publicaciones ilimitadas', 'Todos los postulados y gestión completa', 'Búsqueda y contacto de talento', 'Mensajería y estadísticas'],
   },
   {
     name: 'Empresa',
-    price: 'Desde $223.500',
-    suffix: '/mes',
     description: 'Para equipos con procesos y marca empleadora propios.',
     features: ['Matching con IA', 'Múltiples usuarios', 'Marca empleadora', 'Soporte prioritario', 'Reportes personalizados'],
   },
@@ -85,7 +77,7 @@ export function PricingPlans({ id }: { id: string }) {
           Empezá gratis. <Accent>Crece cuando lo necesites.</Accent>
         </h2>
         <p className="mx-auto mt-5 max-w-2xl text-base font-light leading-relaxed text-white/70 sm:text-lg">
-          Herramientas claras para estudiantes y empresas, sin pagar antes de encontrar valor.
+          Herramientas claras para estudiantes y empresas según cada etapa.
         </p>
       </Reveal>
 
@@ -116,10 +108,7 @@ export function PricingPlans({ id }: { id: string }) {
                     ? 'Plan Empresa'
                     : `Empresa ${plan.name}`}
               </h3>
-              <p className="mt-7 text-4xl font-semibold tracking-tight text-slate-950">
-                {plan.price}<span className="ml-1 text-sm font-normal text-slate-600">{plan.suffix}</span>
-              </p>
-              <p className="mt-3 min-h-12 text-sm leading-relaxed text-slate-600">{plan.description}</p>
+              <p className="mt-7 min-h-12 text-sm leading-relaxed text-slate-600">{plan.description}</p>
               <button
                 type="button"
                 onClick={() => open()}
@@ -142,12 +131,6 @@ export function PricingPlans({ id }: { id: string }) {
         ))}
       </div>
 
-      {audience === 'empresas' && (
-        <Reveal delay={0.15} className="mx-auto mt-5 flex max-w-3xl items-start justify-center gap-2 text-center text-sm text-white/55">
-          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand-300" />
-          <p>También podés destacar una pasantía por 15 días a $37.500 o por 30 días a $60.000.</p>
-        </Reveal>
-      )}
       </div>
     </Section>
     <div ref={transitionRef} className="relative h-[70svh] min-h-[30rem] overflow-hidden bg-brand-500 sm:h-[80svh]" aria-hidden>

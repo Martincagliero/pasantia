@@ -95,9 +95,9 @@ const FAQ = [
       'Estamos en etapa de acceso anticipado. El sistema completo con perfiles, matching y postulación está en desarrollo. Sumándote a la lista sos de los primeros en entrar cuando lancemos.',
   },
   {
-    question: '¿Tiene costo?',
+    question: '¿Qué planes ofrece PasantIA?',
     answer:
-      'Podés empezar gratis. Estudiante Pro cuesta $7.500 por mes, Empresa Pro $73.500 por mes y el plan Empresa parte de $223.500 por mes.',
+      'Hay planes Gratis, Pro y Empresa con distintas herramientas y límites según cada etapa.',
   },
   {
     question: '¿Es para estudiantes o para empresas?',

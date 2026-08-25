@@ -1,7 +1,7 @@
-import { CheckCircle2, Sparkles } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { Card, PageHeader } from '../ui/primitives';
-import { activePlan, planLabel, planPrice } from '../../lib/plans';
+import { activePlan, planLabel } from '../../lib/plans';
 import type { Role, SubscriptionPlan } from '../../lib/database.types';
 import { UpgradePrompt } from './UpgradePrompt';
 
@@ -59,25 +59,13 @@ export default function PlansPage() {
     <div>
       <PageHeader
         title="Planes PasantIA"
-        description="Elegí las herramientas que necesitás. Todos los precios están expresados en pesos argentinos."
+        description="Elegí las herramientas que necesitás según tu etapa."
       />
       <div className={`grid gap-4 ${plans.length === 3 ? 'lg:grid-cols-3' : 'mx-auto max-w-3xl sm:grid-cols-2'}`}>
         {plans.map((item) => (
           <PlanCard key={item.plan} role={role} current={current} {...item} />
         ))}
       </div>
-      {role === 'empresa' && (
-        <Card className="mx-auto mt-5 max-w-3xl">
-          <div className="flex items-start gap-3">
-            <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-brand-500" />
-            <div>
-              <h2 className="font-semibold text-white">Publicaciones destacadas</h2>
-              <p className="mt-1 text-sm text-white/60">Ubicá una pasantía primero en Inicio, búsquedas y comunidades: $37.500 por 15 días o $60.000 por 30 días.</p>
-              <p className="mt-2 text-xs text-white/45">Podés solicitar el destacado desde “Mis pasantías”.</p>
-            </div>
-          </div>
-        </Card>
-      )}
     </div>
   );
 }
@@ -100,7 +88,6 @@ function PlanCard({
     <Card className={`relative flex flex-col ${plan !== 'free' ? 'border-2 border-white/30' : ''}`}>
       {plan !== 'free' && <span className="absolute right-4 top-4 text-[10px] font-semibold uppercase text-white/45">Recomendado</span>}
       <h2 className="pr-24 text-lg font-semibold text-white">{name}</h2>
-      <p className="mt-2 text-2xl font-bold text-white">{planPrice(role, plan)}</p>
       <div className="mt-4 flex-1 space-y-2.5">
         {features.map((feature) => (
           <p key={feature} className="flex items-start gap-2 text-sm text-white/65">

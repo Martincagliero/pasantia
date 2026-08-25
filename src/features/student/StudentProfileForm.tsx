@@ -25,14 +25,13 @@ export default function StudentProfileForm() {
   const [saved, setSaved] = useState(false);
   const [editing, setEditing] = useState(false);
   const [verified, setVerified] = useState(false);
-  const [requested, setRequested] = useState(false);
   const [uploading, setUploading] = useState<'cv' | 'transcript' | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const transcriptInputRef = useRef<HTMLInputElement>(null);
 
   const [fullName, setFullName] = useState('');
-  const [form, setForm] = useState<Omit<StudentProfile, 'id' | 'skills' | 'verified' | 'verification_requested'> & { skills: string }>({
+  const [form, setForm] = useState<Omit<StudentProfile, 'id' | 'skills' | 'verified'> & { skills: string }>({
     avatar_url: '',
     university: '',
     career: '',
@@ -97,7 +96,6 @@ export default function StudentProfileForm() {
           is_public: s.is_public ?? false,
         });
         setVerified(!!s.verified);
-        setRequested(!!s.verification_requested);
       }
       setFullName(profile?.full_name ?? '');
       setLoading(false);
@@ -171,17 +169,6 @@ export default function StudentProfileForm() {
     setForm((f) => ({ ...f, [field]: url }));
     await supabase.from('student_profiles').update({ [field]: url }).eq('id', uid);
     setUploading(null);
-  }
-
-  async function requestVerification() {
-    const { error } = await supabase.rpc('request_profile_verification');
-    if (error) {
-      alert(/PLAN_PRO_REQUIRED/i.test(error.message)
-        ? 'Necesitás un plan Pro vigente para solicitar la verificación.'
-        : 'No pudimos enviar la solicitud. Intentá nuevamente.');
-      return;
-    }
-    setRequested(true);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -568,10 +555,8 @@ export default function StudentProfileForm() {
         subtitle={[form.career, form.university, form.year].filter(Boolean).join(' · ') || 'Estudiante'}
         avatarUrl={form.avatar_url}
         verified={verified}
-        requested={requested}
-        canRequestVerification={isPro(profile)}
+        hasPro={isPro(profile)}
         onEdit={() => setEditing(true)}
-        onRequestVerification={requestVerification}
       />
 
       <ProfileCompletion

@@ -36,7 +36,6 @@ export interface StudentProfile {
   id: string;
   avatar_url: string | null;
   verified: boolean;
-  verification_requested: boolean;
   university: string | null;
   career: string | null;
   year: string | null;
@@ -60,7 +59,6 @@ export interface CompanyProfile {
   id: string;
   avatar_url: string | null;
   verified: boolean;
-  verification_requested: boolean;
   company_name: string | null;
   industry: string | null;
   size: string | null;
@@ -88,7 +86,6 @@ export interface AmbassadorProfile {
   description: string | null;
   logo_url: string | null;
   verified: boolean;
-  verification_requested: boolean;
   created_at: string;
 }
 

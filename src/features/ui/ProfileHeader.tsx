@@ -1,5 +1,5 @@
 // Encabezado de perfil (modo vista, estilo LinkedIn): avatar, nombre, verificación y editar.
-import { Pencil, ShieldCheck, Clock } from 'lucide-react';
+import { BadgeCheck, Pencil } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { VerifiedBadge } from '../ambassador/VerifiedBadge';
 
@@ -14,19 +14,15 @@ export function ProfileHeader({
   subtitle,
   avatarUrl,
   verified,
-  requested,
-  canRequestVerification,
+  hasPro,
   onEdit,
-  onRequestVerification,
 }: {
   name: string;
   subtitle?: string;
   avatarUrl?: string | null;
   verified: boolean;
-  requested: boolean;
-  canRequestVerification: boolean;
+  hasPro: boolean;
   onEdit: () => void;
-  onRequestVerification: () => void;
 }) {
   return (
     <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -48,29 +44,16 @@ export function ProfileHeader({
             {verified && <VerifiedBadge verified />}
           </div>
           {subtitle && <p className="mt-0.5 text-sm text-white/60">{subtitle}</p>}
-          {!verified && requested && (
-            <span className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-400/20 px-2.5 py-0.5 text-xs font-semibold text-amber-600">
-              <Clock className="h-3 w-3" /> Verificación en revisión
-            </span>
-          )}
         </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {!verified && !requested && canRequestVerification && (
-          <button
-            onClick={onRequestVerification}
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10"
-          >
-            <ShieldCheck className="h-4 w-4" /> Solicitar verificación
-          </button>
-        )}
-        {!verified && !requested && !canRequestVerification && (
+        {!verified && !hasPro && (
           <Link
             to="/app/planes"
-            className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-400/15"
+            className="inline-flex items-center gap-1.5 px-1 py-2 text-xs font-medium text-brand-500 transition hover:text-brand-600"
           >
-            <ShieldCheck className="h-4 w-4" /> Verificación con Pro
+            <BadgeCheck className="h-4 w-4" strokeWidth={2.25} /> Verificación con Pro
           </Link>
         )}
         <button

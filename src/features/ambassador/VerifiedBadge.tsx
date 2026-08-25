@@ -1,4 +1,4 @@
-// Badge de "verificado" para embajadores.
+// Distintivo compartido para todas las cuentas verificadas.
 import { BadgeCheck } from 'lucide-react';
 
 interface VerifiedBadgeProps {
@@ -7,21 +7,13 @@ interface VerifiedBadgeProps {
 }
 
 export function VerifiedBadge({ verified, small = false }: VerifiedBadgeProps) {
-  if (verified) {
-    return (
-      <span className={`inline-flex items-center gap-1 rounded-full border border-brand-300/30 bg-brand-500/15 font-medium text-brand-200 ${
-        small ? 'px-1.5 py-0.5 text-xs' : 'px-2.5 py-0.5 text-xs'
-      }`}>
-        <BadgeCheck className={small ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
-        {!small && 'Verificado'}
-      </span>
-    );
-  }
+  if (!verified) return null;
+
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border border-amber-300/30 bg-amber-400/15 font-medium text-amber-200 ${
-      small ? 'px-1.5 py-0.5 text-xs' : 'px-2.5 py-0.5 text-xs'
-    }`}>
-      {!small && 'Pendiente de verificación'}
-    </span>
+    <BadgeCheck
+      aria-label="Cuenta verificada"
+      strokeWidth={2.25}
+      className={`shrink-0 text-brand-500 ${small ? 'h-4 w-4' : 'h-5 w-5'}`}
+    />
   );
 }

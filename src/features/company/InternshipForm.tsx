@@ -8,8 +8,9 @@ import { Button } from '../../components/ui/Button';
 import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { Card, PageHeader, PageLoader } from '../ui/primitives';
 import { useModalGuard } from '../ui/modalGuard';
-import { BadgeCheck, ChevronDown, X, ImagePlus, Trash2 } from 'lucide-react';
+import { ChevronDown, X, ImagePlus, Trash2 } from 'lucide-react';
 import { sendPushEvent } from '../../lib/notify';
+import { VerifiedBadge } from '../ambassador/VerifiedBadge';
 
 const emptyForm = {
   title: '',
@@ -426,9 +427,7 @@ export default function InternshipForm({
                           <span className="text-sm font-medium text-white">
                             {amb.org_name}
                           </span>
-                          {amb.verified && (
-                            <BadgeCheck className="h-4 w-4 text-sky-400" />
-                          )}
+                          {amb.verified && <VerifiedBadge verified small />}
                         </div>
                         <div className="text-xs text-white/50">
                           {amb.org_type === 'cuenta_instagram' ? amb.university : amb.org_type} •{' '}

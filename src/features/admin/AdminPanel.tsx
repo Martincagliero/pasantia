@@ -17,7 +17,7 @@ import {
   CreditCard,
   X,
   Flag,
-  ShieldCheck,
+  BadgeCheck,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { sendPushEvent } from '../../lib/notify';
@@ -26,6 +26,7 @@ import type { Role, SubscriptionPlan } from '../../lib/database.types';
 import { planLabel } from '../../lib/plans';
 import { Button } from '../../components/ui/Button';
 import { Card, PageHeader, PageLoader } from '../ui/primitives';
+import { VerifiedBadge } from '../ambassador/VerifiedBadge';
 
 /* ------------------------------- Tipos ------------------------------- */
 interface UserRow {
@@ -115,7 +116,6 @@ interface VerificationRow {
   detail: string | null;
   avatar_url: string | null;
   verified: boolean;
-  verification_requested: boolean;
 }
 
 type Tab = 'usuarios' | 'solicitudes' | 'verificaciones' | 'planes' | 'denuncias' | 'promotores';
@@ -203,7 +203,7 @@ export default function AdminPanel() {
   const tabs: { key: Tab; label: string; icon: typeof Users; count: number }[] = [
     { key: 'usuarios', label: 'Registrados', icon: Users, count: users.length },
     { key: 'solicitudes', label: 'Formulario', icon: ClipboardList, count: requests.length },
-    { key: 'verificaciones', label: 'Verificaciones', icon: ShieldCheck, count: verifications.filter((row) => row.verification_requested && !row.verified).length },
+    { key: 'verificaciones', label: 'Verificaciones', icon: BadgeCheck, count: verifications.filter((row) => row.verified).length },
     { key: 'planes', label: 'Planes', icon: CreditCard, count: planRequests.filter((request) => request.status === 'pending').length },
     { key: 'denuncias', label: 'Denuncias', icon: Flag, count: reports.filter((report) => report.status === 'pendiente').length },
     { key: 'promotores', label: 'Promotores', icon: Rocket, count: promoters.length },
@@ -271,7 +271,7 @@ function VerificationsTab({
   setupError: boolean;
   onChanged: () => void;
 }) {
-  const [filter, setFilter] = useState<'pendientes' | 'sin_verificar' | 'verificadas' | 'todas'>('pendientes');
+  const [filter, setFilter] = useState<'sin_verificar' | 'verificadas' | 'todas'>('sin_verificar');
   const [query, setQuery] = useState('');
   const [resolvingId, setResolvingId] = useState<string | null>(null);
 
@@ -302,7 +302,6 @@ function VerificationsTab({
 
   const normalizedQuery = query.trim().toLowerCase();
   const filtered = rows.filter((row) => {
-    if (filter === 'pendientes' && (!row.verification_requested || row.verified)) return false;
     if (filter === 'sin_verificar' && row.verified) return false;
     if (filter === 'verificadas' && !row.verified) return false;
     if (!normalizedQuery) return true;
@@ -331,7 +330,6 @@ function VerificationsTab({
           className="rounded-full border border-white/12 bg-white/5 px-4 py-2 text-sm text-white outline-none focus:border-brand-400/60"
           aria-label="Filtrar verificaciones"
         >
-          <option value="pendientes">Solicitudes pendientes</option>
           <option value="sin_verificar">Sin verificar</option>
           <option value="verificadas">Verificadas</option>
           <option value="todas">Todas</option>
@@ -356,15 +354,7 @@ function VerificationsTab({
                     <span className={`rounded-full border px-2 py-0.5 text-xs ${roleBadge[row.role] ?? ''}`}>
                       {roleLabel[row.role] ?? row.role}
                     </span>
-                    {row.verified ? (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-brand-400/30 bg-brand-500/10 px-2 py-0.5 text-xs font-semibold text-brand-500">
-                        <ShieldCheck className="h-3 w-3" /> Verificada
-                      </span>
-                    ) : row.verification_requested ? (
-                      <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-xs font-semibold text-amber-600">
-                        Solicitada
-                      </span>
-                    ) : null}
+                    {row.verified && <VerifiedBadge verified small />}
                   </div>
                   <p className="mt-1 truncate text-sm text-white/55">{row.email}</p>
                   {row.detail && <p className="mt-0.5 truncate text-xs text-white/40">{row.detail}</p>}
@@ -377,7 +367,7 @@ function VerificationsTab({
                   </Button>
                 ) : (
                   <Button variant="primary" size="sm" disabled={resolvingId === row.id} onClick={() => void setVerification(row, true)}>
-                    <ShieldCheck className="h-4 w-4" /> Verificar perfil
+                    <BadgeCheck className="h-4 w-4" /> Verificar perfil
                   </Button>
                 )}
               </div>

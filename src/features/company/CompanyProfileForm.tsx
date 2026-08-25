@@ -35,11 +35,10 @@ export default function CompanyProfileForm() {
   const [saved, setSaved] = useState(false);
   const [editing, setEditing] = useState(false);
   const [verified, setVerified] = useState(false);
-  const [requested, setRequested] = useState(false);
   const [internships, setInternships] = useState<InternshipLite[]>([]);
 
   const [fullName, setFullName] = useState('');
-  const [form, setForm] = useState<Omit<CompanyProfile, 'id' | 'verified' | 'verification_requested'>>({
+  const [form, setForm] = useState<Omit<CompanyProfile, 'id' | 'verified'>>({
     avatar_url: '',
     company_name: '',
     industry: '',
@@ -71,7 +70,6 @@ export default function CompanyProfileForm() {
           description: c.description ?? '',
         });
         setVerified(!!c.verified);
-        setRequested(!!c.verification_requested);
       }
       setInternships((ints as InternshipLite[]) ?? []);
       setFullName(profile?.full_name ?? '');
@@ -88,17 +86,6 @@ export default function CompanyProfileForm() {
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
     setSaved(false);
-  }
-
-  async function requestVerification() {
-    const { error } = await supabase.rpc('request_profile_verification');
-    if (error) {
-      alert(/PLAN_PRO_REQUIRED/i.test(error.message)
-        ? 'Necesitás un plan Pro vigente para solicitar la verificación.'
-        : 'No pudimos enviar la solicitud. Intentá nuevamente.');
-      return;
-    }
-    setRequested(true);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -241,10 +228,8 @@ export default function CompanyProfileForm() {
         subtitle={[form.industry, form.size && `${form.size} empleados`].filter(Boolean).join(' · ') || 'Empresa'}
         avatarUrl={form.avatar_url}
         verified={verified}
-        requested={requested}
-        canRequestVerification={isPro(profile)}
+        hasPro={isPro(profile)}
         onEdit={() => setEditing(true)}
-        onRequestVerification={requestVerification}
       />
 
       <ProfileCompletion

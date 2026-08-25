@@ -32,7 +32,6 @@ export default function AmbassadorProfile() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [requested, setRequested] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -57,7 +56,6 @@ export default function AmbassadorProfile() {
           description: a.description ?? '',
           logo_url: a.logo_url ?? '',
         });
-        setRequested(!!a.verification_requested);
       }
       } catch { /* ignore */ } finally {
         if (active) setLoading(false);
@@ -122,17 +120,6 @@ export default function AmbassadorProfile() {
     setUploading(false);
   }
 
-  async function requestVerification() {
-    const { error } = await supabase.rpc('request_profile_verification');
-    if (error) {
-      alert(/PLAN_PRO_REQUIRED/i.test(error.message)
-        ? 'Necesitás un plan Pro vigente para solicitar la verificación.'
-        : 'No pudimos enviar la solicitud. Intentá nuevamente.');
-      return;
-    }
-    setRequested(true);
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.logo_url.trim()) {
@@ -168,10 +155,8 @@ export default function AmbassadorProfile() {
           subtitle={[orgTypeLabel(form.org_type), form.university].filter(Boolean).join(' · ')}
           avatarUrl={form.logo_url}
           verified={!!amb?.verified}
-          requested={requested}
-          canRequestVerification={isPro(profile)}
+          hasPro={isPro(profile)}
           onEdit={() => setEditing(true)}
-          onRequestVerification={requestVerification}
         />
 
         <ProfileCompletion

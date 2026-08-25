@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Bookmark, BriefcaseBusiness, Building2, Check, Clock3, House, MessageSquare, Newspaper, Plus, ShieldCheck, UserCheck, UserPlus } from 'lucide-react';
+import { ArrowRight, Bookmark, BriefcaseBusiness, Building2, Check, Clock3, House, MessageSquare, Newspaper, Plus, UserCheck, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import type { ConnectionRequest, InternshipWithCompany, Post, Profile } from '../../lib/database.types';
@@ -14,6 +14,7 @@ import { ApplyModal } from './BrowseInternships';
 import { PostComposerModal } from '../posts/PostComposer';
 import { SocialPostImages, SocialPostText } from '../posts/SocialPostContent';
 import { PostActionsMenu } from '../posts/PostActionsMenu';
+import { VerifiedBadge } from '../ambassador/VerifiedBadge';
 import pasantiaLogo from '../../assets/logo.png';
 
 interface HomePost extends Post {
@@ -415,9 +416,7 @@ export default function StudentHome() {
                         <p className="truncate text-sm font-semibold leading-tight text-white">
                           {verified ? 'PasantIA' : item.post.author_name || 'Usuario'}
                         </p>
-                        {verified && (
-                          <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-brand-500" aria-label="Cuenta verificada" />
-                        )}
+                        {verified && <VerifiedBadge verified small />}
                       </div>
                       <p className="mt-0.5 text-[11px] text-white/40">
                         {verified ? 'Aviso oficial de PasantIA' : 'Publicación en Novedades'} · {relativeTime(item.createdAt)}

@@ -1,7 +1,7 @@
 // Layout del panel interno: barra de navegación superior (estilo LinkedIn) con
 // buscador, más un panel de mensajes desplegable abajo a la derecha.
-import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutGrid,
   Send,
@@ -80,6 +80,7 @@ function initials(name: string): string {
 export function DashboardLayout() {
   const { profile, signOut, adminViewRole, setAdminViewRole } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   // Modo oscuro deshabilitado (próximamente): la app usa siempre modo claro.
   const theme = 'light' as const;
 
@@ -171,19 +172,17 @@ export function DashboardLayout() {
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
-  // Compacta la barra inferior al bajar y recupera su tamaño al subir.
-  const [compactBottomNav, setCompactBottomNav] = useState(false);
-  const lastScrollYRef = useRef(0);
-  useEffect(() => {
-    function onScroll() {
-      const y = window.scrollY;
-      const goingDown = y > lastScrollYRef.current;
-      setCompactBottomNav(goingDown && y > 80);
-      lastScrollYRef.current = y;
+  // Cada sección empieza arriba. Si se toca de nuevo la sección activa, el
+  // onClick de la barra también vuelve al inicio sin depender de un cambio de URL.
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [location.pathname]);
+
+  function handleBottomNavClick(to: string) {
+    if (location.pathname === to) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     }
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  }
 
   async function handleSignOut() {
     await signOut();
@@ -197,7 +196,7 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className={`dash-root min-h-screen ${role === 'embajador' ? 'dash-community' : ''}`} data-theme={theme}>
+    <div className={`dash-root min-h-[100dvh] ${role === 'embajador' ? 'dash-community' : ''}`} data-theme={theme}>
       <MessagesProvider>
         <WelcomeOnboarding />
         <header className="dash-panel sticky top-0 z-[45] border-b border-white/10 pt-[env(safe-area-inset-top)]">
@@ -374,26 +373,17 @@ export function DashboardLayout() {
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl overflow-x-hidden px-4 py-6 pb-28 sm:px-6 lg:pb-6">
+        <main className="mx-auto max-w-7xl overflow-x-hidden px-4 py-6 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:px-6 lg:pb-6">
           <Outlet />
         </main>
 
-        {/* Barra inferior mobile: bloque flotante que se compacta al bajar.
-            OJO iOS: NO usar backdrop-blur en un elemento position:fixed. Safari
-            lo "despega" al hacer scroll y lo dibuja flotando en el medio de la
-            pantalla. El fondo ya es opaco (mobile-end-gradient), así que el blur
-            no aportaba nada visual. */}
+        {/* La envoltura fixed nunca se transforma: la pastilla conserva el diseño
+            flotante sin perder su posición cuando cambia el viewport de iOS. */}
         <nav
-          className={`dash-panel mobile-end-gradient fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 mx-auto max-w-md overflow-hidden rounded-2xl border border-white/12 shadow-xl shadow-black/20 transition-[transform,opacity] duration-300 ease-out lg:hidden ${
-            compactBottomNav ? 'scale-[0.92] opacity-95' : 'scale-100 opacity-100'
-          }`}
+          className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] lg:hidden"
+          aria-label="Navegación principal"
         >
-
-          <div
-            className={`mx-auto flex items-center justify-around transition-all duration-300 ${
-              compactBottomNav ? 'h-11 px-5' : 'h-14 px-2'
-            }`}
-          >
+          <div className="dash-panel pointer-events-auto mx-auto flex h-14 max-w-md items-center justify-around overflow-hidden rounded-2xl border border-white/12 bg-white px-2 shadow-xl shadow-black/20">
             {bottomNav.map(({ to, label, icon: Icon, end }) => (
               <NavLink
                 key={to}
@@ -404,17 +394,12 @@ export function DashboardLayout() {
                 onMouseEnter={() => prefetchAppRoute(to)}
                 onFocus={() => prefetchAppRoute(to)}
                 onTouchStart={() => prefetchAppRoute(to)}
-                className={`flex shrink-0 items-center justify-center rounded-xl transition-all duration-300 active:scale-95 ${
-                  compactBottomNav ? 'h-9 w-9' : 'h-11 w-11'
-                }`}
+                onClick={() => handleBottomNavClick(to)}
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors active:bg-white/8"
               >
                 {({ isActive }) => (
                   <Icon
-                    className={`shrink-0 transition-all duration-300 ${
-                      compactBottomNav ? 'h-5 w-5' : 'h-6 w-6'
-                    } ${
-                      isActive ? 'text-brand-500' : 'text-white/55'
-                    }`}
+                    className={`h-6 w-6 shrink-0 transition-colors ${isActive ? 'text-brand-500' : 'text-white/55'}`}
                     strokeWidth={isActive ? 2.6 : 2}
                   />
                 )}

@@ -224,14 +224,14 @@ export function PostInteractions({
   const activeEmojis = EMOJIS.filter((e) => (counts[e] ?? 0) > 0);
 
   return (
-    <div ref={rootRef} className="mt-3 border-t border-white/10 pt-2.5">
-      <div className="flex items-center gap-1">
+    <div ref={rootRef} className="mt-2.5 border-t border-white/10 pt-1.5">
+      <div>
         {/* Resumen de reacciones (se toca para ver quién reaccionó) */}
-        {totalReactions > 0 ? (
-          <div className="relative mr-auto">
+        {totalReactions > 0 && (
+          <div className="relative mb-0.5 w-fit">
             <button
               onClick={toggleReactors}
-              className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1 text-xs text-white/50 transition hover:bg-white/10 hover:text-white"
+              className="inline-flex items-center gap-1 rounded-lg px-1 py-0.5 text-[11px] text-white/50 transition hover:bg-white/10 hover:text-white"
               title="Ver quién reaccionó"
             >
               <span className="flex items-center gap-0.5">
@@ -261,15 +261,14 @@ export function PostInteractions({
               </div>
             )}
           </div>
-        ) : (
-          <span className="mr-auto" />
         )}
 
-        {/* Reaccionar */}
-        <div className="relative">
+        <div className={`grid w-full gap-0.5 ${sharePost ? 'grid-cols-3' : 'grid-cols-2'}`}>
+          {/* Reaccionar */}
+          <div className="relative min-w-0">
           <button
             onClick={() => setPickerOpen((v) => !v)}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition hover:bg-white/10 ${
+            className={`flex w-full min-w-0 items-center justify-center gap-1 rounded-lg px-1 py-1 text-xs font-medium transition hover:bg-white/10 ${
               myEmoji ? 'text-brand-500' : 'text-white/60 hover:text-white'
             }`}
           >
@@ -292,29 +291,31 @@ export function PostInteractions({
               ))}
             </div>
           )}
-        </div>
+          </div>
 
-        {/* Comentar: enfoca el campo (los comentarios ya están visibles) */}
-        <button
-          onClick={() => inputRef.current?.focus()}
-          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-white/60 transition hover:bg-white/10 hover:text-white"
-        >
-          <MessageCircle className="h-4 w-4" />
-          {comments.length > 0 ? comments.length : ''} Comentar
-        </button>
-        {sharePost && (
+          {/* Comentar: enfoca el campo (los comentarios ya están visibles) */}
           <button
-            onClick={() => setShareOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-white/60 transition hover:bg-white/10 hover:text-white"
-            aria-label="Enviar publicación"
+            onClick={() => inputRef.current?.focus()}
+            className="flex min-w-0 items-center justify-center gap-1 rounded-lg px-1 py-1 text-xs font-medium text-white/60 transition hover:bg-white/10 hover:text-white"
           >
-            <Send className="h-4 w-4" />
-            Enviar
+            <MessageCircle className="h-4 w-4 shrink-0" />
+            <span className="truncate">Comentar</span>
+            {comments.length > 0 && <span className="shrink-0 tabular-nums">{comments.length}</span>}
           </button>
-        )}
+          {sharePost && (
+            <button
+              onClick={() => setShareOpen(true)}
+              className="flex min-w-0 items-center justify-center gap-1 rounded-lg px-1 py-1 text-xs font-medium text-white/60 transition hover:bg-white/10 hover:text-white"
+              aria-label="Enviar publicación"
+            >
+              <Send className="h-4 w-4 shrink-0" />
+              <span className="truncate">Enviar</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="mt-2.5 space-y-2.5">
+      <div className="mt-2 space-y-2">
         {comments.length > 2 && !showAllComments && (
           <button
             onClick={() => setShowAllComments(true)}

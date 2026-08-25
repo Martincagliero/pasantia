@@ -82,16 +82,6 @@
   }
 }
 
-/* Marca sutil del final de la plataforma, incluida el área segura de iOS. */
-.mobile-end-gradient {
-  background: linear-gradient(
-    to bottom,
-    var(--dash-panel) 0%,
-    var(--dash-panel) calc(100% - max(10px, env(safe-area-inset-bottom))),
-    rgb(10 102 194 / 0.18) 100%
-  );
-}
-
 /* El toolbar flotante del teclado móvil deja una franja transparente sobre la
    página. Extendemos la superficie del chat por debajo del visual viewport para
    que detrás del teclado solo se vea el bloque del compositor. */

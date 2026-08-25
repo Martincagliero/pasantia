@@ -14,3 +14,12 @@ export function useMediaQuery(query: string): boolean {
 
   return matches;
 }
+
+export function useTouchDevice(): boolean {
+  const coarsePointer = useMediaQuery('(pointer: coarse)');
+  const [hasTouch] = useState(
+    () => 'ontouchstart' in window || navigator.maxTouchPoints > 0
+  );
+
+  return coarsePointer || hasTouch;
+}

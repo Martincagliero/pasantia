@@ -36,6 +36,7 @@ import mockComunidadIndustrial from '../../assets/images/mockup/comunidad-indust
 import mockComunidadUx from '../../assets/images/mockup/comunidad-ux.webp';
 import mockInternship from '../../assets/images/mockup/internship.webp';
 import mockTechnova from '../../assets/images/mockup/technova.webp';
+import { useMediaQuery, useTouchDevice } from '../../hooks/useMediaQuery';
 
 type PreviewId = 'novedades' | 'pasantias' | 'perfiles' | 'comunidades' | 'promotores';
 
@@ -204,6 +205,9 @@ interface InteractiveAppPreviewProps {
 
 export function InteractiveAppPreview({ variant = 'section' }: InteractiveAppPreviewProps) {
   const [activeId, setActiveId] = useState<PreviewId>('pasantias');
+  const isDesktop = useMediaQuery('(min-width: 768px)');
+  const isTouchDevice = useTouchDevice();
+  const allowMotion = isDesktop && !isTouchDevice;
   const activeIndex = PREVIEWS.findIndex((preview) => preview.id === activeId);
   const active = PREVIEWS[activeIndex];
   const Screen = SCREENS[activeId];
@@ -219,7 +223,7 @@ export function InteractiveAppPreview({ variant = 'section' }: InteractiveAppPre
               <span className="flex items-center gap-1"><span className="h-1.5 w-3 rounded-sm border border-slate-700" /><span className="h-1.5 w-1.5 rounded-full bg-slate-700" /></span>
             </div>
             <AnimatePresence mode="wait">
-              <motion.div key={activeId} initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -18 }} transition={{ duration: 0.24 }} className="absolute inset-x-0 bottom-[3.7rem] top-8 origin-top scale-[0.88] overflow-hidden xs:scale-95 md:scale-100">
+              <motion.div key={activeId} initial={allowMotion ? { opacity: 0, x: 18 } : false} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -18 }} transition={{ duration: 0.24 }} className="absolute inset-x-0 bottom-[3.7rem] top-8 origin-top scale-[0.88] overflow-hidden xs:scale-95 md:scale-100">
                 <AppTopbar />
                 <Screen />
               </motion.div>
@@ -235,7 +239,7 @@ export function InteractiveAppPreview({ variant = 'section' }: InteractiveAppPre
           </div>
         </div>
         <motion.div
-          initial={{ opacity: 0, rotate: -4, y: 8 }}
+          initial={allowMotion ? { opacity: 0, rotate: -4, y: 8 } : false}
           animate={{ opacity: 1, rotate: -4, y: 0 }}
           transition={{ duration: 0.55, delay: 1.05 }}
           aria-hidden="true"

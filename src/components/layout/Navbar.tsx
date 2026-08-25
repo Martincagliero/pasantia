@@ -82,7 +82,7 @@ export function Navbar() {
         </Link>
 
         {/* Links desktop */}
-        <ul className="hidden items-center gap-1 md:flex">
+        <ul className="hidden items-center gap-1 lg:flex">
           {desktopLinks.map((link) => (
             <li key={link.to}>
               <NavLink
@@ -170,7 +170,7 @@ export function Navbar() {
         </ul>
 
         {/* CTA desktop */}
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-2 lg:flex">
           <Button
             as="link"
             to="/ingresar"
@@ -193,7 +193,7 @@ export function Navbar() {
         {/* Botón menú mobile */}
         <button
           type="button"
-          className={`relative z-50 flex h-10 w-10 items-center justify-center rounded-xl border transition-[color,border-color,transform] active:scale-90 md:hidden ${
+          className={`relative z-50 flex h-10 w-10 items-center justify-center rounded-xl border transition-[color,border-color,transform] active:scale-90 lg:hidden ${
             scrolled && !menuOpen
               ? 'border-slate-300 text-brand-700'
               : 'border-white/20 text-white'
@@ -208,7 +208,7 @@ export function Navbar() {
 
       {/* Menú mobile a pantalla completa */}
       {menuOpen && (
-        <div className="fixed inset-x-0 top-0 z-40 flex h-[100dvh] flex-col bg-brand-600 md:hidden">
+        <div className="fixed inset-x-0 top-0 z-40 flex h-[100dvh] flex-col overflow-y-auto overscroll-contain bg-brand-600 lg:hidden">
           <nav className="flex flex-1 flex-col items-center justify-center gap-6 px-6 pt-16">
             {NAV_LINKS.map((link) => (
               <NavLink

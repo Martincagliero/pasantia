@@ -1,11 +1,20 @@
 import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
+import { useMediaQuery, useTouchDevice } from '../../hooks/useMediaQuery';
 
 /**
  * Transición de página con fade + slide sutil.
  * Se usa junto a AnimatePresence en App para evitar saltos bruscos al navegar.
  */
 export function PageTransition({ children }: { children: ReactNode }) {
+  const isTouchDevice = useTouchDevice();
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  const limitMotion = isTouchDevice || isMobile;
+
+  if (limitMotion) {
+    return <main className="overflow-x-clip">{children}</main>;
+  }
+
   return (
     <motion.main
       initial={{ opacity: 0, y: 16 }}

@@ -1,10 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import Lenis from 'lenis';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-gsap.registerPlugin(ScrollTrigger);
+import type Lenis from 'lenis';
 
 /**
  * Scroll suave y "pesado" (estilo Vercel/premium) con Lenis.
@@ -32,27 +28,44 @@ export function SmoothScroll() {
       return;
     }
 
-    const lenis = new Lenis({
-      duration: 1.5, // más alto = scroll más lento y suave
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-      wheelMultiplier: 0.9,
-      touchMultiplier: 1.4,
-    });
+    let disposed = false;
+    let cleanup: (() => void) | undefined;
 
-    // Guardamos la instancia para el scroll-to-top por ruta.
-    lenisRef.current = lenis;
+    // Mobile no descarga ni parsea estas librerías. En Safari usamos scroll
+    // nativo; Lenis/GSAP se cargan bajo demanda únicamente en desktop.
+    void Promise.all([import('lenis'), import('gsap'), import('gsap/ScrollTrigger')])
+      .then(([{ default: LenisClass }, { default: gsap }, { ScrollTrigger }]) => {
+        if (disposed) return;
+        gsap.registerPlugin(ScrollTrigger);
 
-    lenis.on('scroll', ScrollTrigger.update);
+        const lenis = new LenisClass({
+          duration: 1.5,
+          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+          smoothWheel: true,
+          wheelMultiplier: 0.9,
+          touchMultiplier: 1.4,
+        });
 
-    const onTick = (time: number) => lenis.raf(time * 1000);
-    gsap.ticker.add(onTick);
-    gsap.ticker.lagSmoothing(0);
+        lenisRef.current = lenis;
+        lenis.on('scroll', ScrollTrigger.update);
+
+        const onTick = (time: number) => lenis.raf(time * 1000);
+        gsap.ticker.add(onTick);
+        gsap.ticker.lagSmoothing(0);
+
+        cleanup = () => {
+          gsap.ticker.remove(onTick);
+          lenis.destroy();
+          lenisRef.current = null;
+        };
+      })
+      .catch(() => {
+        // El scroll nativo sigue funcionando si el chunk opcional no carga.
+      });
 
     return () => {
-      gsap.ticker.remove(onTick);
-      lenis.destroy();
-      lenisRef.current = null;
+      disposed = true;
+      cleanup?.();
     };
   }, []);
 

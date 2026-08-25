@@ -1,6 +1,7 @@
 import { motion, useReducedMotion, type HTMLMotionProps } from 'framer-motion';
 import type { ReactNode } from 'react';
 import { fadeUp, viewportOnce } from '../../lib/motion';
+import { useMediaQuery, useTouchDevice } from '../../hooks/useMediaQuery';
 
 interface RevealProps extends Omit<HTMLMotionProps<'div'>, 'children'> {
   children: ReactNode;
@@ -15,8 +16,11 @@ interface RevealProps extends Omit<HTMLMotionProps<'div'>, 'children'> {
  */
 export function Reveal({ children, delay = 0, className, ...rest }: RevealProps) {
   const reduce = useReducedMotion();
+  const isTouchDevice = useTouchDevice();
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  const limitMotion = isTouchDevice || isMobile;
 
-  if (reduce) {
+  if (reduce || limitMotion) {
     return <div className={className}>{children}</div>;
   }
 

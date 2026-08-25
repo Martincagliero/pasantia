@@ -11,6 +11,7 @@ import { useAuth } from './features/auth/AuthProvider';
 import { DashboardLayout } from './features/dashboard/DashboardLayout';
 import Home from './pages/Home';
 import { PlanGate } from './features/plans/PlanGate';
+import { useTouchDevice } from './hooks/useMediaQuery';
 
 // Lazy load de las subpáginas para aligerar el bundle inicial.
 const Estudiantes = lazy(() => import('./pages/Estudiantes'));
@@ -288,10 +289,11 @@ export default function App() {
 // hacía que el modal y el ingreso al panel se trabaran/titilaran en el celular.
 function LandingShell({ location }: { location: ReturnType<typeof useLocation> }) {
   const { isOpen } = useEarlyAccess();
+  const isTouchDevice = useTouchDevice();
   if (isOpen) return fallback;
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className={`landing-shell flex min-h-screen flex-col ${isTouchDevice ? 'landing-touch' : ''}`}>
       <SmoothScroll />
       <Navbar />
 

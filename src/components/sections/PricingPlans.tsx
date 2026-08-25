@@ -5,6 +5,7 @@ import { Reveal } from '../ui/Reveal';
 import { Section } from '../ui/Section';
 import { Accent } from '../ui/Accent';
 import { useEarlyAccess } from '../early-access/EarlyAccess';
+import { useMediaQuery, useTouchDevice } from '../../hooks/useMediaQuery';
 
 type Audience = 'estudiantes' | 'empresas';
 
@@ -48,8 +49,13 @@ export function PricingPlans({ id }: { id: string }) {
   const { open } = useEarlyAccess();
   const plans = audience === 'estudiantes' ? studentPlans : companyPlans;
   const reduceMotion = useReducedMotion();
+  const isDesktop = useMediaQuery('(min-width: 768px)');
+  const isTouchDevice = useTouchDevice();
+  const animateWipe = isDesktop && !isTouchDevice;
 
   useEffect(() => {
+    if (!animateWipe) return;
+
     const updateWipe = () => {
       if (!transitionRef.current || !wipeRef.current) return;
       const rect = transitionRef.current.getBoundingClientRect();
@@ -65,7 +71,7 @@ export function PricingPlans({ id }: { id: string }) {
       window.removeEventListener('scroll', updateWipe);
       window.removeEventListener('resize', updateWipe);
     };
-  }, [reduceMotion]);
+  }, [animateWipe, reduceMotion]);
 
   return (
     <div className="relative bg-brand-500">
@@ -133,12 +139,16 @@ export function PricingPlans({ id }: { id: string }) {
 
       </div>
     </Section>
-    <div ref={transitionRef} className="relative h-[70svh] min-h-[30rem] overflow-hidden bg-brand-500 sm:h-[80svh]" aria-hidden>
-      <div
-        ref={wipeRef}
-        className="absolute inset-0 bg-white [clip-path:circle(0%_at_50%_100%)] will-change-[clip-path]"
-      />
-    </div>
+    {animateWipe ? (
+      <div ref={transitionRef} className="relative h-[80svh] min-h-[30rem] overflow-hidden bg-brand-500" aria-hidden>
+        <div
+          ref={wipeRef}
+          className="absolute inset-0 bg-white [clip-path:circle(0%_at_50%_100%)] will-change-[clip-path]"
+        />
+      </div>
+    ) : (
+      <div className="h-24 bg-gradient-to-b from-brand-500 to-white" aria-hidden />
+    )}
     </div>
   );
 }

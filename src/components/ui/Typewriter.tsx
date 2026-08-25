@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
+import { useTouchDevice } from '../../hooks/useMediaQuery';
 
 interface TypewriterProps {
   words: string[];
@@ -23,12 +24,14 @@ export function Typewriter({
   holdTime = 1700,
 }: TypewriterProps) {
   const reduce = useReducedMotion();
+  const isTouchDevice = useTouchDevice();
+  const staticMotion = Boolean(reduce || isTouchDevice);
   const [text, setText] = useState('');
   const [index, setIndex] = useState(0);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    if (reduce) {
+    if (staticMotion) {
       setText(words[0]);
       return;
     }
@@ -52,17 +55,19 @@ export function Typewriter({
       deleting ? deleteSpeed : typeSpeed
     );
     return () => clearTimeout(t);
-  }, [text, deleting, index, words, reduce, typeSpeed, deleteSpeed, holdTime]);
+  }, [text, deleting, index, words, staticMotion, typeSpeed, deleteSpeed, holdTime]);
 
   return (
     <span className={className}>
-      {text}
-      <span
-        aria-hidden
-        className="ml-0.5 inline-block w-[0.5ch] animate-pulse font-light text-white/70"
-      >
-        |
-      </span>
+      {staticMotion ? words[0] : text}
+      {!staticMotion && (
+        <span
+          aria-hidden
+          className="ml-0.5 inline-block w-[0.5ch] animate-pulse font-light text-white/70"
+        >
+          |
+        </span>
+      )}
     </span>
   );
 }

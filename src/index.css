@@ -86,10 +86,36 @@
    En pantallas táctiles quedan estáticos para que la carga y los toques tengan
    prioridad; desktop conserva el movimiento completo. */
 @media (max-width: 767px), (pointer: coarse) {
-  .animate-glow-pulse,
-  .animate-marquee {
+  .landing-shell .animate-marquee {
     animation: none !important;
   }
+
+  .landing-shell .animate-glow-pulse,
+  .early-access-glow {
+    display: none !important;
+  }
+
+  .landing-shell .glass,
+  .landing-shell .glass-strong {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: rgb(255 255 255 / 0.08);
+  }
+}
+
+.landing-shell.landing-touch .animate-marquee {
+  animation: none !important;
+}
+
+.landing-shell.landing-touch .animate-glow-pulse {
+  display: none !important;
+}
+
+.landing-shell.landing-touch .glass,
+.landing-shell.landing-touch .glass-strong {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background-color: rgb(255 255 255 / 0.08);
 }
 
 /* El toolbar flotante del teclado móvil deja una franja transparente sobre la

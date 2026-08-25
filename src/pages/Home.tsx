@@ -35,7 +35,7 @@ import { InstallAppSection } from '../components/sections/InstallAppSection';
 import { PricingPlans } from '../components/sections/PricingPlans';
 import { LaunchCountdown } from '../components/sections/LaunchCountdown';
 import { IMAGES, AVATARS } from '../lib/images';
-import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useMediaQuery, useTouchDevice } from '../hooks/useMediaQuery';
 import estudianteImg from '../assets/images/estudiante.webp';
 import iconosHero from '../assets/images/iconos-hero.png';
 
@@ -114,6 +114,8 @@ const FAQ = [
 
 export default function Home() {
   const isDesktop = useMediaQuery('(min-width: 768px)');
+  const isTouchDevice = useTouchDevice();
+  const allowMotion = isDesktop && !isTouchDevice;
 
   useSeo({
     title: 'Conectamos estudiantes con empresas',
@@ -205,7 +207,7 @@ export default function Home() {
             </div>
 
             <motion.div
-              initial={{ opacity: 0, y: 18, scale: 0.97 }}
+              initial={allowMotion ? { opacity: 0, y: 18, scale: 0.97 } : false}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.75, delay: 0.2 }}
               className="relative flex flex-col items-center md:pr-12 xl:pr-16"
@@ -219,13 +221,20 @@ export default function Home() {
                 </h1>
               </div>
               <motion.div
-                initial={{ opacity: 0, x: 12, rotate: 5 }}
-                animate={{ opacity: 1, x: 0, rotate: 3, y: [0, -3, 0] }}
+                initial={allowMotion ? { opacity: 0, x: 12, rotate: 5 } : false}
+                animate={{
+                  opacity: 1,
+                  x: 0,
+                  rotate: 3,
+                  ...(allowMotion ? { y: [0, -3, 0] } : {}),
+                }}
                 transition={{
                   opacity: { duration: 0.5, delay: 1.15 },
                   x: { duration: 0.5, delay: 1.15 },
                   rotate: { duration: 0.5, delay: 1.15 },
-                  y: { duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1.7 },
+                  ...(allowMotion
+                    ? { y: { duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1.7 } }
+                    : {}),
                 }}
                 className="pointer-events-none relative z-30 mb-1 self-end pr-4 text-right text-white md:absolute md:right-0 md:top-[8.5rem] md:mb-0 md:max-w-[7.5rem] md:self-auto md:pr-0"
                 aria-label="Más de 100 estudiantes ya se registraron"

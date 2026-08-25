@@ -693,7 +693,7 @@ function Onboarding({
           aria-label="Registro de acceso anticipado"
         >
           {/* Glows de fondo */}
-          <div className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[22rem] w-[22rem] -translate-x-1/2 rounded-full bg-white/10 blur-[130px] sm:h-[36rem] sm:w-[36rem]" />
+          <div className="early-access-glow pointer-events-none absolute left-1/2 top-0 -z-10 h-[22rem] w-[22rem] -translate-x-1/2 rounded-full bg-white/10 blur-[130px] sm:h-[36rem] sm:w-[36rem]" />
 
           {/* Header */}
           <header className="flex shrink-0 items-center justify-between px-3 py-3 sm:px-10 sm:py-5 lg:py-3">

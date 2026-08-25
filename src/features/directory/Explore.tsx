@@ -54,6 +54,7 @@ type Tab = 'estudiantes' | 'empresas' | 'embajadores' | 'red';
 interface PublicProfile {
   full_name: string;
   email: string;
+  role: 'estudiante' | 'empresa' | 'embajador';
   plan?: 'free' | 'pro' | 'enterprise';
   plan_expires_at?: string | null;
 }
@@ -85,7 +86,7 @@ function hasActivePro(profile: PublicProfile | null | undefined): boolean {
 
 function ProBadge({ small = false }: { small?: boolean }) {
   return (
-    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-400/35 bg-amber-400/15 font-semibold text-amber-700 ${small ? 'px-1.5 py-0.5 text-[10px]' : 'px-2.5 py-0.5 text-xs'}`}>
+    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border border-brand-500 bg-brand-500 font-semibold !text-white ${small ? 'px-1.5 py-0.5 text-[10px]' : 'px-2.5 py-0.5 text-xs'}`}>
       <BadgeCheck className={small ? 'h-3 w-3' : 'h-3.5 w-3.5'} /> Pro
     </span>
   );
@@ -305,21 +306,21 @@ export default function Explore() {
     //  - Embajador y estudiante: perfil público completo (estudios, contacto,
     //    redes, descripción y actividad) PERO sin CV/analítico/promedio.
     const publicStudentCols =
-      'id, avatar_url, verified, university, career, year, area, location, phone, instagram_url, linkedin_url, github_url, portfolio_url, bio, skills, profile:profiles(full_name, email, plan, plan_expires_at)';
+      'id, avatar_url, verified, university, career, year, area, location, phone, instagram_url, linkedin_url, github_url, portfolio_url, bio, skills, profile:profiles(full_name, email, role, plan, plan_expires_at)';
     const studentSelect =
-      viewerRole === 'empresa' ? '*, profile:profiles(full_name, email, plan, plan_expires_at)' : publicStudentCols;
+      viewerRole === 'empresa' ? '*, profile:profiles(full_name, email, role, plan, plan_expires_at)' : publicStudentCols;
     (async () => {
       const [{ data: st }, { data: co }, { data: am }] = await Promise.all([
         supabase.from('student_profiles').select(studentSelect).eq('is_public', true),
-        supabase.from('company_profiles').select('*, profile:profiles(full_name, email, plan, plan_expires_at)'),
+        supabase.from('company_profiles').select('*, profile:profiles(full_name, email, role, plan, plan_expires_at)'),
         // Mostramos todas las comunidades (incluye las del acceso anticipado, aún
         // sin verificar). El tilde de verificado se muestra solo si corresponde.
-        supabase.from('ambassador_profiles').select('*, profile:profiles(full_name, email, plan, plan_expires_at)'),
+        supabase.from('ambassador_profiles').select('*, profile:profiles(full_name, email, role, plan, plan_expires_at)'),
       ]);
       if (!active) return;
-      setStudents((st as unknown as StudentRow[]) ?? []);
-      setCompanies((co as unknown as CompanyRow[]) ?? []);
-      setAmbassadors((am as AmbRow[]) ?? []);
+      setStudents(((st as unknown as StudentRow[]) ?? []).filter((row) => row.profile?.role === 'estudiante'));
+      setCompanies(((co as unknown as CompanyRow[]) ?? []).filter((row) => row.profile?.role === 'empresa'));
+      setAmbassadors(((am as AmbRow[]) ?? []).filter((row) => row.profile?.role === 'embajador'));
       setLoading(false);
     })();
     return () => {
@@ -356,6 +357,7 @@ export default function Explore() {
   const filteredStudents = useMemo(
     () =>
       students
+        .filter((r) => r.profile?.role === 'estudiante')
         .filter((r) => {
           if (!q) return true;
           return [r.profile?.full_name, r.career, r.university, r.area, (r.skills ?? []).join(' ')]
@@ -371,6 +373,7 @@ export default function Explore() {
   const filteredCompanies = useMemo(
     () =>
       companies
+        .filter((r) => r.profile?.role === 'empresa')
         .filter((r) => {
           if (!q) return true;
           return [r.company_name, r.industry, r.profile?.full_name, r.description]
@@ -386,6 +389,7 @@ export default function Explore() {
   const filteredAmbassadors = useMemo(
     () =>
       ambassadors
+        .filter((r) => r.profile?.role === 'embajador')
         .filter((r) => {
           if (!q) return true;
           return [r.org_name, r.university, orgTypeLabel(r.org_type), r.description]
@@ -439,7 +443,7 @@ export default function Explore() {
       />
 
       {!isPro(viewer) && (
-        <Card className="mb-4 flex flex-col justify-between gap-2 !border-amber-400/25 !bg-amber-400/[0.06] !p-3 sm:flex-row sm:items-center sm:px-4">
+        <Card className="mb-4 flex flex-col justify-between gap-2 !border-brand-400/20 !bg-brand-500/[0.035] !p-3 sm:flex-row sm:items-center sm:px-4">
           <div className="min-w-0">
             <p className="text-sm font-semibold text-white">Destacá tu perfil con Pro</p>
             <p className="mt-0.5 text-xs leading-relaxed text-white/55">
@@ -597,7 +601,7 @@ function ProfileCard({
 }) {
   return (
     <button onClick={onClick} className="text-left">
-      <Card hover className={`relative h-full cursor-pointer ${promoted ? '!border-amber-400/35 !bg-amber-400/[0.06] shadow-[0_8px_24px_rgba(245,158,11,0.08)]' : ''}`}>
+      <Card hover className={`relative h-full cursor-pointer ${promoted ? '!border-brand-400/25 !bg-brand-500/[0.035]' : ''}`}>
         <div className="flex items-start gap-3">
           {avatar}
           <div className="min-w-0 flex-1">

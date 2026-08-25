@@ -1,5 +1,6 @@
 // Encabezado de perfil (modo vista, estilo LinkedIn): avatar, nombre, verificación y editar.
 import { Pencil, ShieldCheck, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { VerifiedBadge } from '../ambassador/VerifiedBadge';
 
 function initials(name: string): string {
@@ -14,6 +15,7 @@ export function ProfileHeader({
   avatarUrl,
   verified,
   requested,
+  canRequestVerification,
   onEdit,
   onRequestVerification,
 }: {
@@ -22,6 +24,7 @@ export function ProfileHeader({
   avatarUrl?: string | null;
   verified: boolean;
   requested: boolean;
+  canRequestVerification: boolean;
   onEdit: () => void;
   onRequestVerification: () => void;
 }) {
@@ -54,13 +57,21 @@ export function ProfileHeader({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {!verified && !requested && (
+        {!verified && !requested && canRequestVerification && (
           <button
             onClick={onRequestVerification}
             className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10"
           >
             <ShieldCheck className="h-4 w-4" /> Solicitar verificación
           </button>
+        )}
+        {!verified && !requested && !canRequestVerification && (
+          <Link
+            to="/app/planes"
+            className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-400/15"
+          >
+            <ShieldCheck className="h-4 w-4" /> Verificación con Pro
+          </Link>
         )}
         <button
           onClick={onEdit}

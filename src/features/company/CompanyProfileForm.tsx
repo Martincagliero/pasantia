@@ -5,7 +5,6 @@ import { Globe, ExternalLink, Briefcase } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { CompanyProfile } from '../../lib/database.types';
-import { mailtoLink } from '../../lib/constants';
 import { Button } from '../../components/ui/Button';
 import { FormRow, SelectField, TextArea, TextField } from '../ui/Field';
 import { Card, EmptyState, PageLoader } from '../ui/primitives';
@@ -15,6 +14,7 @@ import { ProfileHeader } from '../ui/ProfileHeader';
 import { ProfileCompletion } from '../ui/ProfileCompletion';
 import { UserPosts } from '../posts/UserPosts';
 import { normalizeUrl } from '../../lib/url';
+import { isPro } from '../../lib/plans';
 
 interface InternshipLite {
   id: string;
@@ -91,21 +91,14 @@ export default function CompanyProfileForm() {
   }
 
   async function requestVerification() {
-    const msg =
-      `Quiero solicitar la verificación de mi cuenta de EMPRESA en PasantIA.\n` +
-      `Empresa: ${form.company_name || '-'}\n` +
-      `Contacto: ${fullName || '-'}\n` +
-      `Email: ${profile?.email || '-'}`;
-    window.location.href = mailtoLink('Solicitud de verificación de empresa', msg);
-    try {
-      await supabase
-        .from('company_profiles')
-        .update({ verification_requested: true })
-        .eq('id', session!.user.id);
-      setRequested(true);
-    } catch {
-      /* ignore */
+    const { error } = await supabase.rpc('request_profile_verification');
+    if (error) {
+      alert(/PLAN_PRO_REQUIRED/i.test(error.message)
+        ? 'Necesitás un plan Pro vigente para solicitar la verificación.'
+        : 'No pudimos enviar la solicitud. Intentá nuevamente.');
+      return;
     }
+    setRequested(true);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -249,6 +242,7 @@ export default function CompanyProfileForm() {
         avatarUrl={form.avatar_url}
         verified={verified}
         requested={requested}
+        canRequestVerification={isPro(profile)}
         onEdit={() => setEditing(true)}
         onRequestVerification={requestVerification}
       />

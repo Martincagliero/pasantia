@@ -4,6 +4,102 @@
 -- migracion-admin.sql.
 -- =============================================================================
 
+-- La solicitud se crea dentro de la plataforma, sin correo. La función valida
+-- el plan en la base para que el requisito Pro no dependa solo de la interfaz.
+CREATE OR REPLACE FUNCTION public.request_profile_verification()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_user_id uuid := auth.uid();
+  v_role user_role;
+  v_plan text;
+  v_plan_expires_at timestamptz;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'no autorizado';
+  END IF;
+
+  SELECT role, plan::text, plan_expires_at
+    INTO v_role, v_plan, v_plan_expires_at
+    FROM profiles
+    WHERE id = v_user_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'perfil inexistente';
+  END IF;
+
+  IF v_plan NOT IN ('pro', 'enterprise')
+    OR (v_plan_expires_at IS NOT NULL AND v_plan_expires_at < now()) THEN
+    RAISE EXCEPTION 'PLAN_PRO_REQUIRED';
+  END IF;
+
+  IF v_role = 'estudiante' THEN
+    UPDATE student_profiles SET verification_requested = true WHERE id = v_user_id;
+  ELSIF v_role = 'empresa' THEN
+    UPDATE company_profiles SET verification_requested = true WHERE id = v_user_id;
+  ELSIF v_role = 'embajador' THEN
+    UPDATE ambassador_profiles SET verification_requested = true WHERE id = v_user_id;
+  ELSE
+    RAISE EXCEPTION 'rol no verificable';
+  END IF;
+END;
+$$;
+
+-- Impide autoasignarse el tilde y bloquea solicitudes sin Pro incluso si se
+-- intenta actualizar la tabla directamente. Admin y tareas internas conservan
+-- la capacidad de resolver verificaciones.
+CREATE OR REPLACE FUNCTION public.guard_profile_verification_fields()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_plan text;
+  v_plan_expires_at timestamptz;
+BEGIN
+  IF auth.uid() IS NULL OR public.is_admin() THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.verified IS DISTINCT FROM OLD.verified THEN
+    RAISE EXCEPTION 'solo un administrador puede cambiar la verificación';
+  END IF;
+
+  IF NEW.verification_requested IS TRUE
+    AND NEW.verification_requested IS DISTINCT FROM OLD.verification_requested THEN
+    SELECT plan::text, plan_expires_at
+      INTO v_plan, v_plan_expires_at
+      FROM profiles
+      WHERE id = auth.uid();
+
+    IF NEW.id <> auth.uid()
+      OR v_plan NOT IN ('pro', 'enterprise')
+      OR (v_plan_expires_at IS NOT NULL AND v_plan_expires_at < now()) THEN
+      RAISE EXCEPTION 'PLAN_PRO_REQUIRED';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS guard_student_profile_verification ON student_profiles;
+CREATE TRIGGER guard_student_profile_verification
+  BEFORE UPDATE ON student_profiles
+  FOR EACH ROW EXECUTE FUNCTION public.guard_profile_verification_fields();
+
+DROP TRIGGER IF EXISTS guard_company_profile_verification ON company_profiles;
+CREATE TRIGGER guard_company_profile_verification
+  BEFORE UPDATE ON company_profiles
+  FOR EACH ROW EXECUTE FUNCTION public.guard_profile_verification_fields();
+
+DROP TRIGGER IF EXISTS guard_ambassador_profile_verification ON ambassador_profiles;
+CREATE TRIGGER guard_ambassador_profile_verification
+  BEFORE UPDATE ON ambassador_profiles
+  FOR EACH ROW EXECUTE FUNCTION public.guard_profile_verification_fields();
+
 CREATE OR REPLACE FUNCTION public.admin_list_verifications()
 RETURNS TABLE (
   id uuid,
@@ -111,6 +207,8 @@ $$;
 
 REVOKE ALL ON FUNCTION public.admin_list_verifications() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_set_profile_verification(uuid, boolean) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.request_profile_verification() FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION public.admin_list_verifications() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_set_profile_verification(uuid, boolean) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.request_profile_verification() TO authenticated;

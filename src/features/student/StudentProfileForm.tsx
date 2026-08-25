@@ -11,10 +11,10 @@ import { AvatarUpload } from '../ui/AvatarUpload';
 import { ProfileHeader } from '../ui/ProfileHeader';
 import { ProfileCompletion } from '../ui/ProfileCompletion';
 import { StudentRecentActivity } from './StudentRecentActivity';
-import { mailtoLink } from '../../lib/constants';
 import { UniversityAutocomplete } from '../ui/UniversityAutocomplete';
 import { AVAILABILITY_OPTIONS, CAREERS, suggestFor } from './suggestions';
 import { detectProfileLink, normalizeProfileUrl, normalizeUrl, profileLinkLabel, type ProfileLinkKind } from '../../lib/url';
+import { isPro } from '../../lib/plans';
 
 const MAX_CV_MB = 20;
 
@@ -174,21 +174,14 @@ export default function StudentProfileForm() {
   }
 
   async function requestVerification() {
-    const msg =
-      `Quiero solicitar la verificación de mi cuenta de ESTUDIANTE en PasantIA.\n` +
-      `Nombre: ${fullName || '-'}\n` +
-      `Universidad: ${form.university || '-'}\n` +
-      `Email: ${profile?.email || '-'}`;
-    window.location.href = mailtoLink('Solicitud de verificación de estudiante', msg);
-    try {
-      await supabase
-        .from('student_profiles')
-        .update({ verification_requested: true })
-        .eq('id', session!.user.id);
-      setRequested(true);
-    } catch {
-      /* ignore */
+    const { error } = await supabase.rpc('request_profile_verification');
+    if (error) {
+      alert(/PLAN_PRO_REQUIRED/i.test(error.message)
+        ? 'Necesitás un plan Pro vigente para solicitar la verificación.'
+        : 'No pudimos enviar la solicitud. Intentá nuevamente.');
+      return;
     }
+    setRequested(true);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -576,6 +569,7 @@ export default function StudentProfileForm() {
         avatarUrl={form.avatar_url}
         verified={verified}
         requested={requested}
+        canRequestVerification={isPro(profile)}
         onEdit={() => setEditing(true)}
         onRequestVerification={requestVerification}
       />

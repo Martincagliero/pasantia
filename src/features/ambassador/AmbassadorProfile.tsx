@@ -13,11 +13,11 @@ import { ProfileHeader } from '../ui/ProfileHeader';
 import { ProfileCompletion } from '../ui/ProfileCompletion';
 import { UserPosts } from '../posts/UserPosts';
 import { EmojiText } from '../ui/EmojiText';
-import { mailtoLink } from '../../lib/constants';
 import { Upload } from 'lucide-react';
+import { isPro } from '../../lib/plans';
 
 export default function AmbassadorProfile() {
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const [amb, setAmb] = useState<AmbassadorProfile | null>(null);
   const [form, setForm] = useState({
     org_name: '',
@@ -123,21 +123,14 @@ export default function AmbassadorProfile() {
   }
 
   async function requestVerification() {
-    const msg =
-      `Quiero solicitar la verificación de mi comunidad (EMBAJADOR) en PasantIA.\n` +
-      `Comunidad: ${form.org_name || '-'}\n` +
-      `Instagram: ${form.instagram_url || '-'}\n` +
-      `Email: ${session?.user.email || '-'}`;
-    window.location.href = mailtoLink('Solicitud de verificación de embajador', msg);
-    try {
-      await supabase
-        .from('ambassador_profiles')
-        .update({ verification_requested: true })
-        .eq('id', session!.user.id);
-      setRequested(true);
-    } catch {
-      /* ignore */
+    const { error } = await supabase.rpc('request_profile_verification');
+    if (error) {
+      alert(/PLAN_PRO_REQUIRED/i.test(error.message)
+        ? 'Necesitás un plan Pro vigente para solicitar la verificación.'
+        : 'No pudimos enviar la solicitud. Intentá nuevamente.');
+      return;
     }
+    setRequested(true);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -176,6 +169,7 @@ export default function AmbassadorProfile() {
           avatarUrl={form.logo_url}
           verified={!!amb?.verified}
           requested={requested}
+          canRequestVerification={isPro(profile)}
           onEdit={() => setEditing(true)}
           onRequestVerification={requestVerification}
         />

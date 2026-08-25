@@ -27,24 +27,35 @@ export function UpgradePrompt({
     if (!profile || sending || sent) return;
     setSending(true);
     setError('');
-    const { error: requestError } = await supabase.from('plan_requests').insert({
-      user_id: profile.id,
-      requested_plan: plan,
-      kind: 'subscription',
-      message: `Solicitud desde: ${title}`,
-    });
-    setSending(false);
-    if (requestError) {
-      if (requestError.code === '23505') {
-        setSent(true);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15_000);
+    try {
+      const { error: requestError } = await supabase.from('plan_requests').insert({
+        user_id: profile.id,
+        requested_plan: plan,
+        kind: 'subscription',
+        message: `Solicitud desde: ${title}`,
+      }).abortSignal(controller.signal);
+      if (requestError) {
+        if (requestError.code === '23505') {
+          setSent(true);
+          return;
+        }
+        setError(/plan_requests|schema cache|relation/i.test(requestError.message)
+          ? 'Falta ejecutar la migración freemium en Supabase.'
+          : 'No pudimos enviar la solicitud. Intentá nuevamente.');
         return;
       }
-      setError(/plan_requests|schema cache|relation/i.test(requestError.message)
-        ? 'Falta ejecutar la migración freemium en Supabase.'
+      setSent(true);
+    } catch (requestError) {
+      const aborted = controller.signal.aborted || (requestError instanceof Error && requestError.name === 'AbortError');
+      setError(aborted
+        ? 'La conexión tardó demasiado. Revisá internet e intentá nuevamente.'
         : 'No pudimos enviar la solicitud. Intentá nuevamente.');
-      return;
+    } finally {
+      window.clearTimeout(timeout);
+      setSending(false);
     }
-    setSent(true);
   }
 
   const content = (

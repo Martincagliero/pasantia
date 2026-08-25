@@ -212,12 +212,14 @@ export default function StudentHome() {
     );
     if (state === 'connected') return;
     setConnectingId(targetId);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15_000);
     try {
       if (state === 'received' && existing) {
         const { error } = await supabase.rpc('respond_connection_request', {
           p_request_id: existing.id,
           p_accept: true,
-        });
+        }).abortSignal(controller.signal);
         if (error) throw error;
         setConnectionRequests((current) => current.filter((row) => row.id !== existing.id));
         setFollowingIds((current) => new Set(current).add(targetId));
@@ -225,12 +227,18 @@ export default function StudentHome() {
         return;
       }
       if (state === 'sent' && existing) {
-        const { error } = await supabase.from('connection_requests').delete().eq('id', existing.id);
+        const { error } = await supabase
+          .from('connection_requests')
+          .delete()
+          .eq('id', existing.id)
+          .abortSignal(controller.signal);
         if (error) throw error;
         setConnectionRequests((current) => current.filter((row) => row.id !== existing.id));
         return;
       }
-      const { data, error } = await supabase.rpc('request_connection', { p_recipient_id: targetId });
+      const { data, error } = await supabase
+        .rpc('request_connection', { p_recipient_id: targetId })
+        .abortSignal(controller.signal);
       if (error) throw error;
       setConnectionRequests((current) => [
         ...current,
@@ -247,13 +255,16 @@ export default function StudentHome() {
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
       alert(
-        /FREE_CONNECTION_MONTHLY_LIMIT/i.test(message)
+        controller.signal.aborted
+          ? 'La conexión tardó demasiado. Revisá internet e intentá nuevamente.'
+          : /FREE_CONNECTION_MONTHLY_LIMIT/i.test(message)
           ? 'Alcanzaste las 5 conexiones nuevas de este mes. Estudiante Pro permite conectar sin límite.'
           : /does not exist|schema cache|function/i.test(message)
           ? 'Falta correr la migración de solicitudes de conexión en Supabase.'
           : 'No se pudo actualizar la conexión.'
       );
     } finally {
+      window.clearTimeout(timeout);
       setConnectingId(null);
     }
   }

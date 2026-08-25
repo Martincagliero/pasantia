@@ -164,6 +164,7 @@ export default function Explore() {
   const [connectionRequests, setConnectionRequests] = useState<ConnectionRequest[]>([]);
   const [selected, setSelected] = useState<Selected | null>(null);
   const [proBannerOpen, setProBannerOpen] = useState(false);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
 
   // La barra superior puede buscar varias veces sin desmontar esta página.
   useEffect(() => {
@@ -259,7 +260,7 @@ export default function Explore() {
   }
 
   async function toggleConnection(targetId: string) {
-    if (!uid || viewerRole !== 'estudiante' || targetId === uid) return;
+    if (!uid || viewerRole !== 'estudiante' || targetId === uid || connectingId) return;
     const state = connectionStateFor(targetId);
     const existing = connectionRequests.find(
       (row) =>
@@ -268,39 +269,63 @@ export default function Explore() {
           (row.recipient_id === uid && row.requester_id === targetId))
     );
     if (state === 'connected') return;
-    if (state === 'received' && existing) {
-      await respondConnection(existing, true);
-      return;
-    }
-    if (state === 'sent' && existing) {
-      const { error } = await supabase.from('connection_requests').delete().eq('id', existing.id);
-      if (!error) setConnectionRequests((current) => current.filter((row) => row.id !== existing.id));
-      return;
-    }
+    setConnectingId(targetId);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15_000);
+    try {
+      if (state === 'received' && existing) {
+        const { error } = await supabase.rpc('respond_connection_request', {
+          p_request_id: existing.id,
+          p_accept: true,
+        }).abortSignal(controller.signal);
+        if (error) throw error;
+        setConnectionRequests((current) => current.filter((row) => row.id !== existing.id));
+        setFollowingIds((current) => new Set(current).add(existing.requester_id));
+        void sendPushEvent('connection_accepted', existing.id);
+        return;
+      }
+      if (state === 'sent' && existing) {
+        const { error } = await supabase
+          .from('connection_requests')
+          .delete()
+          .eq('id', existing.id)
+          .abortSignal(controller.signal);
+        if (error) throw error;
+        setConnectionRequests((current) => current.filter((row) => row.id !== existing.id));
+        return;
+      }
 
-    const { data, error } = await supabase.rpc('request_connection', { p_recipient_id: targetId });
-    if (error) {
+      const { data, error } = await supabase
+        .rpc('request_connection', { p_recipient_id: targetId })
+        .abortSignal(controller.signal);
+      if (error) throw error;
+      setConnectionRequests((current) => [
+        ...current,
+        {
+          id: String(data),
+          requester_id: uid,
+          recipient_id: targetId,
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ]);
+      void sendPushEvent('connection_request', String(data));
+    } catch (requestError) {
+      const message = requestError instanceof Error ? requestError.message : '';
       alert(
-        /FREE_CONNECTION_MONTHLY_LIMIT/i.test(error.message)
+        controller.signal.aborted
+          ? 'La conexión tardó demasiado. Revisá internet e intentá nuevamente.'
+          : /FREE_CONNECTION_MONTHLY_LIMIT/i.test(message)
           ? 'Alcanzaste las 5 conexiones nuevas de este mes. Estudiante Pro permite conectar sin límite.'
-          : /does not exist|schema cache|function/i.test(error.message)
+          : /does not exist|schema cache|function/i.test(message)
           ? 'Falta correr la migración "migracion-solicitudes-conexion.sql" en Supabase.'
-          : 'No se pudo enviar la solicitud.'
+          : 'No se pudo actualizar la conexión. Intentá nuevamente.'
       );
-      return;
+    } finally {
+      window.clearTimeout(timeout);
+      setConnectingId(null);
     }
-    setConnectionRequests((current) => [
-      ...current,
-      {
-        id: String(data),
-        requester_id: uid,
-        recipient_id: targetId,
-        status: 'pending',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ]);
-    void sendPushEvent('connection_request', String(data));
   }
 
 
@@ -594,6 +619,7 @@ export default function Explore() {
           onToggleFollow={() => toggleFollow(selected.row.id)}
           connectionState={connectionStateFor(selected.row.id)}
           onToggleConnection={() => toggleConnection(selected.row.id)}
+          connecting={connectingId === selected.row.id}
           canConnect={viewerRole === 'estudiante'}
           messageOnly={viewerRole === 'embajador'}
         />
@@ -659,6 +685,7 @@ function DetailModal({
   onToggleFollow,
   connectionState,
   onToggleConnection,
+  connecting,
   canConnect,
   messageOnly,
 }: {
@@ -669,6 +696,7 @@ function DetailModal({
   onToggleFollow: () => void;
   connectionState: ConnectionState;
   onToggleConnection: () => void;
+  connecting: boolean;
   canConnect: boolean;
   messageOnly: boolean;
 }) {
@@ -695,7 +723,7 @@ function DetailModal({
         </button>
 
         {selected.type === 'estudiantes' && (
-          <StudentDetail row={selected.row} onMessage={onMessage} connectionState={connectionState} onToggleConnection={onToggleConnection} canConnect={canConnect} messageOnly={messageOnly} />
+          <StudentDetail row={selected.row} onMessage={onMessage} connectionState={connectionState} onToggleConnection={onToggleConnection} connecting={connecting} canConnect={canConnect} messageOnly={messageOnly} />
         )}
         {selected.type === 'empresas' && (
           <div className="p-5 sm:p-6"><CompanyDetail row={selected.row} onMessage={onMessage} isFollowing={isFollowing} onToggleFollow={onToggleFollow} /></div>
@@ -735,9 +763,11 @@ function FollowButton({
   );
 }
 
-function ConnectionButton({ state, onClick }: { state: ConnectionState; onClick: () => void }) {
+function ConnectionButton({ state, onClick, loading = false }: { state: ConnectionState; onClick: () => void; loading?: boolean }) {
   const label =
-    state === 'connected'
+    loading
+      ? 'Enviando…'
+      : state === 'connected'
       ? 'Conectado'
       : state === 'sent'
         ? 'Solicitud enviada'
@@ -749,7 +779,7 @@ function ConnectionButton({ state, onClick }: { state: ConnectionState; onClick:
     <button
       type="button"
       onClick={onClick}
-      disabled={state === 'connected'}
+      disabled={state === 'connected' || loading}
       title={state === 'sent' ? 'Tocá para cancelar la solicitud' : undefined}
       className={
         passive
@@ -785,7 +815,7 @@ function LinkChip({ href, label, icon }: { href: string; label: string; icon: Re
   );
 }
 
-function StudentDetail({ row, onMessage, connectionState, onToggleConnection, canConnect, messageOnly }: { row: StudentRow; onMessage: (id: string, name: string, avatar?: string | null) => void; connectionState: ConnectionState; onToggleConnection: () => void; canConnect: boolean; messageOnly: boolean }) {
+function StudentDetail({ row, onMessage, connectionState, onToggleConnection, connecting, canConnect, messageOnly }: { row: StudentRow; onMessage: (id: string, name: string, avatar?: string | null) => void; connectionState: ConnectionState; onToggleConnection: () => void; connecting: boolean; canConnect: boolean; messageOnly: boolean }) {
   const name = row.profile?.full_name || 'Estudiante';
   return (
     <div>
@@ -815,7 +845,7 @@ function StudentDetail({ row, onMessage, connectionState, onToggleConnection, ca
         )}
 
         <div className="mb-6 grid grid-cols-2 gap-2">
-          {canConnect && <ConnectionButton state={connectionState} onClick={onToggleConnection} />}
+          {canConnect && <ConnectionButton state={connectionState} onClick={onToggleConnection} loading={connecting} />}
           <button
             onClick={() => onMessage(row.id, name, row.avatar_url)}
             className={`${canConnect ? '' : 'col-span-2'} inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-500 px-3 text-sm font-semibold !text-white transition hover:bg-brand-400`}

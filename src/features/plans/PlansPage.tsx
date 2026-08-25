@@ -14,7 +14,7 @@ const STUDENT_PLANS = [
   {
     plan: 'pro' as const,
     name: 'Estudiante Pro',
-    features: ['Postulaciones ilimitadas', 'Conexiones sin límite', 'Mensajes sin conexión previa', 'Ser promotor', 'Mayor visibilidad del perfil'],
+    features: ['Postulaciones ilimitadas', 'Conexiones sin límite', 'Mensajes sin conexión previa', 'Perfil destacado primero en Explorar', 'Tilde Pro junto al nombre'],
   },
 ];
 
@@ -27,7 +27,7 @@ const COMPANY_PLANS = [
   {
     plan: 'pro' as const,
     name: 'Empresa Pro',
-    features: ['Publicaciones ilimitadas', 'Todos los postulados y gestión completa', 'Búsqueda y contacto de talento', 'Mensajería y estadísticas'],
+    features: ['Publicaciones ilimitadas', 'Todos los postulados y gestión completa', 'Perfil destacado primero en Explorar', 'Tilde Pro junto al nombre', 'Mensajería y estadísticas'],
   },
   {
     plan: 'enterprise' as const,
@@ -45,7 +45,7 @@ const AMBASSADOR_PLANS = [
   {
     plan: 'pro' as const,
     name: 'Embajador Premium',
-    features: ['Todo lo incluido en Gratis', 'Acompañamiento en campañas', 'Reportes de alcance', 'Soporte prioritario'],
+    features: ['Todo lo incluido en Gratis', 'Perfil destacado primero en Explorar', 'Tilde Pro junto al nombre', 'Reportes de alcance', 'Soporte prioritario'],
   },
 ];
 

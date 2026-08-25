@@ -20,8 +20,10 @@ import {
   Network,
   ChevronDown,
   Clock3,
+  BadgeCheck,
+  ArrowUpRight,
 } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import type {
   StudentProfile,
@@ -49,13 +51,19 @@ import { PostActionsMenu } from '../posts/PostActionsMenu';
 
 type Tab = 'estudiantes' | 'empresas' | 'embajadores' | 'red';
 
+interface PublicProfile {
+  full_name: string;
+  email: string;
+  plan?: 'free' | 'pro' | 'enterprise';
+  plan_expires_at?: string | null;
+}
 interface StudentRow extends StudentProfile {
-  profile: { full_name: string; email: string } | null;
+  profile: PublicProfile | null;
 }
 interface CompanyRow extends CompanyProfile {
-  profile: { full_name: string; email: string } | null;
+  profile: PublicProfile | null;
 }
-type AmbRow = AmbassadorProfile;
+type AmbRow = AmbassadorProfile & { profile: PublicProfile | null };
 
 type Selected =
   | { type: 'estudiantes'; row: StudentRow }
@@ -68,6 +76,19 @@ function initials(name: string): string {
   const parts = (name || '').trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return 'U';
   return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase();
+}
+
+function hasActivePro(profile: PublicProfile | null | undefined): boolean {
+  if (profile?.plan !== 'pro' && profile?.plan !== 'enterprise') return false;
+  return !profile.plan_expires_at || new Date(profile.plan_expires_at).getTime() >= Date.now();
+}
+
+function ProBadge({ small = false }: { small?: boolean }) {
+  return (
+    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-400/35 bg-amber-400/15 font-semibold text-amber-700 ${small ? 'px-1.5 py-0.5 text-[10px]' : 'px-2.5 py-0.5 text-xs'}`}>
+      <BadgeCheck className={small ? 'h-3 w-3' : 'h-3.5 w-3.5'} /> Pro
+    </span>
+  );
 }
 
 /** Solo permite http/https para links externos. */
@@ -284,16 +305,16 @@ export default function Explore() {
     //  - Embajador y estudiante: perfil público completo (estudios, contacto,
     //    redes, descripción y actividad) PERO sin CV/analítico/promedio.
     const publicStudentCols =
-      'id, avatar_url, verified, university, career, year, area, location, phone, instagram_url, linkedin_url, github_url, portfolio_url, bio, skills, profile:profiles(full_name, email)';
+      'id, avatar_url, verified, university, career, year, area, location, phone, instagram_url, linkedin_url, github_url, portfolio_url, bio, skills, profile:profiles(full_name, email, plan, plan_expires_at)';
     const studentSelect =
-      viewerRole === 'empresa' ? '*, profile:profiles(full_name, email)' : publicStudentCols;
+      viewerRole === 'empresa' ? '*, profile:profiles(full_name, email, plan, plan_expires_at)' : publicStudentCols;
     (async () => {
       const [{ data: st }, { data: co }, { data: am }] = await Promise.all([
         supabase.from('student_profiles').select(studentSelect).eq('is_public', true),
-        supabase.from('company_profiles').select('*, profile:profiles(full_name, email)'),
+        supabase.from('company_profiles').select('*, profile:profiles(full_name, email, plan, plan_expires_at)'),
         // Mostramos todas las comunidades (incluye las del acceso anticipado, aún
         // sin verificar). El tilde de verificado se muestra solo si corresponde.
-        supabase.from('ambassador_profiles').select('*'),
+        supabase.from('ambassador_profiles').select('*, profile:profiles(full_name, email, plan, plan_expires_at)'),
       ]);
       if (!active) return;
       setStudents((st as unknown as StudentRow[]) ?? []);
@@ -343,7 +364,7 @@ export default function Explore() {
             .toLowerCase()
             .includes(q);
         })
-        .sort((a, b) => (b.avatar_url ? 1 : 0) - (a.avatar_url ? 1 : 0)),
+        .sort((a, b) => Number(hasActivePro(b.profile)) - Number(hasActivePro(a.profile)) || Number(!!b.avatar_url) - Number(!!a.avatar_url)),
     [students, q]
   );
 
@@ -358,7 +379,7 @@ export default function Explore() {
             .toLowerCase()
             .includes(q);
         })
-        .sort((a, b) => (b.avatar_url ? 1 : 0) - (a.avatar_url ? 1 : 0)),
+        .sort((a, b) => Number(hasActivePro(b.profile)) - Number(hasActivePro(a.profile)) || Number(!!b.avatar_url) - Number(!!a.avatar_url)),
     [companies, q]
   );
 
@@ -373,7 +394,7 @@ export default function Explore() {
             .toLowerCase()
             .includes(q);
         })
-        .sort((a, b) => (b.logo_url ? 1 : 0) - (a.logo_url ? 1 : 0)),
+        .sort((a, b) => Number(hasActivePro(b.profile)) - Number(hasActivePro(a.profile)) || Number(!!b.logo_url) - Number(!!a.logo_url)),
     [ambassadors, q]
   );
 
@@ -417,12 +438,18 @@ export default function Explore() {
         }
       />
 
-      {viewerRole === 'estudiante' && !isPro(viewer) && (
-        <Card className="mb-4 flex flex-col justify-between gap-2 !p-4 sm:flex-row sm:items-center">
-          <p className="text-sm text-white/60">
-            Plan Gratis: <span className="font-semibold text-white">{monthlyConnections} de {FREE_STUDENT_CONNECTIONS_PER_MONTH}</span> conexiones iniciadas este mes.
-          </p>
-          <a href="/app/planes" className="text-sm font-semibold text-brand-500 hover:text-brand-400">Ver Estudiante Pro</a>
+      {!isPro(viewer) && (
+        <Card className="mb-4 flex flex-col justify-between gap-2 !border-amber-400/25 !bg-amber-400/[0.06] !p-3 sm:flex-row sm:items-center sm:px-4">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-white">Destacá tu perfil con Pro</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-white/55">
+              Aparecé primero en Explorar y sumá el tilde Pro junto a tu nombre.
+              {viewerRole === 'estudiante' && ` Usaste ${monthlyConnections} de ${FREE_STUDENT_CONNECTIONS_PER_MONTH} conexiones gratis este mes.`}
+            </p>
+          </div>
+          <Link to="/app/planes" className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-brand-500 hover:text-brand-400">
+            Solicitar Pro <ArrowUpRight className="h-4 w-4" />
+          </Link>
         </Card>
       )}
 
@@ -502,6 +529,7 @@ export default function Explore() {
                 tags={(r.skills ?? []).slice(0, 3)}
                 onClick={() => setSelected({ type: 'estudiantes', row: r })}
                 badge={r.verified ? <VerifiedBadge verified small /> : undefined}
+                promoted={hasActivePro(r.profile)}
               />
             ))}
           {tab === 'empresas' &&
@@ -514,6 +542,7 @@ export default function Explore() {
                 tags={[]}
                 onClick={() => setSelected({ type: 'empresas', row: r })}
                 badge={r.verified ? <VerifiedBadge verified small /> : undefined}
+                promoted={hasActivePro(r.profile)}
               />
             ))}
           {tab === 'embajadores' &&
@@ -526,6 +555,7 @@ export default function Explore() {
                 tags={r.reach ? [`${r.reach} de alcance`] : []}
                 onClick={() => setSelected({ type: 'embajadores', row: r })}
                 badge={r.verified ? <VerifiedBadge verified small /> : undefined}
+                promoted={hasActivePro(r.profile)}
               />
             ))}
         </div>
@@ -555,6 +585,7 @@ function ProfileCard({
   tags,
   onClick,
   badge,
+  promoted = false,
 }: {
   avatar: React.ReactNode;
   title: string;
@@ -562,16 +593,18 @@ function ProfileCard({
   tags: string[];
   onClick: () => void;
   badge?: React.ReactNode;
+  promoted?: boolean;
 }) {
   return (
     <button onClick={onClick} className="text-left">
-      <Card hover className="h-full cursor-pointer">
+      <Card hover className={`relative h-full cursor-pointer ${promoted ? '!border-amber-400/35 !bg-amber-400/[0.06] shadow-[0_8px_24px_rgba(245,158,11,0.08)]' : ''}`}>
         <div className="flex items-start gap-3">
           {avatar}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <h3 className="truncate font-semibold text-white">{title}</h3>
               {badge}
+              {promoted && <ProBadge small />}
             </div>
             <p className="mt-0.5 text-[13px] leading-snug text-white/55 line-clamp-2">{subtitle}</p>
           </div>
@@ -738,7 +771,8 @@ function StudentDetail({ row, onMessage, connectionState, onToggleConnection, ca
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <h2 className="truncate text-xl font-bold text-[#fff] sm:text-2xl">{name}</h2>
-            {row.verified && <VerifiedBadge verified />}
+              {row.verified && <VerifiedBadge verified />}
+              {hasActivePro(row.profile) && <ProBadge />}
             </div>
             <p className="mt-1 line-clamp-2 text-sm leading-5 text-[rgba(255,255,255,0.72)]">
               {[row.career, row.year && `${row.year} año`, row.university].filter(Boolean).join(' · ') || 'Estudiante'}
@@ -828,6 +862,7 @@ function CompanyDetail({ row, onMessage, isFollowing, onToggleFollow }: { row: C
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold text-white">{name}</h2>
             {row.verified && <VerifiedBadge verified />}
+            {hasActivePro(row.profile) && <ProBadge />}
           </div>
           <p className="mt-0.5 text-sm text-white/60">
             {[row.industry, row.size && `${row.size} empleados`].filter(Boolean).join(' · ') || 'Empresa'}
@@ -884,7 +919,8 @@ function AmbassadorDetail({ row, onMessage, isFollowing, onToggleFollow }: { row
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold text-white">{name}</h2>
-            <VerifiedBadge verified={!!row.verified} />
+            {row.verified && <VerifiedBadge verified />}
+            {hasActivePro(row.profile) && <ProBadge />}
           </div>
           <p className="mt-0.5 text-sm text-white/60">
             {[orgTypeLabel(row.org_type), row.university].filter(Boolean).join(' · ')}

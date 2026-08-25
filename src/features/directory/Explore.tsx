@@ -159,6 +159,7 @@ export default function Explore() {
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [connectionRequests, setConnectionRequests] = useState<ConnectionRequest[]>([]);
   const [selected, setSelected] = useState<Selected | null>(null);
+  const [proBannerOpen, setProBannerOpen] = useState(false);
 
   // La barra superior puede buscar varias veces sin desmontar esta página.
   useEffect(() => {
@@ -443,17 +444,32 @@ export default function Explore() {
       />
 
       {!isPro(viewer) && (
-        <Card className="mb-4 flex flex-col justify-between gap-2 !border-brand-400/20 !bg-brand-500/[0.035] !p-3 sm:flex-row sm:items-center sm:px-4">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-white">Destacá tu perfil con Pro</p>
-            <p className="mt-0.5 text-xs leading-relaxed text-white/55">
-              Aparecé primero en Explorar y sumá el tilde Pro junto a tu nombre.
-              {viewerRole === 'estudiante' && ` Usaste ${monthlyConnections} de ${FREE_STUDENT_CONNECTIONS_PER_MONTH} conexiones gratis este mes.`}
-            </p>
+        <Card className="mb-4 overflow-hidden !border-[#0148FD] !bg-[#0148FD] !p-0 after:!hidden">
+          <button
+            type="button"
+            onClick={() => setProBannerOpen((open) => !open)}
+            aria-expanded={proBannerOpen}
+            className="flex w-full items-center gap-2 px-3 py-2.5 text-left sm:hidden"
+          >
+            <BadgeCheck className="h-4 w-4 shrink-0 !text-white" strokeWidth={2.25} />
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold !text-white">Destacá tu perfil con Pro</span>
+            <ChevronDown className={`h-4 w-4 shrink-0 !text-white transition-transform ${proBannerOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          <div className={`${proBannerOpen ? 'flex' : 'hidden'} flex-col gap-3 border-t border-white/20 px-3 pb-3 pt-2.5 sm:flex sm:flex-row sm:items-center sm:justify-between sm:border-0 sm:px-4 sm:py-3`}>
+            <div className="min-w-0">
+              <p className="hidden items-center gap-2 text-sm font-semibold !text-white sm:flex">
+                <BadgeCheck className="h-4 w-4 shrink-0" strokeWidth={2.25} /> Destacá tu perfil con Pro
+              </p>
+              <p className="text-xs leading-relaxed !text-white/80 sm:mt-0.5">
+                Aparecé primero en Explorar y sumá el tilde Pro junto a tu nombre.
+                {viewerRole === 'estudiante' && ` Usaste ${monthlyConnections} de ${FREE_STUDENT_CONNECTIONS_PER_MONTH} conexiones gratis este mes.`}
+              </p>
+            </div>
+            <Link to="/app/planes" className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold !text-white transition hover:opacity-80">
+              Solicitar Pro <ArrowUpRight className="h-4 w-4" />
+            </Link>
           </div>
-          <Link to="/app/planes" className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-brand-500 hover:text-brand-400">
-            Solicitar Pro <ArrowUpRight className="h-4 w-4" />
-          </Link>
         </Card>
       )}
 

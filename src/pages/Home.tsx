@@ -35,6 +35,7 @@ import { InstallAppSection } from '../components/sections/InstallAppSection';
 import { PricingPlans } from '../components/sections/PricingPlans';
 import { LaunchCountdown } from '../components/sections/LaunchCountdown';
 import { IMAGES, AVATARS } from '../lib/images';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import estudianteImg from '../assets/images/estudiante.webp';
 import iconosHero from '../assets/images/iconos-hero.png';
 
@@ -112,6 +113,8 @@ const FAQ = [
 ];
 
 export default function Home() {
+  const isDesktop = useMediaQuery('(min-width: 768px)');
+
   useSeo({
     title: 'Conectamos estudiantes con empresas',
     description:
@@ -274,13 +277,14 @@ export default function Home() {
       </section>
 
       {/* ===================== POR QUÉ PASANTIA (solo mobile: 2da sección) ===================== */}
-      <Section className="md:hidden">
-        <PlatformShowcase />
-      </Section>
-
-      <div className="md:hidden">
-        <PricingPlans id="planes" />
-      </div>
+      {!isDesktop && (
+        <>
+          <Section>
+            <PlatformShowcase />
+          </Section>
+          <PricingPlans id="planes" />
+        </>
+      )}
 
       {/* ===================== TIRA DE RUBROS (estilo tira de marcas go-marz) ===================== */}
       <div className="bg-white py-12 text-brand-700 sm:py-16 md:bg-transparent md:text-white">
@@ -357,13 +361,14 @@ export default function Home() {
 
       {/* ===================== POR QUÉ PASANTIA ===================== */}
       {/* ===================== POR QUÉ PASANTIA (desktop: en su posición original) ===================== */}
-      <Section className="hidden md:block">
-        <PlatformShowcase />
-      </Section>
-
-      <div className="hidden md:block">
-        <PricingPlans id="planes-desktop" />
-      </div>
+      {isDesktop && (
+        <>
+          <Section>
+            <PlatformShowcase />
+          </Section>
+          <PricingPlans id="planes-desktop" />
+        </>
+      )}
 
       {/* ===================== CÓMO FUNCIONA ===================== */}
       <Section id="como-funciona" className="bg-white text-brand-800">

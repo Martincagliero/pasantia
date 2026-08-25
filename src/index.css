@@ -82,6 +82,16 @@
   }
 }
 
+/* Los glows con blur grande y la marquesina mantienen composición continua.
+   En pantallas táctiles quedan estáticos para que la carga y los toques tengan
+   prioridad; desktop conserva el movimiento completo. */
+@media (max-width: 767px), (pointer: coarse) {
+  .animate-glow-pulse,
+  .animate-marquee {
+    animation: none !important;
+  }
+}
+
 /* El toolbar flotante del teclado móvil deja una franja transparente sobre la
    página. Extendemos la superficie del chat por debajo del visual viewport para
    que detrás del teclado solo se vea el bloque del compositor. */

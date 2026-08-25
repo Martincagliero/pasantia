@@ -601,7 +601,7 @@ function ProfileCard({
 }) {
   return (
     <button onClick={onClick} className="text-left">
-      <Card hover className={`relative h-full cursor-pointer ${promoted ? '!border-brand-400/25 !bg-brand-500/[0.035]' : ''}`}>
+      <Card hover className={`relative h-full cursor-pointer ${promoted ? 'pro-profile-card !border-brand-400/25 !bg-brand-500/[0.035]' : ''}`}>
         <div className="flex items-start gap-3">
           {avatar}
           <div className="min-w-0 flex-1">

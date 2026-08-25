@@ -301,6 +301,12 @@ input:-webkit-autofill:active {
   border-color: rgb(10 102 194 / 0.17);
   box-shadow: 0 8px 22px rgb(15 23 42 / 0.055);
 }
+.dash-root .pro-profile-card {
+  background-image: none;
+}
+.dash-root .pro-profile-card::after {
+  display: none;
+}
 .dash-root .bg-brand-400 { background-color: #2178cf !important; }
 .dash-root .hover\:bg-brand-400:hover { background-color: #004182 !important; }
 .dash-root .bg-brand-500\/15,

@@ -33,6 +33,7 @@ import { sendPushEvent } from '../../lib/notify';
 import { isPro } from '../../lib/plans';
 import { useAuth } from '../auth/AuthProvider';
 import { useAnyModalOpen } from '../ui/modalGuard';
+import { planRestriction, restrictionFromError } from '../../lib/planRestrictions';
 
 interface MessagesContextValue {
   openChatWith: (userId: string, name: string, avatar?: string | null) => void;
@@ -654,8 +655,9 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       return null;
     } catch (error) {
       const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : '';
-      if (/FREE_CONNECTION_MONTHLY_LIMIT/i.test(message)) {
-        return 'Alcanzaste las 5 conexiones nuevas de este mes. Estudiante Pro permite conectar sin límite.';
+      const restriction = restrictionFromError(error);
+      if (restriction?.code === 'student_connections') {
+        return `${restriction.title}. ${restriction.message}`;
       }
       if (/does not exist|schema cache|function/i.test(message)) {
         return 'Las solicitudes de conexión todavía no están disponibles.';
@@ -1277,9 +1279,8 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
                     {upgradeNotice && (
                       <div className="mx-3 mb-2 rounded-lg border border-white/15 bg-white/[0.06] p-3">
                         <p className="text-xs leading-relaxed text-white/70">
-                          {upgradeNotice === 'student'
-                            ? 'Para enviar mensajes sin conexión necesitás Estudiante Pro. También podés solicitar conexión desde el perfil.'
-                            : 'La mensajería directa con talento está disponible en Empresa Pro.'}
+                          {planRestriction(upgradeNotice === 'student' ? 'student_messages' : 'company_messages').message}
+                          {upgradeNotice === 'student' && ' También podés solicitar conexión desde el perfil.'}
                         </p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {upgradeNotice === 'student' && active && (

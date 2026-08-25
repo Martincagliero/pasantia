@@ -11,6 +11,8 @@ import { useModalGuard } from '../ui/modalGuard';
 import { ChevronDown, X, ImagePlus, Trash2 } from 'lucide-react';
 import { sendPushEvent } from '../../lib/notify';
 import { VerifiedBadge } from '../ambassador/VerifiedBadge';
+import { PlanRestrictionDialog } from '../plans/PlanRestrictionDialog';
+import { restrictionFromError, type PlanRestriction } from '../../lib/planRestrictions';
 
 const emptyForm = {
   title: '',
@@ -51,6 +53,7 @@ export default function InternshipForm({
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [planRestriction, setPlanRestriction] = useState<PlanRestriction | null>(null);
   const [ambassadors, setAmbassadors] = useState<AmbassadorProfile[]>([]);
   const [selectedAmbassadors, setSelectedAmbassadors] = useState<string[]>([]);
   const [commOpen, setCommOpen] = useState(false);
@@ -152,61 +155,74 @@ export default function InternshipForm({
       image_url: form.image_url.trim() || null,
       is_active: form.is_active,
     };
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15_000);
 
     async function save(pl: typeof payload | Omit<typeof payload, 'image_url' | 'experience_years'>) {
       return editId
-        ? await supabase.from('internships').update(pl).eq('id', editId)
+        ? await supabase.from('internships').update(pl).eq('id', editId).abortSignal(controller.signal)
         : await supabase
             .from('internships')
             .insert({ ...pl, company_id: session!.user.id })
             .select()
+            .abortSignal(controller.signal)
             .single();
     }
 
-    let result = await save(payload);
-    // Si falta alguna columna nueva (migración no corrida), guardar sin ella.
-    if (result.error && /experience_years|image_url|column|schema cache|does not exist/i.test(result.error.message)) {
-      const { image_url, experience_years, ...rest } = payload;
-      void image_url;
-      void experience_years;
-      result = await save(rest);
-    }
-
-    setSaving(false);
-    if (result.error) {
-      setError(
-        /FREE_COMPANY_MONTHLY_LIMIT/i.test(result.error.message)
-          ? 'Alcanzaste las 3 publicaciones mensuales del plan Gratis. Solicitá Empresa Pro para publicar sin límite.'
-          : 'No se pudo guardar la pasantía. Revisá los datos e intentá de nuevo.'
-      );
-      return;
-    }
-
-    // Si hay embajadores seleccionados, crear internship_broadcasts
-    const internshipId = editId || (result.data as any).id;
-    if (!editId && internshipId && form.is_active) {
-      void sendPushEvent('internship', internshipId);
-    }
-    if (selectedAmbassadors.length > 0 && internshipId) {
-      const broadcasts = selectedAmbassadors.map((ambId) => ({
-        internship_id: internshipId,
-        ambassador_id: ambId,
-      }));
-
-      // Primero, borrar los broadcasts anteriores si estamos editando
-      if (editId) {
-        await supabase
-          .from('internship_broadcasts')
-          .delete()
-          .eq('internship_id', editId);
+    try {
+      let result = await save(payload);
+      // Si falta alguna columna nueva (migración no corrida), guardar sin ella.
+      if (result.error && /experience_years|image_url|column|schema cache|does not exist/i.test(result.error.message)) {
+        const { image_url, experience_years, ...rest } = payload;
+        void image_url;
+        void experience_years;
+        result = await save(rest);
       }
 
-      // Luego, insertar los nuevos
-      await supabase.from('internship_broadcasts').insert(broadcasts);
-    }
+      if (result.error) {
+        const restriction = restrictionFromError(result.error);
+        if (restriction?.code === 'company_posts') {
+          setPlanRestriction(restriction);
+          return;
+        }
+        setError('No se pudo guardar la pasantía. Revisá los datos e intentá de nuevo.');
+        return;
+      }
 
-    if (onDone) onDone();
-    else navigate('/app/mis-pasantias');
+      // Si hay embajadores seleccionados, crear internship_broadcasts
+      const internshipId = editId || (result.data as any).id;
+      if (!editId && internshipId && form.is_active) {
+        void sendPushEvent('internship', internshipId);
+      }
+      if (selectedAmbassadors.length > 0 && internshipId) {
+        const broadcasts = selectedAmbassadors.map((ambId) => ({
+          internship_id: internshipId,
+          ambassador_id: ambId,
+        }));
+
+        // Primero, borrar los broadcasts anteriores si estamos editando
+        if (editId) {
+          await supabase
+            .from('internship_broadcasts')
+            .delete()
+            .eq('internship_id', editId)
+            .abortSignal(controller.signal);
+        }
+
+        // Luego, insertar los nuevos
+        await supabase.from('internship_broadcasts').insert(broadcasts).abortSignal(controller.signal);
+      }
+
+      if (onDone) onDone();
+      else navigate('/app/mis-pasantias');
+    } catch {
+      setError(controller.signal.aborted
+        ? 'La conexión tardó demasiado. Revisá internet e intentá nuevamente.'
+        : 'No se pudo guardar la pasantía. Revisá tu conexión e intentá de nuevo.');
+    } finally {
+      window.clearTimeout(timeout);
+      setSaving(false);
+    }
   }
 
   if (loading) return <PageLoader />;
@@ -470,6 +486,7 @@ export default function InternshipForm({
         </form>
         </Card>
       </div>
+      <PlanRestrictionDialog restriction={planRestriction} onClose={() => setPlanRestriction(null)} />
     </div>
   );
 }

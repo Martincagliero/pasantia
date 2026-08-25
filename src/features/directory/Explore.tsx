@@ -48,6 +48,8 @@ import { EmojiText } from '../ui/EmojiText';
 import { ReportButton } from '../ui/ReportButton';
 import { CONNECTION_USAGE_RESET_AT, FREE_STUDENT_CONNECTIONS_PER_MONTH, isPro } from '../../lib/plans';
 import { PostActionsMenu } from '../posts/PostActionsMenu';
+import { PlanRestrictionDialog } from '../plans/PlanRestrictionDialog';
+import { restrictionFromError, type PlanRestriction } from '../../lib/planRestrictions';
 
 type Tab = 'estudiantes' | 'empresas' | 'embajadores' | 'red';
 
@@ -165,6 +167,7 @@ export default function Explore() {
   const [selected, setSelected] = useState<Selected | null>(null);
   const [proBannerOpen, setProBannerOpen] = useState(false);
   const [connectingId, setConnectingId] = useState<string | null>(null);
+  const [planRestriction, setPlanRestriction] = useState<PlanRestriction | null>(null);
 
   // La barra superior puede buscar varias veces sin desmontar esta página.
   useEffect(() => {
@@ -313,11 +316,14 @@ export default function Explore() {
       void sendPushEvent('connection_request', String(data));
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : '';
+      const restriction = restrictionFromError(requestError);
+      if (restriction) {
+        setPlanRestriction(restriction);
+        return;
+      }
       alert(
         controller.signal.aborted
           ? 'La conexión tardó demasiado. Revisá internet e intentá nuevamente.'
-          : /FREE_CONNECTION_MONTHLY_LIMIT/i.test(message)
-          ? 'Alcanzaste las 5 conexiones nuevas de este mes. Estudiante Pro permite conectar sin límite.'
           : /does not exist|schema cache|function/i.test(message)
           ? 'Falta correr la migración "migracion-solicitudes-conexion.sql" en Supabase.'
           : 'No se pudo actualizar la conexión. Intentá nuevamente.'
@@ -624,6 +630,7 @@ export default function Explore() {
           messageOnly={viewerRole === 'embajador'}
         />
       )}
+      <PlanRestrictionDialog restriction={planRestriction} onClose={() => setPlanRestriction(null)} />
     </div>
   );
 }

@@ -16,6 +16,8 @@ import { SocialPostImages, SocialPostText } from '../posts/SocialPostContent';
 import { PostActionsMenu } from '../posts/PostActionsMenu';
 import { VerifiedBadge } from '../ambassador/VerifiedBadge';
 import pasantiaLogo from '../../assets/logo.png';
+import { PlanRestrictionDialog } from '../plans/PlanRestrictionDialog';
+import { restrictionFromError, type PlanRestriction } from '../../lib/planRestrictions';
 
 interface HomePost extends Post {
   author: { is_admin: boolean } | null;
@@ -74,6 +76,7 @@ export default function StudentHome() {
   const [selected, setSelected] = useState<InternshipWithCompany | null>(null);
   const [detail, setDetail] = useState<InternshipWithCompany | null>(null);
   const [composing, setComposing] = useState(false);
+  const [planRestriction, setPlanRestriction] = useState<PlanRestriction | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -254,11 +257,14 @@ export default function StudentHome() {
       void sendPushEvent('connection_request', String(data));
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
+      const restriction = restrictionFromError(error);
+      if (restriction) {
+        setPlanRestriction(restriction);
+        return;
+      }
       alert(
         controller.signal.aborted
           ? 'La conexión tardó demasiado. Revisá internet e intentá nuevamente.'
-          : /FREE_CONNECTION_MONTHLY_LIMIT/i.test(message)
-          ? 'Alcanzaste las 5 conexiones nuevas de este mes. Estudiante Pro permite conectar sin límite.'
           : /does not exist|schema cache|function/i.test(message)
           ? 'Falta correr la migración de solicitudes de conexión en Supabase.'
           : 'No se pudo actualizar la conexión.'
@@ -660,6 +666,7 @@ export default function StudentHome() {
           }}
         />
       )}
+      <PlanRestrictionDialog restriction={planRestriction} onClose={() => setPlanRestriction(null)} />
     </div>
   );
 }

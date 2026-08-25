@@ -8,7 +8,7 @@ import type { Internship, Modality } from '../../lib/database.types';
 import { Button } from '../../components/ui/Button';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
 import InternshipForm from './InternshipForm';
-import { FREE_COMPANY_POSTS_PER_MONTH, isPro } from '../../lib/plans';
+import { FREE_COMPANY_APPLICANTS_PER_INTERNSHIP, FREE_COMPANY_POSTS_PER_MONTH, isPro } from '../../lib/plans';
 import { UpgradePrompt } from '../plans/UpgradePrompt';
 
 const modalityLabel: Record<Modality, string> = {
@@ -221,7 +221,7 @@ export default function MyInternships() {
                     to={`/app/pasantia/${i.id}`}
                     className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-white/10"
                   >
-                    <Users className="h-4 w-4" /> {!unlimited && count === 3 ? '3+' : count} postulante{count === 1 ? '' : 's'}
+                    <Users className="h-4 w-4" /> {!unlimited && count === FREE_COMPANY_APPLICANTS_PER_INTERNSHIP ? `${FREE_COMPANY_APPLICANTS_PER_INTERNSHIP}+` : count} postulante{count === 1 ? '' : 's'}
                   </Link>
                   <button
                     onClick={() => toggleActive(i)}

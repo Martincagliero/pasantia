@@ -13,6 +13,7 @@ import { PostInteractions } from '../ui/PostInteractions';
 import { InternshipDetailModal } from '../ui/InternshipDetailModal';
 import { EmojiText } from '../ui/EmojiText';
 import { useModalGuard } from '../ui/modalGuard';
+import { restrictionFromError } from '../../lib/planRestrictions';
 
 const modalityLabel: Record<Modality, string> = {
   presencial: 'Presencial',
@@ -342,26 +343,37 @@ export function ApplyModal({
     setLoading(true);
     setError(null);
     setLimitReached(false);
-    const { error } = await supabase.from('applications').insert({
-      internship_id: internship.id,
-      student_id: studentId,
-      message: message.trim() || null,
-    });
-    setLoading(false);
-    if (error) {
-      if (/FREE_STUDENT_MONTHLY_APPLICATION_LIMIT/i.test(error.message)) {
-        setLimitReached(true);
-        setError('Ya usaste tus 5 postulaciones gratis de este mes. Estudiante Pro incluye postulaciones ilimitadas.');
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15_000);
+    try {
+      const { error } = await supabase.from('applications').insert({
+        internship_id: internship.id,
+        student_id: studentId,
+        message: message.trim() || null,
+      }).abortSignal(controller.signal);
+      if (error) {
+        const restriction = restrictionFromError(error);
+        if (restriction?.code === 'student_applications') {
+          setLimitReached(true);
+          setError(`${restriction.title}. ${restriction.message}`);
+          return;
+        }
+        setError(
+          error.code === '23505'
+            ? 'Ya te postulaste a esta pasantía.'
+            : 'No se pudo enviar la postulación. Intentá de nuevo.'
+        );
         return;
       }
-      setError(
-        error.code === '23505'
-          ? 'Ya te postulaste a esta pasantía.'
-          : 'No se pudo enviar la postulación. Intentá de nuevo.'
-      );
-      return;
+      onApplied();
+    } catch {
+      setError(controller.signal.aborted
+        ? 'La conexión tardó demasiado. Revisá internet e intentá nuevamente.'
+        : 'No se pudo enviar la postulación. Intentá de nuevo.');
+    } finally {
+      window.clearTimeout(timeout);
+      setLoading(false);
     }
-    onApplied();
   }
 
   return (

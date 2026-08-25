@@ -84,6 +84,10 @@ function hasActivePro(profile: PublicProfile | null | undefined): boolean {
   return !profile.plan_expires_at || new Date(profile.plan_expires_at).getTime() >= Date.now();
 }
 
+function hasExplorePriority(verified: boolean, profile: PublicProfile | null | undefined): boolean {
+  return verified || hasActivePro(profile);
+}
+
 function ProBadge({ small = false }: { small?: boolean }) {
   return (
     <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border border-brand-500 bg-brand-500 font-semibold !text-white ${small ? 'px-1.5 py-0.5 text-[10px]' : 'px-2.5 py-0.5 text-xs'}`}>
@@ -367,7 +371,7 @@ export default function Explore() {
             .toLowerCase()
             .includes(q);
         })
-        .sort((a, b) => Number(hasActivePro(b.profile)) - Number(hasActivePro(a.profile)) || Number(!!b.avatar_url) - Number(!!a.avatar_url)),
+        .sort((a, b) => Number(hasExplorePriority(b.verified, b.profile)) - Number(hasExplorePriority(a.verified, a.profile)) || Number(!!b.avatar_url) - Number(!!a.avatar_url)),
     [students, q]
   );
 
@@ -383,7 +387,7 @@ export default function Explore() {
             .toLowerCase()
             .includes(q);
         })
-        .sort((a, b) => Number(hasActivePro(b.profile)) - Number(hasActivePro(a.profile)) || Number(!!b.avatar_url) - Number(!!a.avatar_url)),
+        .sort((a, b) => Number(hasExplorePriority(b.verified, b.profile)) - Number(hasExplorePriority(a.verified, a.profile)) || Number(!!b.avatar_url) - Number(!!a.avatar_url)),
     [companies, q]
   );
 
@@ -399,7 +403,7 @@ export default function Explore() {
             .toLowerCase()
             .includes(q);
         })
-        .sort((a, b) => Number(hasActivePro(b.profile)) - Number(hasActivePro(a.profile)) || Number(!!b.logo_url) - Number(!!a.logo_url)),
+        .sort((a, b) => Number(hasExplorePriority(b.verified, b.profile)) - Number(hasExplorePriority(a.verified, a.profile)) || Number(!!b.logo_url) - Number(!!a.logo_url)),
     [ambassadors, q]
   );
 

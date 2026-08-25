@@ -136,9 +136,9 @@ export default function Novedades() {
           }
         />
       ) : (
-        <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
+        <div className="grid items-start gap-3 sm:gap-4 lg:grid-cols-2">
           {filtered.map((p) => (
-            <Card key={p.id} className="flex flex-col">
+            <Card key={p.id} className="w-full">
               <div className="mb-1.5 flex items-center justify-between gap-2 sm:mb-2">
                 <span
                   className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium sm:px-3 sm:py-1 ${categoryStyle[p.category]}`}
@@ -159,7 +159,7 @@ export default function Novedades() {
 
               {p.link_url && <LinkPreview url={p.link_url} className="mt-2.5 sm:mt-3" />}
 
-              <div className="mt-auto">
+              <div>
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-2.5 sm:mt-4 sm:gap-3 sm:pt-3">
                   <div className="flex items-center gap-2 text-xs text-white/50">
                     {p.author_role === 'empresa' ? (

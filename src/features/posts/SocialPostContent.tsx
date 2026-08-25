@@ -71,7 +71,7 @@ export function SocialPostImages({ urls = [] }: { urls?: string[] }) {
             alt={`Imagen ${index + 1} de la publicación`}
             loading="lazy"
             decoding="async"
-            className={`w-full object-cover ${visible.length === 1 ? 'max-h-[32rem]' : 'h-44 sm:h-56'}`}
+            className={`w-full object-cover ${visible.length === 1 ? 'h-64 sm:h-80' : 'h-44 sm:h-56'}`}
           />
           {index === 3 && urls.length > 4 && (
             <span className="absolute inset-0 grid place-items-center bg-black/55 text-xl font-semibold text-white">

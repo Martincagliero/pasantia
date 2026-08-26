@@ -1,6 +1,6 @@
 // Modal reutilizable para crear una publicación social (Novedades / Inicio).
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
-import { ImagePlus, Link2, Loader2, Send, X } from 'lucide-react';
+import { BriefcaseBusiness, ImagePlus, Link2, Loader2, Send, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Post, PostCategory, PostMention } from '../../lib/database.types';
 import { Button } from '../../components/ui/Button';
@@ -67,6 +67,7 @@ export function PostComposerModal({
     let active = true;
     const timer = window.setTimeout(() => {
       void (async () => {
+        const term = mentionQuery.trim();
         let profilesQuery = supabase
           .from('profiles')
           .select('id, full_name, role')
@@ -74,8 +75,15 @@ export function PostComposerModal({
           .neq('id', authorId)
           .order('full_name')
           .limit(8);
-        if (mentionQuery.trim()) profilesQuery = profilesQuery.ilike('full_name', `%${mentionQuery.trim()}%`);
-        const { data } = await profilesQuery;
+        if (term) profilesQuery = profilesQuery.ilike('full_name', `%${term}%`);
+        let internshipsQuery = supabase
+          .from('internships')
+          .select('id, title, image_url')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(8);
+        if (term) internshipsQuery = internshipsQuery.ilike('title', `%${term}%`);
+        const [{ data }, { data: internships }] = await Promise.all([profilesQuery, internshipsQuery]);
         if (!active) return;
         const rows = (data ?? []) as { id: string; full_name: string; role: 'estudiante' | 'empresa' }[];
         const companyIds = rows.filter((row) => row.role === 'empresa').map((row) => row.id);
@@ -89,12 +97,20 @@ export function PostComposerModal({
           : { data: [] };
         const studentAvatarById = new Map((students ?? []).map((student) => [student.id, student.avatar_url]));
         if (!active) return;
-        setCandidates(rows.map((row) => ({
-          id: row.id,
-          role: row.role,
-          name: row.role === 'empresa' ? companyById.get(row.id)?.company_name || row.full_name : row.full_name,
-          avatarUrl: row.role === 'empresa' ? companyById.get(row.id)?.avatar_url ?? null : studentAvatarById.get(row.id) ?? null,
-        })));
+        setCandidates([
+          ...rows.map((row) => ({
+            id: row.id,
+            role: row.role,
+            name: row.role === 'empresa' ? companyById.get(row.id)?.company_name || row.full_name : row.full_name,
+            avatarUrl: row.role === 'empresa' ? companyById.get(row.id)?.avatar_url ?? null : studentAvatarById.get(row.id) ?? null,
+          })),
+          ...(internships ?? []).map((internship) => ({
+            id: internship.id,
+            role: 'pasantia' as const,
+            name: internship.title,
+            avatarUrl: internship.image_url,
+          })),
+        ]);
       })();
     }, 180);
     return () => {
@@ -263,10 +279,10 @@ export function PostComposerModal({
               className="w-full resize-none bg-transparent text-base leading-relaxed text-white outline-none placeholder:text-white/35 sm:text-lg"
             />
             {mentionQuery !== null && candidates.length > 0 && (
-              <div className="absolute inset-x-0 top-full z-20 mt-2 overflow-hidden rounded-xl border border-white/15 bg-brand-950 shadow-2xl">
+              <div className="dash-panel absolute inset-x-0 top-full z-20 mt-2 max-h-64 overflow-y-auto rounded-xl border border-white/15 shadow-2xl">
                 {candidates.map((candidate) => (
                   <button
-                    key={candidate.id}
+                    key={`${candidate.role}-${candidate.id}`}
                     type="button"
                     onClick={() => selectMention(candidate)}
                     className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-white/8"
@@ -274,11 +290,17 @@ export function PostComposerModal({
                     {candidate.avatarUrl ? (
                       <img src={candidate.avatarUrl} alt="" className="h-9 w-9 rounded-full object-cover" />
                     ) : (
-                      <span className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-xs font-bold text-white/70">{candidate.name.slice(0, 2).toUpperCase()}</span>
+                      <span className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-xs font-bold text-white/70">
+                        {candidate.role === 'pasantia'
+                          ? <BriefcaseBusiness className="h-4 w-4" />
+                          : candidate.name.slice(0, 2).toUpperCase()}
+                      </span>
                     )}
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold text-white">{candidate.name}</span>
-                      <span className="block text-xs capitalize text-white/45">{candidate.role}</span>
+                      <span className="block text-xs capitalize text-white/45">
+                        {candidate.role === 'pasantia' ? 'Pasantía' : candidate.role}
+                      </span>
                     </span>
                   </button>
                 ))}

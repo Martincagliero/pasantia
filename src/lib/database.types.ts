@@ -154,7 +154,7 @@ export type PostCategory = 'novedad' | 'proyecto' | 'busqueda' | 'recurso';
 export interface PostMention {
   id: string;
   name: string;
-  role: 'estudiante' | 'empresa';
+  role: 'estudiante' | 'empresa' | 'pasantia';
 }
 
 /** Publicación del panel de Novedades (la pueden crear estudiantes y empresas). */

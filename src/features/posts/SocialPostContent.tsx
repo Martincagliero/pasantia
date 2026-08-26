@@ -26,10 +26,13 @@ export function SocialPostText({ text, mentions = [] }: { text: string; mentions
       {text.split(tokenPattern).filter(Boolean).map((part, index) => {
         const mention = mentionByLabel.get(part.toLowerCase());
         if (mention) {
+          const destination = mention.role === 'pasantia'
+            ? `/app/buscar?q=${encodeURIComponent(mention.name)}`
+            : `/app/explorar?u=${mention.id}`;
           return (
             <Link
               key={`${part}-${index}`}
-              to={`/app/explorar?u=${mention.id}`}
+              to={destination}
               className="font-semibold text-brand-400 hover:underline"
             >
               {part}

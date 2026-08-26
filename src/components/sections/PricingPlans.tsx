@@ -147,7 +147,9 @@ export function PricingPlans({ id }: { id: string }) {
         />
       </div>
     ) : (
-      <div className="h-24 bg-gradient-to-b from-brand-500 to-white" aria-hidden />
+      <div className="relative h-[35vw] min-h-28 max-h-[30rem] overflow-hidden bg-brand-500" aria-hidden>
+        <div className="absolute left-1/2 top-[3vw] aspect-square w-[89vw] -translate-x-1/2 rounded-full bg-white" />
+      </div>
     )}
     </div>
   );

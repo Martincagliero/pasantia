@@ -1,13 +1,11 @@
-// Embajador: panel de inicio. Estado de verificación, puntos, nivel y accesos.
+// Embajador: panel de inicio, puntos, nivel y accesos.
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, Megaphone, Trophy, ArrowRight, Share2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { AmbassadorProfile } from '../../lib/database.types';
-import { Button } from '../../components/ui/Button';
 import { Card, PageLoader } from '../ui/primitives';
-import { VerifiedBadge } from './VerifiedBadge';
 import { POINTS_PER_DIFFUSION, levelFor, orgTypeLabel } from './ambassadorConfig';
 
 export default function AmbassadorHome() {
@@ -70,31 +68,11 @@ export default function AmbassadorHome() {
       <div className="mb-7">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{name}</h1>
-          <VerifiedBadge verified={!!amb?.verified} />
         </div>
         <p className="mt-1.5 text-[15px] text-white/60">
           {orgTypeLabel(amb?.org_type)} · Panel de embajador de PasantIA
         </p>
       </div>
-
-      {!amb?.verified && (
-        <Card className="mb-6 border-amber-300/25 bg-amber-400/[0.07]">
-          <div className="flex items-start gap-3">
-            <Sparkles className="mt-0.5 h-5 w-5 text-amber-300" />
-            <div>
-              <p className="font-semibold text-white">Tu cuenta está en revisión</p>
-              <p className="mt-1 text-sm text-white/70">
-                El equipo de PasantIA está validando tu comunidad. Mientras tanto podés
-                completar tu perfil. Cuando te verifiquemos vas a poder difundir pasantías
-                y sumar puntos.
-              </p>
-              <Button as="link" to="/app/embajador-perfil" variant="secondary" size="sm" className="mt-4">
-                Completar perfil
-              </Button>
-            </div>
-          </div>
-        </Card>
-      )}
 
       {/* Métricas */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">

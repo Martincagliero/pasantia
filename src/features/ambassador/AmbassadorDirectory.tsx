@@ -1,8 +1,7 @@
-// Directorio de embajadores: estudiantes y empresas ven todos los embajadores verificados
+// Directorio público de comunidades y embajadores.
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { AmbassadorProfile } from '../../lib/database.types';
-import { VerifiedBadge } from './VerifiedBadge';
 import { orgTypeLabel } from './ambassadorConfig';
 import { Section } from '../../components/ui/Section';
 import { Reveal } from '../../components/ui/Reveal';
@@ -24,7 +23,6 @@ export default function AmbassadorDirectory() {
       const { data } = await supabase
         .from('ambassador_profiles')
         .select('*')
-        .eq('verified', true)
         .order('created_at', { ascending: false });
       
       if (!active) return;
@@ -60,7 +58,7 @@ export default function AmbassadorDirectory() {
               Embajadores <Accent>de PasantIA</Accent>
             </h1>
             <p className="mt-4 text-lg font-light text-white/70">
-              Comunidades e influencers que difunden pasantías verificadas
+              Comunidades e influencers que difunden oportunidades
             </p>
             <div className="mt-6">
               <Button as="a" href="#demo-plataforma" variant="secondary">
@@ -112,13 +110,12 @@ export default function AmbassadorDirectory() {
 
       <RoleProductDemo role="embajador" />
 
-      {/* Embajadores verificados */}
       {ambassadors.length === 0 ? (
         <Section>
           <Reveal>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-12 text-center">
               <Trophy className="mx-auto h-12 w-12 text-white/40 mb-4" />
-              <p className="text-white/60 text-lg">Aún no hay embajadores verificados.</p>
+              <p className="text-white/60 text-lg">Aún no hay comunidades registradas.</p>
               <Button onClick={() => openEarlyAccess('embajador')} className="mt-4">
                 Sé el primero
               </Button>
@@ -128,7 +125,7 @@ export default function AmbassadorDirectory() {
       ) : (
         <Section>
           <Reveal>
-            <h2 className="text-2xl font-semibold text-white mb-6">Embajadores Verificados</h2>
+            <h2 className="text-2xl font-semibold text-white mb-6">Comunidades de PasantIA</h2>
           </Reveal>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {ambassadors.map((amb) => (
@@ -149,7 +146,6 @@ export default function AmbassadorDirectory() {
                           <h3 className="font-semibold text-white">
                             {amb.org_name}
                           </h3>
-                          <VerifiedBadge verified={amb.verified} small />
                         </div>
                         <p className="text-sm text-white/50">
                           {orgTypeLabel(amb.org_type)}

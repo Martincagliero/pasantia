@@ -1,4 +1,4 @@
-// Embajador: perfil. Editar datos de la comunidad, Instagram, verificación.
+// Embajador: perfil y edición de datos de la comunidad e Instagram.
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
@@ -6,7 +6,6 @@ import type { AmbassadorProfile, AmbassadorOrgType } from '../../lib/database.ty
 import { Button } from '../../components/ui/Button';
 import { TextField } from '../ui/Field';
 import { Card, PageLoader } from '../ui/primitives';
-import { VerifiedBadge } from './VerifiedBadge';
 import { ORG_TYPES, orgTypeLabel } from './ambassadorConfig';
 import { UniversityAutocomplete } from '../ui/UniversityAutocomplete';
 import { ProfileHeader } from '../ui/ProfileHeader';
@@ -14,11 +13,9 @@ import { ProfileCompletion } from '../ui/ProfileCompletion';
 import { UserPosts } from '../posts/UserPosts';
 import { EmojiText } from '../ui/EmojiText';
 import { Upload } from 'lucide-react';
-import { isPro } from '../../lib/plans';
 
 export default function AmbassadorProfile() {
-  const { session, profile } = useAuth();
-  const [amb, setAmb] = useState<AmbassadorProfile | null>(null);
+  const { session } = useAuth();
   const [form, setForm] = useState({
     org_name: '',
     org_type: 'cuenta_instagram' as AmbassadorOrgType,
@@ -46,7 +43,6 @@ export default function AmbassadorProfile() {
         if (!active) return;
         if (data) {
           const a = data as AmbassadorProfile;
-          setAmb(a);
           setForm({
           org_name: a.org_name ?? '',
           org_type: (a.org_type as AmbassadorOrgType) ?? 'cuenta_instagram',
@@ -154,8 +150,6 @@ export default function AmbassadorProfile() {
           name={form.org_name || 'Comunidad'}
           subtitle={[orgTypeLabel(form.org_type), form.university].filter(Boolean).join(' · ')}
           avatarUrl={form.logo_url}
-          verified={!!amb?.verified}
-          hasPro={isPro(profile)}
           userId={session!.user.id}
           onEdit={() => setEditing(true)}
         />
@@ -201,7 +195,7 @@ export default function AmbassadorProfile() {
           emptyText="Todavía no publicaste nada en Novedades."
         />
 
-        {amb?.verified && <AmbassadorPerks />}
+        <AmbassadorPerks />
       </div>
     );
   }
@@ -221,11 +215,6 @@ export default function AmbassadorProfile() {
           <Card>
             <h3 className="mb-5 text-base font-semibold text-white">Identidad</h3>
             <div className="space-y-5">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm text-white/60">Estado: {amb?.org_name}</span>
-                <VerifiedBadge verified={!!amb?.verified} />
-              </div>
-
               {/* Logo */}
               <div>
                 <label className="block text-sm font-medium text-white/80 mb-2">Logo / Avatar (máx 5MB) <span className="text-red-300">*</span></label>
@@ -354,8 +343,8 @@ function AmbassadorPerks() {
   return (
     <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.07] p-5">
-        <p className="mb-0.5 text-xs font-semibold uppercase tracking-wider text-emerald-300/70">Estado</p>
-        <h3 className="mb-2 font-semibold text-white">Cuenta verificada</h3>
+        <p className="mb-0.5 text-xs font-semibold uppercase tracking-wider text-emerald-300/70">Difusión</p>
+        <h3 className="mb-2 font-semibold text-white">Compartí oportunidades</h3>
         <p className="text-sm text-white/65">
           Podés difundir pasantías en Instagram y tus seguidores podrán postularse directamente desde PasantIA.
         </p>

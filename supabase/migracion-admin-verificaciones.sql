@@ -70,32 +70,14 @@ BEGIN
       p.id,
       p.role,
       p.full_name,
-      CASE
-        WHEN p.role = 'empresa' THEN COALESCE(c.company_name, p.full_name, p.email)
-        WHEN p.role = 'embajador' THEN COALESCE(a.org_name, p.full_name, p.email)
-        ELSE COALESCE(p.full_name, p.email)
-      END AS display_name,
+      COALESCE(c.company_name, p.full_name, p.email) AS display_name,
       p.email,
-      CASE
-        WHEN p.role = 'empresa' THEN c.industry
-        WHEN p.role = 'embajador' THEN a.university
-        ELSE s.university
-      END AS detail,
-      CASE
-        WHEN p.role = 'empresa' THEN c.avatar_url
-        WHEN p.role = 'embajador' THEN a.logo_url
-        ELSE s.avatar_url
-      END AS avatar_url,
-      CASE
-        WHEN p.role = 'empresa' THEN COALESCE(c.verified, false)
-        WHEN p.role = 'embajador' THEN COALESCE(a.verified, false)
-        ELSE COALESCE(s.verified, false)
-      END AS verified
+      c.industry AS detail,
+      c.avatar_url AS avatar_url,
+      COALESCE(c.verified, false) AS verified
     FROM profiles p
-    LEFT JOIN student_profiles s ON s.id = p.id
-    LEFT JOIN company_profiles c ON c.id = p.id
-    LEFT JOIN ambassador_profiles a ON a.id = p.id
-    WHERE p.role IN ('estudiante', 'empresa', 'embajador')
+    JOIN company_profiles c ON c.id = p.id
+    WHERE p.role = 'empresa'
     ORDER BY p.created_at DESC;
 END;
 $$;
@@ -120,20 +102,12 @@ BEGIN
     RAISE EXCEPTION 'perfil inexistente';
   END IF;
 
-  IF v_role = 'estudiante' THEN
-    UPDATE student_profiles
-      SET verified = p_verified
-      WHERE id = p_user_id;
-  ELSIF v_role = 'empresa' THEN
+  IF v_role = 'empresa' THEN
     UPDATE company_profiles
       SET verified = p_verified
       WHERE id = p_user_id;
-  ELSIF v_role = 'embajador' THEN
-    UPDATE ambassador_profiles
-      SET verified = p_verified
-      WHERE id = p_user_id;
   ELSE
-    RAISE EXCEPTION 'rol no verificable';
+    RAISE EXCEPTION 'solo se pueden verificar empresas';
   END IF;
 END;
 $$;

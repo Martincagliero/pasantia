@@ -18,7 +18,7 @@ const studentPlans = [
     name: 'Pro',
     description: 'Para moverte sin límites y contactar antes que nadie.',
     featured: true,
-    features: ['Postulaciones ilimitadas', 'Conexiones sin límite', 'Mensajes sin conexión previa', 'Perfil destacado primero en Explorar', 'Tilde Pro junto al nombre', 'Verificación de cuenta'],
+    features: ['Postulaciones ilimitadas', 'Conexiones sin límite', 'Mensajes sin conexión previa', 'Perfil destacado primero en Explorar', 'Tilde Pro junto al nombre'],
   },
 ];
 
@@ -32,7 +32,7 @@ const companyPlans = [
     name: 'Pro',
     description: 'Para contratar talento joven de forma continua.',
     featured: true,
-    features: ['Publicaciones ilimitadas', 'Todos los postulados y gestión completa', 'Perfil destacado primero en Explorar', 'Tilde Pro junto al nombre', 'Verificación de cuenta', 'Mensajería y estadísticas'],
+    features: ['Publicaciones ilimitadas', 'Todos los postulados y gestión completa', 'Perfil destacado primero en Explorar', 'Tilde Pro junto al nombre', 'Mensajería y estadísticas'],
   },
   {
     name: 'Empresa',

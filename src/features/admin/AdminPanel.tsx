@@ -203,7 +203,7 @@ export default function AdminPanel() {
   const tabs: { key: Tab; label: string; icon: typeof Users; count: number }[] = [
     { key: 'usuarios', label: 'Registrados', icon: Users, count: users.length },
     { key: 'solicitudes', label: 'Formulario', icon: ClipboardList, count: requests.length },
-    { key: 'verificaciones', label: 'Verificaciones', icon: BadgeCheck, count: verifications.filter((row) => row.verified).length },
+    { key: 'verificaciones', label: 'Empresas verificadas', icon: BadgeCheck, count: verifications.filter((row) => row.verified).length },
     { key: 'planes', label: 'Planes', icon: CreditCard, count: planRequests.filter((request) => request.status === 'pending').length },
     { key: 'denuncias', label: 'Denuncias', icon: Flag, count: reports.filter((report) => report.status === 'pendiente').length },
     { key: 'promotores', label: 'Promotores', icon: Rocket, count: promoters.length },
@@ -295,7 +295,7 @@ function VerificationsTab({
   if (setupError) {
     return (
       <Card className="border-red-400/30 bg-red-500/5 text-sm text-red-700">
-        Falta ejecutar supabase/migracion-admin-verificaciones.sql en el SQL Editor de Supabase.
+        Falta ejecutar supabase/migracion-verificacion-solo-empresas.sql en el SQL Editor de Supabase.
       </Card>
     );
   }
@@ -375,7 +375,7 @@ function VerificationsTab({
           </Card>
         ))}
         {filtered.length === 0 && (
-          <Card className="text-center text-sm text-white/45">No hay perfiles para este filtro.</Card>
+          <Card className="text-center text-sm text-white/45">No hay empresas para este filtro.</Card>
         )}
       </div>
     </div>

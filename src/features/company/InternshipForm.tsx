@@ -10,7 +10,6 @@ import { Card, PageHeader, PageLoader } from '../ui/primitives';
 import { useModalGuard } from '../ui/modalGuard';
 import { ChevronDown, X, ImagePlus, Trash2 } from 'lucide-react';
 import { sendPushEvent } from '../../lib/notify';
-import { VerifiedBadge } from '../ambassador/VerifiedBadge';
 import { PlanRestrictionDialog } from '../plans/PlanRestrictionDialog';
 import { restrictionFromError, type PlanRestriction } from '../../lib/planRestrictions';
 
@@ -91,14 +90,13 @@ export default function InternshipForm({
     };
   }, [editId]);
 
-  // Cargar embajadores verificados
+  // Cargar comunidades disponibles para difundir la pasantía.
   useEffect(() => {
     let active = true;
     (async () => {
       const { data } = await supabase
         .from('ambassador_profiles')
-        .select('*')
-        .eq('verified', true);
+        .select('*');
       if (!active) return;
       setAmbassadors((data as AmbassadorProfile[]) || []);
     })();
@@ -398,7 +396,7 @@ export default function InternshipForm({
             <p className="mt-1.5 text-xs text-white/45">JPG, PNG o WEBP · máx 5 MB</p>
           </div>
 
-          {/* Difundir en embajadores verificados */}
+          {/* Difundir en comunidades */}
           {ambassadors.length > 0 && (
             <div className="border-t border-white/10 pt-4">
               <button
@@ -439,12 +437,9 @@ export default function InternshipForm({
                         className="h-4 w-4 rounded border-white/30 bg-white/10 accent-white"
                       />
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-white">
-                            {amb.org_name}
-                          </span>
-                          {amb.verified && <VerifiedBadge verified small />}
-                        </div>
+                        <span className="text-sm font-medium text-white">
+                          {amb.org_name}
+                        </span>
                         <div className="text-xs text-white/50">
                           {amb.org_type === 'cuenta_instagram' ? amb.university : amb.org_type} •{' '}
                           {amb.reach || '?'} seguidores

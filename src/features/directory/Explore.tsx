@@ -20,7 +20,7 @@ import {
   Network,
   ChevronDown,
   Clock3,
-  BadgeCheck,
+  Sparkles,
   ArrowUpRight,
 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -87,14 +87,14 @@ function hasActivePro(profile: PublicProfile | null | undefined): boolean {
   return !profile.plan_expires_at || new Date(profile.plan_expires_at).getTime() >= Date.now();
 }
 
-function hasExplorePriority(verified: boolean, profile: PublicProfile | null | undefined): boolean {
-  return verified || hasActivePro(profile);
+function hasExplorePriority(profile: PublicProfile | null | undefined): boolean {
+  return hasActivePro(profile);
 }
 
 function ProBadge({ small = false }: { small?: boolean }) {
   return (
-    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border border-brand-500 bg-brand-500 font-semibold !text-white ${small ? 'px-1.5 py-0.5 text-[10px]' : 'px-2.5 py-0.5 text-xs'}`}>
-      <BadgeCheck className={small ? 'h-3 w-3' : 'h-3.5 w-3.5'} /> Pro
+    <span className={`inline-flex shrink-0 items-center rounded-full border border-brand-500 bg-brand-500 font-semibold uppercase !text-white ${small ? 'px-1.5 py-0.5 text-[10px]' : 'px-2.5 py-0.5 text-xs'}`}>
+      Pro
     </span>
   );
 }
@@ -403,7 +403,7 @@ export default function Explore() {
             .toLowerCase()
             .includes(q);
         })
-        .sort((a, b) => Number(hasExplorePriority(b.verified, b.profile)) - Number(hasExplorePriority(a.verified, a.profile)) || Number(!!b.avatar_url) - Number(!!a.avatar_url)),
+        .sort((a, b) => Number(hasExplorePriority(b.profile)) - Number(hasExplorePriority(a.profile)) || Number(!!b.avatar_url) - Number(!!a.avatar_url)),
     [students, q]
   );
 
@@ -419,7 +419,7 @@ export default function Explore() {
             .toLowerCase()
             .includes(q);
         })
-        .sort((a, b) => Number(hasExplorePriority(b.verified, b.profile)) - Number(hasExplorePriority(a.verified, a.profile)) || Number(!!b.avatar_url) - Number(!!a.avatar_url)),
+        .sort((a, b) => Number(hasExplorePriority(b.profile)) - Number(hasExplorePriority(a.profile)) || Number(!!b.avatar_url) - Number(!!a.avatar_url)),
     [companies, q]
   );
 
@@ -435,7 +435,7 @@ export default function Explore() {
             .toLowerCase()
             .includes(q);
         })
-        .sort((a, b) => Number(hasExplorePriority(b.verified, b.profile)) - Number(hasExplorePriority(a.verified, a.profile)) || Number(!!b.logo_url) - Number(!!a.logo_url)),
+        .sort((a, b) => Number(hasExplorePriority(b.profile)) - Number(hasExplorePriority(a.profile)) || Number(!!b.logo_url) - Number(!!a.logo_url)),
     [ambassadors, q]
   );
 
@@ -487,7 +487,7 @@ export default function Explore() {
             aria-expanded={proBannerOpen}
             className="flex w-full items-center gap-2 px-3 py-2.5 text-left sm:hidden"
           >
-            <BadgeCheck className="h-4 w-4 shrink-0 !text-white" strokeWidth={2.25} />
+            <Sparkles className="h-4 w-4 shrink-0 !text-white" strokeWidth={2.25} />
             <span className="min-w-0 flex-1 truncate text-sm font-semibold !text-white">Destacá tu perfil con Pro</span>
             <ChevronDown className={`h-4 w-4 shrink-0 !text-white transition-transform ${proBannerOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -495,7 +495,7 @@ export default function Explore() {
           <div className={`${proBannerOpen ? 'flex' : 'hidden'} flex-col gap-3 border-t border-white/20 px-3 pb-3 pt-2.5 sm:flex sm:flex-row sm:items-center sm:justify-between sm:border-0 sm:px-4 sm:py-3`}>
             <div className="min-w-0">
               <p className="hidden items-center gap-2 text-sm font-semibold !text-white sm:flex">
-                <BadgeCheck className="h-4 w-4 shrink-0" strokeWidth={2.25} /> Destacá tu perfil con Pro
+                <Sparkles className="h-4 w-4 shrink-0" strokeWidth={2.25} /> Destacá tu perfil con Pro
               </p>
               <p className="text-xs leading-relaxed !text-white/80 sm:mt-0.5">
                 Aparecé primero en Explorar y sumá el tilde Pro junto a tu nombre.
@@ -584,7 +584,6 @@ export default function Explore() {
                 subtitle={[r.career, r.year && `${r.year}° año`, r.university].filter(Boolean).join(' · ') || 'Estudiante'}
                 tags={(r.skills ?? []).slice(0, 3)}
                 onClick={() => setSelected({ type: 'estudiantes', row: r })}
-                badge={r.verified ? <VerifiedBadge verified small /> : undefined}
                 promoted={hasActivePro(r.profile)}
               />
             ))}
@@ -610,7 +609,6 @@ export default function Explore() {
                 subtitle={[orgTypeLabel(r.org_type), r.university].filter(Boolean).join(' · ')}
                 tags={r.reach ? [`${r.reach} de alcance`] : []}
                 onClick={() => setSelected({ type: 'embajadores', row: r })}
-                badge={r.verified ? <VerifiedBadge verified small /> : undefined}
                 promoted={hasActivePro(r.profile)}
               />
             ))}
@@ -833,7 +831,6 @@ function StudentDetail({ row, onMessage, connectionState, onToggleConnection, co
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <h2 className="truncate text-xl font-bold text-[#fff] sm:text-2xl">{name}</h2>
-              {row.verified && <VerifiedBadge verified />}
               {hasActivePro(row.profile) && <ProBadge />}
             </div>
             <p className="mt-1 line-clamp-2 text-sm leading-5 text-[rgba(255,255,255,0.72)]">
@@ -983,7 +980,6 @@ function AmbassadorDetail({ row, onMessage, isFollowing, onToggleFollow }: { row
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold text-white">{name}</h2>
-            {row.verified && <VerifiedBadge verified />}
             {hasActivePro(row.profile) && <ProBadge />}
           </div>
           <p className="mt-0.5 text-sm text-white/60">
@@ -1186,7 +1182,6 @@ function NetworkTab({
                   title={r.profile?.full_name || 'Estudiante'}
                   subtitle={[r.career, r.year && `${r.year}°`].filter(Boolean).join(' · ')}
                   onClick={() => onOpen({ type: 'estudiantes', row: r })}
-                  badge={r.verified ? <VerifiedBadge verified small /> : undefined}
                 />
               ))}
             </div>
@@ -1205,7 +1200,6 @@ function NetworkTab({
                 title={r.org_name || 'Comunidad'}
                 subtitle={orgTypeLabel(r.org_type)}
                 onClick={() => onOpen({ type: 'embajadores', row: r })}
-                badge={<VerifiedBadge verified small />}
               />
             ))}
           </div>

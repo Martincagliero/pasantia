@@ -46,7 +46,6 @@ export default function AmbassadorAnnouncements() {
   const [diffusedIds, setDiffusedIds] = useState<Set<string>>(new Set());
   const [broadcastIds, setBroadcastIds] = useState<Set<string>>(new Set());
   const [ownIds, setOwnIds] = useState<Set<string>>(new Set());
-  const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [detail, setDetail] = useState<InternshipWithCompany | null>(null);
@@ -56,11 +55,10 @@ export default function AmbassadorAnnouncements() {
     (async () => {
       try {
         const uid = session!.user.id;
-        const [items, { data: diff }, { data: bc }, { data: prof }, { data: own }] = await Promise.all([
+        const [items, { data: diff }, { data: bc }, { data: own }] = await Promise.all([
           fetchActiveInternships(),
           supabase.from('internship_diffusions').select('internship_id').eq('ambassador_id', uid),
           supabase.from('internship_broadcasts').select('internship_id').eq('ambassador_id', uid),
-          supabase.from('ambassador_profiles').select('verified').eq('id', uid).single(),
           supabase.from('internships').select('id').eq('company_id', uid),
         ]);
         if (!active) return;
@@ -68,7 +66,6 @@ export default function AmbassadorAnnouncements() {
         setDiffusedIds(new Set((diff ?? []).map((d) => d.internship_id)));
         setBroadcastIds(new Set((bc ?? []).map((b) => b.internship_id)));
         setOwnIds(new Set((own ?? []).map((o) => o.id)));
-        setVerified(!!(prof as { verified: boolean } | null)?.verified);
       } catch { /* ignore */ } finally {
         if (active) setLoading(false);
       }
@@ -128,14 +125,6 @@ export default function AmbassadorAnnouncements() {
           onClose={() => setShowForm(false)}
           onCreated={handleInternshipCreated}
         />
-      )}
-
-      {!verified && (
-        <Card className="mb-5 border-amber-300/25 bg-amber-400/[0.07]">
-          <p className="text-sm text-white/80">
-            Tu cuenta todavía no está verificada. Vas a poder registrar difusiones cuando el equipo valide tu comunidad.
-          </p>
-        </Card>
       )}
 
       <div className="mb-5 flex gap-2">
@@ -208,7 +197,6 @@ export default function AmbassadorAnnouncements() {
                     ) : (
                       <button
                         onClick={() => markDiffused(i)}
-                        disabled={!verified}
                         title="Marcar como difundida"
                         className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white px-2.5 py-1 text-xs font-semibold text-brand-600 transition hover:bg-brand-950 hover:text-white disabled:opacity-40"
                       >

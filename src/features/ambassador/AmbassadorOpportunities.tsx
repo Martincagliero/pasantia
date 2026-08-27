@@ -18,7 +18,6 @@ export default function AmbassadorOpportunities() {
   const [items, setItems] = useState<InternshipWithCompany[]>([]);
   const [diffusedIds, setDiffusedIds] = useState<Set<string>>(new Set());
   const [broadcastIds, setBroadcastIds] = useState<Set<string>>(new Set());
-  const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
   const [onlyForMe, setOnlyForMe] = useState(false);
@@ -27,7 +26,7 @@ export default function AmbassadorOpportunities() {
     let active = true;
     (async () => {
       const uid = session!.user.id;
-      const [{ data: list }, { data: diff }, { data: bc }, { data: prof }] = await Promise.all([
+      const [{ data: list }, { data: diff }, { data: bc }] = await Promise.all([
         supabase
           .from('internships')
           .select('*, company:company_profiles(company_name, industry)')
@@ -35,13 +34,11 @@ export default function AmbassadorOpportunities() {
           .order('created_at', { ascending: false }),
         supabase.from('internship_diffusions').select('internship_id').eq('ambassador_id', uid),
         supabase.from('internship_broadcasts').select('internship_id').eq('ambassador_id', uid),
-        supabase.from('ambassador_profiles').select('verified').eq('id', uid).single(),
       ]);
       if (!active) return;
       setItems((list as InternshipWithCompany[]) ?? []);
       setDiffusedIds(new Set((diff ?? []).map((d) => d.internship_id)));
       setBroadcastIds(new Set((bc ?? []).map((b) => b.internship_id)));
-      setVerified(!!(prof as { verified: boolean } | null)?.verified);
       setLoading(false);
     })();
     return () => {
@@ -87,15 +84,6 @@ export default function AmbassadorOpportunities() {
         title="Difundir pasantías"
         description={`Compartí en tu comunidad. Cada difusión suma ${POINTS_PER_DIFFUSION} puntos.`}
       />
-
-      {!verified && (
-        <Card className="mb-6 border-amber-300/25 bg-amber-400/[0.07]">
-          <p className="text-sm text-white/80">
-            Tu cuenta todavía no está verificada. Vas a poder registrar difusiones y sumar
-            puntos cuando el equipo de PasantIA valide tu comunidad.
-          </p>
-        </Card>
-      )}
 
       <div className="mb-5 flex gap-2">
         <FilterChip active={!onlyForMe} onClick={() => setOnlyForMe(false)}>
@@ -159,7 +147,6 @@ export default function AmbassadorOpportunities() {
                   ) : (
                     <button
                       onClick={() => markDiffused(i)}
-                      disabled={!verified}
                       className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white px-3.5 py-2 text-sm font-semibold text-brand-600 transition hover:bg-brand-950 hover:text-white disabled:opacity-40"
                     >
                       <Send className="h-4 w-4" /> Marcar difundida

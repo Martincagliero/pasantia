@@ -7,7 +7,6 @@ import { useAuth } from '../auth/AuthProvider';
 import type { AmbassadorProfile } from '../../lib/database.types';
 import { createAchievementStory, shareAchievementFile } from '../../lib/achievementStory';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
-import { VerifiedBadge } from './VerifiedBadge';
 import { POINTS_PER_DIFFUSION, levelFor, orgTypeLabel } from './ambassadorConfig';
 
 interface Ranked {
@@ -16,7 +15,6 @@ interface Ranked {
   logo_url: string | null;
   org_type: AmbassadorProfile['org_type'];
   instagram_url: string | null;
-  verified: boolean;
   diffusions: number;
 }
 
@@ -70,7 +68,6 @@ export default function AmbassadorLeaderboard() {
           logo_url: a.logo_url,
           org_type: a.org_type,
           instagram_url: a.instagram_url,
-          verified: a.verified,
           diffusions: counts.get(a.id) ?? 0,
         }));
         ranked.sort((a, b) => b.diffusions - a.diffusions);
@@ -167,7 +164,6 @@ export default function AmbassadorLeaderboard() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="truncate font-semibold text-white">{r.name}</p>
-                    {r.verified && <VerifiedBadge verified />}
                     {isMe && (
                       <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-brand-600">
                         Vos

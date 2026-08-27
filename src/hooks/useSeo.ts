@@ -21,7 +21,7 @@ export function useSeo({ title, description, path = '/', image }: SeoOptions): v
     document.title = fullTitle;
 
     const url = `${BASE_URL}${path}`;
-    const ogImage = image ?? `${BASE_URL}/og.jpg`;
+    const ogImage = image ?? `${BASE_URL}/fotolink-social.jpg`;
 
     const meta: Array<[string, string, 'name' | 'property']> = [
       ['description', description, 'name'],

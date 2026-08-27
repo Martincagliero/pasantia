@@ -1,6 +1,5 @@
-// Encabezado de perfil (modo vista, estilo LinkedIn): avatar, nombre, verificación y editar.
-import { BadgeCheck, Pencil } from 'lucide-react';
-import { Link } from 'react-router-dom';
+// Encabezado de perfil (modo vista, estilo LinkedIn): avatar, nombre y editar.
+import { Pencil } from 'lucide-react';
 import { VerifiedBadge } from '../ambassador/VerifiedBadge';
 import { ProfileShareButton } from './ProfileShareButton';
 
@@ -14,16 +13,14 @@ export function ProfileHeader({
   name,
   subtitle,
   avatarUrl,
-  verified,
-  hasPro,
+  verified = false,
   userId,
   onEdit,
 }: {
   name: string;
   subtitle?: string;
   avatarUrl?: string | null;
-  verified: boolean;
-  hasPro: boolean;
+  verified?: boolean;
   userId: string;
   onEdit: () => void;
 }) {
@@ -51,14 +48,6 @@ export function ProfileHeader({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {!verified && !hasPro && (
-          <Link
-            to="/app/planes"
-            className="inline-flex items-center gap-1.5 px-1 py-2 text-xs font-medium text-brand-500 transition hover:text-brand-600"
-          >
-            <BadgeCheck className="h-4 w-4" strokeWidth={2.25} /> Verificación con Pro
-          </Link>
-        )}
         <ProfileShareButton userId={userId} name={name} />
         <button
           onClick={onEdit}

@@ -1,7 +1,7 @@
 // Encabezado de perfil (modo vista, estilo LinkedIn): avatar, nombre y editar.
 import { Pencil } from 'lucide-react';
-import { VerifiedBadge } from '../ambassador/VerifiedBadge';
 import { ProfileShareButton } from './ProfileShareButton';
+import { ProBadge } from './ProBadge';
 
 function initials(name: string): string {
   const parts = (name || '').trim().split(/\s+/).filter(Boolean);
@@ -13,14 +13,14 @@ export function ProfileHeader({
   name,
   subtitle,
   avatarUrl,
-  verified = false,
+  hasPro,
   userId,
   onEdit,
 }: {
   name: string;
   subtitle?: string;
   avatarUrl?: string | null;
-  verified?: boolean;
+  hasPro: boolean;
   userId: string;
   onEdit: () => void;
 }) {
@@ -41,7 +41,7 @@ export function ProfileHeader({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{name}</h1>
-            {verified && <VerifiedBadge verified />}
+            {hasPro && <ProBadge />}
           </div>
           {subtitle && <p className="mt-0.5 text-sm text-white/60">{subtitle}</p>}
         </div>

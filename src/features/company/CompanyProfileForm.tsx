@@ -14,6 +14,7 @@ import { ProfileHeader } from '../ui/ProfileHeader';
 import { ProfileCompletion } from '../ui/ProfileCompletion';
 import { UserPosts } from '../posts/UserPosts';
 import { normalizeUrl } from '../../lib/url';
+import { isPro } from '../../lib/plans';
 
 interface InternshipLite {
   id: string;
@@ -33,7 +34,6 @@ export default function CompanyProfileForm() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [verified, setVerified] = useState(false);
   const [internships, setInternships] = useState<InternshipLite[]>([]);
 
   const [fullName, setFullName] = useState('');
@@ -68,7 +68,6 @@ export default function CompanyProfileForm() {
           website: c.website ?? '',
           description: c.description ?? '',
         });
-        setVerified(!!c.verified);
       }
       setInternships((ints as InternshipLite[]) ?? []);
       setFullName(profile?.full_name ?? '');
@@ -226,7 +225,7 @@ export default function CompanyProfileForm() {
         name={form.company_name || fullName || 'Empresa'}
         subtitle={[form.industry, form.size && `${form.size} empleados`].filter(Boolean).join(' · ') || 'Empresa'}
         avatarUrl={form.avatar_url}
-        verified={verified}
+        hasPro={isPro(profile)}
         userId={session!.user.id}
         onEdit={() => setEditing(true)}
       />

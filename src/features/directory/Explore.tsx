@@ -36,7 +36,6 @@ import { sendPushEvent } from '../../lib/notify';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
 import { TextField } from '../ui/Field';
 import { useModalGuard } from '../ui/modalGuard';
-import { VerifiedBadge } from '../ambassador/VerifiedBadge';
 import { orgTypeLabel } from '../ambassador/ambassadorConfig';
 import { useMessages } from '../messages/MessagesProvider';
 import { useAuth } from '../auth/AuthProvider';
@@ -44,6 +43,7 @@ import { UserPosts } from '../posts/UserPosts';
 import { SocialPostImages, SocialPostText } from '../posts/SocialPostContent';
 import { LinkPreview } from '../ui/LinkPreview';
 import { ProfileShareButton } from '../ui/ProfileShareButton';
+import { ProBadge } from '../ui/ProBadge';
 import { PostInteractions } from '../ui/PostInteractions';
 import { EmojiText } from '../ui/EmojiText';
 import { ReportButton } from '../ui/ReportButton';
@@ -89,14 +89,6 @@ function hasActivePro(profile: PublicProfile | null | undefined): boolean {
 
 function hasExplorePriority(profile: PublicProfile | null | undefined): boolean {
   return hasActivePro(profile);
-}
-
-function ProBadge({ small = false }: { small?: boolean }) {
-  return (
-    <span className={`inline-flex shrink-0 items-center rounded-full border border-brand-500 bg-brand-500 font-semibold uppercase !text-white ${small ? 'px-1.5 py-0.5 text-[10px]' : 'px-2.5 py-0.5 text-xs'}`}>
-      Pro
-    </span>
-  );
 }
 
 /** Solo permite http/https para links externos. */
@@ -596,7 +588,6 @@ export default function Explore() {
                 subtitle={[r.industry, r.size && `${r.size} empleados`].filter(Boolean).join(' · ') || 'Empresa'}
                 tags={[]}
                 onClick={() => setSelected({ type: 'empresas', row: r })}
-                badge={r.verified ? <VerifiedBadge verified small /> : undefined}
                 promoted={hasActivePro(r.profile)}
               />
             ))}
@@ -921,7 +912,6 @@ function CompanyDetail({ row, onMessage, isFollowing, onToggleFollow }: { row: C
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold text-white">{name}</h2>
-            {row.verified && <VerifiedBadge verified />}
             {hasActivePro(row.profile) && <ProBadge />}
           </div>
           <p className="mt-0.5 text-sm text-white/60">
@@ -1163,7 +1153,6 @@ function NetworkTab({
                   title={r.company_name || 'Empresa'}
                   subtitle={[r.industry, r.size && `${r.size} empl.`].filter(Boolean).join(' · ')}
                   onClick={() => onOpen({ type: 'empresas', row: r })}
-                  badge={r.verified ? <VerifiedBadge verified small /> : undefined}
                 />
               ))}
             </div>

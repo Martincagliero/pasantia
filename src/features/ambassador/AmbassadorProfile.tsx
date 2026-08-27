@@ -13,9 +13,10 @@ import { ProfileCompletion } from '../ui/ProfileCompletion';
 import { UserPosts } from '../posts/UserPosts';
 import { EmojiText } from '../ui/EmojiText';
 import { Upload } from 'lucide-react';
+import { isPro } from '../../lib/plans';
 
 export default function AmbassadorProfile() {
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const [form, setForm] = useState({
     org_name: '',
     org_type: 'cuenta_instagram' as AmbassadorOrgType,
@@ -150,6 +151,7 @@ export default function AmbassadorProfile() {
           name={form.org_name || 'Comunidad'}
           subtitle={[orgTypeLabel(form.org_type), form.university].filter(Boolean).join(' · ')}
           avatarUrl={form.logo_url}
+          hasPro={isPro(profile)}
           userId={session!.user.id}
           onEdit={() => setEditing(true)}
         />

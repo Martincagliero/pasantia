@@ -14,6 +14,7 @@ import { StudentRecentActivity } from './StudentRecentActivity';
 import { UniversityAutocomplete } from '../ui/UniversityAutocomplete';
 import { AVAILABILITY_OPTIONS, CAREERS, suggestFor } from './suggestions';
 import { detectProfileLink, normalizeProfileUrl, normalizeUrl, profileLinkLabel, type ProfileLinkKind } from '../../lib/url';
+import { isPro } from '../../lib/plans';
 
 const MAX_CV_MB = 20;
 
@@ -551,6 +552,7 @@ export default function StudentProfileForm() {
         name={fullName || 'Estudiante'}
         subtitle={[form.career, form.university, form.year].filter(Boolean).join(' · ') || 'Estudiante'}
         avatarUrl={form.avatar_url}
+        hasPro={isPro(profile)}
         userId={session!.user.id}
         onEdit={() => setEditing(true)}
       />

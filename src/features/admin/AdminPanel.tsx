@@ -17,7 +17,6 @@ import {
   CreditCard,
   X,
   Flag,
-  BadgeCheck,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { sendPushEvent } from '../../lib/notify';
@@ -26,7 +25,6 @@ import type { Role, SubscriptionPlan } from '../../lib/database.types';
 import { planLabel } from '../../lib/plans';
 import { Button } from '../../components/ui/Button';
 import { Card, PageHeader, PageLoader } from '../ui/primitives';
-import { VerifiedBadge } from '../ambassador/VerifiedBadge';
 
 /* ------------------------------- Tipos ------------------------------- */
 interface UserRow {
@@ -107,18 +105,7 @@ interface ReportRow {
   created_at: string;
 }
 
-interface VerificationRow {
-  id: string;
-  role: Role;
-  full_name: string;
-  display_name: string;
-  email: string;
-  detail: string | null;
-  avatar_url: string | null;
-  verified: boolean;
-}
-
-type Tab = 'usuarios' | 'solicitudes' | 'verificaciones' | 'planes' | 'denuncias' | 'promotores';
+type Tab = 'usuarios' | 'solicitudes' | 'planes' | 'denuncias' | 'promotores';
 
 const roleLabel: Record<string, string> = {
   estudiante: 'Estudiante',
@@ -151,21 +138,18 @@ export default function AdminPanel() {
   const [promoters, setPromoters] = useState<PromoterStat[]>([]);
   const [planRequests, setPlanRequests] = useState<PlanRequestRow[]>([]);
   const [reports, setReports] = useState<ReportRow[]>([]);
-  const [verifications, setVerifications] = useState<VerificationRow[]>([]);
   const [reportsError, setReportsError] = useState(false);
-  const [verificationsError, setVerificationsError] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const [u, r, p, plans, reportList, verificationList] = await Promise.all([
+    const [u, r, p, plans, reportList] = await Promise.all([
       supabase.rpc('admin_list_users_with_plans'),
       supabase.rpc('admin_list_requests'),
       supabase.rpc('admin_promoter_stats'),
       supabase.rpc('admin_list_plan_requests'),
       supabase.rpc('admin_list_reports'),
-      supabase.rpc('admin_list_verifications'),
     ]);
     if (u.error || r.error || p.error || plans.error) {
       setError('No pudimos cargar los datos. ¿Corriste la migración y te marcaste como admin?');
@@ -177,8 +161,6 @@ export default function AdminPanel() {
     setPlanRequests((plans.data ?? []) as PlanRequestRow[]);
     setReports((reportList.data ?? []) as ReportRow[]);
     setReportsError(!!reportList.error);
-    setVerifications((verificationList.data ?? []) as VerificationRow[]);
-    setVerificationsError(!!verificationList.error);
     setPromoters(
       ((p.data ?? []) as PromoterStat[]).map((row) => ({
         ...row,
@@ -203,7 +185,6 @@ export default function AdminPanel() {
   const tabs: { key: Tab; label: string; icon: typeof Users; count: number }[] = [
     { key: 'usuarios', label: 'Registrados', icon: Users, count: users.length },
     { key: 'solicitudes', label: 'Formulario', icon: ClipboardList, count: requests.length },
-    { key: 'verificaciones', label: 'Empresas verificadas', icon: BadgeCheck, count: verifications.filter((row) => row.verified).length },
     { key: 'planes', label: 'Planes', icon: CreditCard, count: planRequests.filter((request) => request.status === 'pending').length },
     { key: 'denuncias', label: 'Denuncias', icon: Flag, count: reports.filter((report) => report.status === 'pendiente').length },
     { key: 'promotores', label: 'Promotores', icon: Rocket, count: promoters.length },
@@ -249,8 +230,6 @@ export default function AdminPanel() {
         <UsersTab users={users} onChanged={load} />
       ) : tab === 'solicitudes' ? (
         <RequestsTab requests={requests} users={users} onChanged={load} />
-      ) : tab === 'verificaciones' ? (
-        <VerificationsTab rows={verifications} setupError={verificationsError} onChanged={load} />
       ) : tab === 'planes' ? (
         <PlanRequestsTab requests={planRequests} onChanged={load} />
       ) : tab === 'denuncias' ? (
@@ -258,126 +237,6 @@ export default function AdminPanel() {
       ) : (
         <PromotersTab promoters={promoters} onChanged={load} />
       )}
-    </div>
-  );
-}
-
-function VerificationsTab({
-  rows,
-  setupError,
-  onChanged,
-}: {
-  rows: VerificationRow[];
-  setupError: boolean;
-  onChanged: () => void;
-}) {
-  const [filter, setFilter] = useState<'sin_verificar' | 'verificadas' | 'todas'>('sin_verificar');
-  const [query, setQuery] = useState('');
-  const [resolvingId, setResolvingId] = useState<string | null>(null);
-
-  async function setVerification(row: VerificationRow, verified: boolean) {
-    const action = verified ? 'verificar' : 'quitar la verificación de';
-    if (!window.confirm(`¿Querés ${action} ${row.display_name || row.full_name || row.email}?`)) return;
-
-    setResolvingId(row.id);
-    const { error } = await supabase.rpc('admin_set_profile_verification', {
-      p_user_id: row.id,
-      p_verified: verified,
-    });
-    setResolvingId(null);
-    if (error) {
-      alert(`No se pudo actualizar la verificación: ${error.message}`);
-      return;
-    }
-    onChanged();
-  }
-
-  if (setupError) {
-    return (
-      <Card className="border-red-400/30 bg-red-500/5 text-sm text-red-700">
-        Falta ejecutar supabase/migracion-verificacion-solo-empresas.sql en el SQL Editor de Supabase.
-      </Card>
-    );
-  }
-
-  const normalizedQuery = query.trim().toLowerCase();
-  const filtered = rows.filter((row) => {
-    if (filter === 'sin_verificar' && row.verified) return false;
-    if (filter === 'verificadas' && !row.verified) return false;
-    if (!normalizedQuery) return true;
-    return [row.display_name, row.full_name, row.email, row.detail]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase()
-      .includes(normalizedQuery);
-  });
-
-  return (
-    <div>
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row">
-        <div className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar nombre, empresa, comunidad o email…"
-            className="w-full rounded-full border border-white/12 bg-white/5 py-2 pl-9 pr-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-brand-400/60"
-          />
-        </div>
-        <select
-          value={filter}
-          onChange={(event) => setFilter(event.target.value as typeof filter)}
-          className="rounded-full border border-white/12 bg-white/5 px-4 py-2 text-sm text-white outline-none focus:border-brand-400/60"
-          aria-label="Filtrar verificaciones"
-        >
-          <option value="sin_verificar">Sin verificar</option>
-          <option value="verificadas">Verificadas</option>
-          <option value="todas">Todas</option>
-        </select>
-      </div>
-
-      <div className="space-y-3">
-        {filtered.map((row) => (
-          <Card key={row.id}>
-            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-              <div className="flex min-w-0 items-center gap-3">
-                {row.avatar_url ? (
-                  <img src={row.avatar_url} alt="" className="h-11 w-11 shrink-0 rounded-full object-cover" />
-                ) : (
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-bold text-white">
-                    {(row.display_name || row.full_name || row.email || '?').slice(0, 1).toUpperCase()}
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate font-semibold text-white">{row.display_name || row.full_name || row.email}</p>
-                    <span className={`rounded-full border px-2 py-0.5 text-xs ${roleBadge[row.role] ?? ''}`}>
-                      {roleLabel[row.role] ?? row.role}
-                    </span>
-                    {row.verified && <VerifiedBadge verified small />}
-                  </div>
-                  <p className="mt-1 truncate text-sm text-white/55">{row.email}</p>
-                  {row.detail && <p className="mt-0.5 truncate text-xs text-white/40">{row.detail}</p>}
-                </div>
-              </div>
-              <div className="shrink-0">
-                {row.verified ? (
-                  <Button variant="ghost" size="sm" disabled={resolvingId === row.id} onClick={() => void setVerification(row, false)}>
-                    <X className="h-4 w-4" /> Quitar verificación
-                  </Button>
-                ) : (
-                  <Button variant="primary" size="sm" disabled={resolvingId === row.id} onClick={() => void setVerification(row, true)}>
-                    <BadgeCheck className="h-4 w-4" /> Verificar perfil
-                  </Button>
-                )}
-              </div>
-            </div>
-          </Card>
-        ))}
-        {filtered.length === 0 && (
-          <Card className="text-center text-sm text-white/45">No hay empresas para este filtro.</Card>
-        )}
-      </div>
     </div>
   );
 }

@@ -156,6 +156,7 @@ export default function AmbassadorProfile() {
           avatarUrl={form.logo_url}
           verified={!!amb?.verified}
           hasPro={isPro(profile)}
+          userId={session!.user.id}
           onEdit={() => setEditing(true)}
         />
 

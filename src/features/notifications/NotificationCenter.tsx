@@ -429,7 +429,7 @@ export function NotificationCenter() {
                       isUnread ? 'bg-brand-500/[0.06]' : ''
                     }`}
                   >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-500/10 text-brand-500">
+                    <span className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-500/10 text-brand-500">
                       {item.kind === 'admin_post' ? (
                         <img
                           src={pasantiaLogo}
@@ -437,13 +437,19 @@ export function NotificationCenter() {
                           className="h-full w-full object-cover"
                         />
                       ) : item.avatarUrl ? (
-                        <img
-                          src={item.avatarUrl}
-                          alt=""
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                        />
+                        <>
+                          <Icon className="h-4 w-4" />
+                          <img
+                            src={item.avatarUrl}
+                            alt=""
+                            className="absolute inset-0 h-full w-full object-cover"
+                            loading="lazy"
+                            decoding="async"
+                            onError={(event) => {
+                              event.currentTarget.hidden = true;
+                            }}
+                          />
+                        </>
                       ) : item.kind === 'plan' ? (
                         <ProMark />
                       ) : (

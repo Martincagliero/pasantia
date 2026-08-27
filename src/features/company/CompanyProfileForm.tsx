@@ -229,6 +229,7 @@ export default function CompanyProfileForm() {
         avatarUrl={form.avatar_url}
         verified={verified}
         hasPro={isPro(profile)}
+        userId={session!.user.id}
         onEdit={() => setEditing(true)}
       />
 

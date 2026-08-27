@@ -43,6 +43,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { UserPosts } from '../posts/UserPosts';
 import { SocialPostImages, SocialPostText } from '../posts/SocialPostContent';
 import { LinkPreview } from '../ui/LinkPreview';
+import { ProfileShareButton } from '../ui/ProfileShareButton';
 import { PostInteractions } from '../ui/PostInteractions';
 import { EmojiText } from '../ui/EmojiText';
 import { ReportButton } from '../ui/ReportButton';
@@ -891,6 +892,7 @@ function StudentDetail({ row, onMessage, connectionState, onToggleConnection, co
         <div className="mb-5 flex flex-wrap items-center gap-2 border-t border-white/10 pt-5">
           {!messageOnly && row.profile?.email && <a href={`mailto:${row.profile.email}`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs font-medium text-white/70"><Mail size={14} /> Email</a>}
           {!messageOnly && row.phone && <a href={`tel:${row.phone}`} className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs font-medium text-white/70"><Phone size={14} /> Llamar</a>}
+          <ProfileShareButton userId={row.id} name={name} className="!rounded-lg !px-3 !py-2 !text-xs" />
           <ReportButton targetType="profile" targetId={row.id} variant="button" className="!rounded-lg !px-3 !py-2 !text-xs" />
         </div>
 
@@ -961,6 +963,7 @@ function CompanyDetail({ row, onMessage, isFollowing, onToggleFollow }: { row: C
         {safeHref(row.website) && (
           <LinkChip href={safeHref(row.website)!} label="Sitio web" icon={<Globe size={15} />} />
         )}
+        <ProfileShareButton userId={row.id} name={name} />
         <ReportButton targetType="profile" targetId={row.id} variant="button" />
       </div>
 
@@ -1017,6 +1020,7 @@ function AmbassadorDetail({ row, onMessage, isFollowing, onToggleFollow }: { row
         {safeHref(row.instagram_url) && (
           <LinkChip href={safeHref(row.instagram_url)!} label="Instagram" icon={<Link2 size={15} />} />
         )}
+        <ProfileShareButton userId={row.id} name={name} />
         <ReportButton targetType="profile" targetId={row.id} variant="button" />
       </div>
 

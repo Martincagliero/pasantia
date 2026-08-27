@@ -2,6 +2,7 @@
 import { BadgeCheck, Pencil } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { VerifiedBadge } from '../ambassador/VerifiedBadge';
+import { ProfileShareButton } from './ProfileShareButton';
 
 function initials(name: string): string {
   const parts = (name || '').trim().split(/\s+/).filter(Boolean);
@@ -15,6 +16,7 @@ export function ProfileHeader({
   avatarUrl,
   verified,
   hasPro,
+  userId,
   onEdit,
 }: {
   name: string;
@@ -22,6 +24,7 @@ export function ProfileHeader({
   avatarUrl?: string | null;
   verified: boolean;
   hasPro: boolean;
+  userId: string;
   onEdit: () => void;
 }) {
   return (
@@ -56,6 +59,7 @@ export function ProfileHeader({
             <BadgeCheck className="h-4 w-4" strokeWidth={2.25} /> Verificación con Pro
           </Link>
         )}
+        <ProfileShareButton userId={userId} name={name} />
         <button
           onClick={onEdit}
           className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold !text-white transition hover:bg-brand-400"

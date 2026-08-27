@@ -118,19 +118,22 @@ function Avatar({
   name: string;
   className?: string;
 }) {
-  return url ? (
-    <img
-      src={url}
-      alt={name}
-      loading="lazy"
-      decoding="async"
-      className={`${className} shrink-0 rounded-full border border-white/12 object-cover`}
-    />
-  ) : (
-    <div
-      className={`${className} flex shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/10 text-sm font-bold text-white`}
-    >
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const showImage = !!url && failedUrl !== url;
+
+  return (
+    <div className={`${className} relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/12 bg-white/10 text-sm font-bold text-white`}>
       {initials(name)}
+      {showImage && (
+        <img
+          src={url}
+          alt={name}
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailedUrl(url)}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
     </div>
   );
 }

@@ -569,7 +569,7 @@ export default function Explore() {
           description="No encontramos perfiles que coincidan con tu búsqueda."
         />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
           {tab === 'estudiantes' &&
             filteredStudents.map((r) => (
               <ProfileCard
@@ -646,7 +646,7 @@ function ProfileCard({
   promoted?: boolean;
 }) {
   return (
-    <button onClick={onClick} className="text-left">
+    <button onClick={onClick} className="w-full min-w-0 text-left">
       <Card hover className={`relative h-full cursor-pointer ${promoted ? 'pro-profile-card !border-brand-400/25 !bg-brand-500/[0.035]' : ''}`}>
         <div className="flex items-start gap-3">
           {avatar}
@@ -664,7 +664,7 @@ function ProfileCard({
             {tags.map((t) => (
               <span
                 key={t}
-                className="rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-xs text-white/70"
+                className="max-w-full truncate rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-xs text-white/70"
               >
                 {t}
               </span>

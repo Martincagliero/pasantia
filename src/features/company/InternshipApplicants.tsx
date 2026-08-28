@@ -1,7 +1,7 @@
 // Empresa: ve los postulantes de una pasantía y cambia el estado de cada uno.
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Mail, GraduationCap, FileText, Link2, Globe, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Mail, GraduationCap, FileText, Link2, Globe, Lock, MessageSquare } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { ApplicationStatus, StudentProfile } from '../../lib/database.types';
@@ -10,6 +10,8 @@ import { STATUS_META, STATUS_ORDER, normalizeStatus } from '../ui/applicationSta
 import { FREE_COMPANY_APPLICANTS_PER_INTERNSHIP, isPro } from '../../lib/plans';
 import { SelectField } from '../ui/Field';
 import { useMessages } from '../messages/MessagesProvider';
+import { PlanRestrictionDialog } from '../plans/PlanRestrictionDialog';
+import { planRestriction, type PlanRestriction } from '../../lib/planRestrictions';
 
 interface ApplicantRow {
   id: string;
@@ -54,6 +56,7 @@ export default function InternshipApplicants() {
   const [title, setTitle] = useState('');
   const [rows, setRows] = useState<ApplicantRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [messageRestriction, setMessageRestriction] = useState<PlanRestriction | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -235,10 +238,17 @@ export default function InternshipApplicants() {
                       {r.student?.id && (
                         <button
                           type="button"
-                          onClick={() => openChatWith(r.student!.id, r.student!.full_name, d?.avatar_url)}
+                          onClick={() => {
+                            if (!isPro(profile)) {
+                              setMessageRestriction(planRestriction('company_messages'));
+                              return;
+                            }
+                            openChatWith(r.student!.id, r.student!.full_name, d?.avatar_url);
+                          }}
                           className="inline-flex h-8 items-center gap-1.5 rounded-full border border-white/15 px-3 text-xs font-semibold text-white/65 transition hover:bg-white/10 hover:text-white"
                         >
-                          <MessageSquare className="h-3.5 w-3.5" /> Mensaje
+                          {isPro(profile) ? <MessageSquare className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+                          {isPro(profile) ? 'Mensaje' : 'Mensaje Pro'}
                         </button>
                       )}
                     </div>
@@ -249,6 +259,7 @@ export default function InternshipApplicants() {
           })}
         </div>
       )}
+      <PlanRestrictionDialog restriction={messageRestriction} onClose={() => setMessageRestriction(null)} />
     </div>
   );
 }

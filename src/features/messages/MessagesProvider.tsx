@@ -219,6 +219,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const { session, profile } = useAuth();
   const uid = session?.user.id;
   const navigate = useNavigate();
+  const companyMessagingLocked = profile?.role === 'empresa' && !isPro(profile);
 
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<{ id: string; name: string; avatar: string | null } | null>(null);
@@ -594,6 +595,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
   const shareWith = useCallback(async (userId: string, content: string): Promise<string | null> => {
     if (!uid || userId === uid || !content.trim()) return 'No se pudo preparar el envío.';
+    if (companyMessagingLocked) return planRestriction('company_messages').message;
     try {
       const { data: message, error } = await supabase
         .from('messages')
@@ -619,7 +621,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       }
       return message ? `No se pudo enviar: ${message}` : 'No se pudo enviar. Intentá nuevamente.';
     }
-  }, [uid, loadConversations]);
+  }, [uid, loadConversations, companyMessagingLocked]);
 
   const connectForSharing = useCallback(async (
     userId: string,
@@ -874,6 +876,10 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
   async function handleSend() {
     if (!text.trim() || (!active && !activeGroup) || !uid) return;
+    if (!activeGroup && companyMessagingLocked) {
+      setUpgradeNotice('company');
+      return;
+    }
     setSending(true);
     try {
       if (activeGroup) {

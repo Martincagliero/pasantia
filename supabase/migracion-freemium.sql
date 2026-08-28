@@ -236,15 +236,17 @@ RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS
     WHERE sender.id = p_sender AND (
       sender.role = 'embajador'
       OR public.current_plan(p_sender) IN ('pro', 'enterprise')
-      OR EXISTS (
-        SELECT 1 FROM public.messages m
-        WHERE (m.sender_id = p_sender AND m.recipient_id = p_recipient)
-           OR (m.sender_id = p_recipient AND m.recipient_id = p_sender)
-      )
-      OR (sender.role = 'estudiante' AND EXISTS (
-        SELECT 1 FROM public.follows f1
-        JOIN public.follows f2 ON f2.follower_id = f1.following_id AND f2.following_id = f1.follower_id
-        WHERE f1.follower_id = p_sender AND f1.following_id = p_recipient
+      OR (sender.role = 'estudiante' AND (
+        EXISTS (
+          SELECT 1 FROM public.messages m
+          WHERE (m.sender_id = p_sender AND m.recipient_id = p_recipient)
+             OR (m.sender_id = p_recipient AND m.recipient_id = p_sender)
+        )
+        OR EXISTS (
+          SELECT 1 FROM public.follows f1
+          JOIN public.follows f2 ON f2.follower_id = f1.following_id AND f2.following_id = f1.follower_id
+          WHERE f1.follower_id = p_sender AND f1.following_id = p_recipient
+        )
       ))
     )
   );

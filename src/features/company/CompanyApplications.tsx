@@ -15,6 +15,8 @@ import {
   X,
   Download,
   ChevronDown,
+  Lock,
+  MessageSquare,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
@@ -24,6 +26,9 @@ import { Card, EmptyState, PageHeader, PageLoader, StatusBadge } from '../ui/pri
 import { TextField, SelectField } from '../ui/Field';
 import { useModalGuard } from '../ui/modalGuard';
 import { STATUS_META, STATUS_ORDER, normalizeStatus, type AppStatus } from '../ui/applicationStatus';
+import { useMessages } from '../messages/MessagesProvider';
+import { PlanRestrictionDialog } from '../plans/PlanRestrictionDialog';
+import { planRestriction, type PlanRestriction } from '../../lib/planRestrictions';
 
 interface Row {
   id: string;
@@ -34,6 +39,7 @@ interface Row {
   internship: { id: string; title: string } | null;
   student:
     | {
+      id: string;
         full_name: string;
         email: string;
         student_profiles: StudentProfile | StudentProfile[] | null;
@@ -103,12 +109,14 @@ function ApplicationStatusSelect({
 
 export default function CompanyApplications() {
   const { session, profile } = useAuth();
+  const { openChatWith } = useMessages();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('todas');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selected, setSelected] = useState<Row | null>(null);
+  const [messageRestriction, setMessageRestriction] = useState<PlanRestriction | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -116,7 +124,7 @@ export default function CompanyApplications() {
       const { data } = await supabase
         .from('applications')
         .select(
-          '*, internship:internships(id, title), student:profiles(full_name, email, student_profiles(*))'
+          '*, internship:internships(id, title), student:profiles(id, full_name, email, student_profiles(*))'
         )
         .order('created_at', { ascending: false });
       if (!active) return;
@@ -355,6 +363,22 @@ export default function CompanyApplications() {
                         <Mail className="h-4 w-4" />
                       </a>
                     )}
+                    {r.student && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!isPro(profile)) {
+                            setMessageRestriction(planRestriction('company_messages'));
+                            return;
+                          }
+                          openChatWith(r.student!.id, r.student!.full_name, d?.avatar_url);
+                        }}
+                        title={isPro(profile) ? 'Mensaje' : 'Mensaje · Empresa Pro'}
+                        className="hover:text-white"
+                      >
+                        {isPro(profile) ? <MessageSquare className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                      </button>
+                    )}
                   </div>
                   <button
                     onClick={() => setSelected(r)}
@@ -377,6 +401,7 @@ export default function CompanyApplications() {
           onFavorite={() => toggleFavorite(selected.id)}
         />
       )}
+      <PlanRestrictionDialog restriction={messageRestriction} onClose={() => setMessageRestriction(null)} />
     </div>
   );
 }

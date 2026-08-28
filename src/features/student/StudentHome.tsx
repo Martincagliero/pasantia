@@ -455,7 +455,7 @@ export default function StudentHome() {
                   <PostInteractions targetType="post" targetId={item.post.id} sharePost={item.post} />
                   </div>
                   {verified && (
-                    <div className="h-1 bg-gradient-to-r from-brand-700 via-brand-400 to-cyan-300" aria-hidden />
+                    <div className="h-px bg-brand-700/20" aria-hidden />
                   )}
                 </Card>
               );

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bell, Briefcase, Check, MessageSquare, Newspaper, Rocket, ShieldCheck, UserPlus, X } from 'lucide-react';
+import { Bell, Briefcase, Check, FileUser, MessageSquare, Newspaper, Rocket, ShieldCheck, UserPlus, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { useMessages } from '../messages/MessagesProvider';
 import pasantiaLogo from '../../assets/logo.png';
 
-type NotificationKind = 'message' | 'internship' | 'post' | 'admin_post' | 'member' | 'connection' | 'promoter' | 'plan';
+type NotificationKind = 'message' | 'application' | 'internship' | 'post' | 'admin_post' | 'member' | 'connection' | 'promoter' | 'plan';
 
 interface ActivityNotification {
   id: string;
@@ -20,6 +20,7 @@ interface ActivityNotification {
 
 const ICONS = {
   message: MessageSquare,
+  application: FileUser,
   internship: Briefcase,
   post: Newspaper,
   admin_post: ShieldCheck,
@@ -70,12 +71,17 @@ export function NotificationCenter() {
     setLoading(true);
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     try {
-      const [messagesResult, internshipsResult, postsResult, membersResult, connectionsResult, promoterRequestsResult, planRequestsResult] = await Promise.all([
+      const [messagesResult, applicationsResult, internshipsResult, postsResult, membersResult, connectionsResult, promoterRequestsResult, planRequestsResult] = await Promise.all([
         supabase
           .from('messages')
           .select('id, sender_id, content, created_at')
           .eq('recipient_id', uid)
           .eq('read', false)
+          .order('created_at', { ascending: false })
+          .limit(10),
+        supabase
+          .from('applications')
+          .select('id, internship_id, student_id, created_at')
           .order('created_at', { ascending: false })
           .limit(10),
         supabase
@@ -140,6 +146,33 @@ export function NotificationCenter() {
         }
       }
 
+      const applicationRows = (applicationsResult.data ?? []) as {
+        id: string;
+        internship_id: string;
+        student_id: string;
+        created_at: string;
+      }[];
+      const applicantIds = [...new Set(applicationRows.map((application) => application.student_id))];
+      const applicationInternshipIds = [...new Set(applicationRows.map((application) => application.internship_id))];
+      const applicantNames = new Map<string, string>();
+      const internshipTitles = new Map<string, string>();
+      await Promise.all([
+        applicantIds.length > 0
+          ? supabase.from('profiles').select('id, full_name').in('id', applicantIds).then(({ data }) => {
+              for (const applicant of (data ?? []) as { id: string; full_name: string }[]) {
+                applicantNames.set(applicant.id, applicant.full_name);
+              }
+            })
+          : Promise.resolve(),
+        applicationInternshipIds.length > 0
+          ? supabase.from('internships').select('id, title').in('id', applicationInternshipIds).then(({ data }) => {
+              for (const internship of (data ?? []) as { id: string; title: string }[]) {
+                internshipTitles.set(internship.id, internship.title);
+              }
+            })
+          : Promise.resolve(),
+      ]);
+
       const memberRows = (membersResult.data ?? []) as {
         id: string;
         full_name: string;
@@ -193,6 +226,13 @@ export function NotificationCenter() {
           title: `Mensaje de ${senderNames.get(message.sender_id) || 'un usuario'}`,
           detail: message.content,
           createdAt: message.created_at,
+        })),
+        ...applicationRows.map((application) => ({
+          id: `application-${application.id}`,
+          kind: 'application' as const,
+          title: 'Nueva postulación recibida',
+          detail: `${applicantNames.get(application.student_id) || 'Un estudiante'} se postuló a ${internshipTitles.get(application.internship_id) || 'tu pasantía'}`,
+          createdAt: application.created_at,
         })),
         ...((internshipsResult.data ?? []) as {
           id: string;
@@ -270,13 +310,15 @@ export function NotificationCenter() {
             : 'Esta vez la solicitud no fue aprobada.',
           createdAt: request.resolved_at,
         })),
-      ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      ]
+        .filter((item) => profile?.role !== 'empresa' || ['message', 'application', 'admin_post'].includes(item.kind))
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setItems(next.slice(0, 6));
     } finally {
       setLoading(false);
     }
-  }, [uid]);
+  }, [profile?.role, uid]);
 
   useEffect(() => {
     load();
@@ -284,6 +326,12 @@ export function NotificationCenter() {
     const postsChannel = supabase
       .channel(`notification-posts-${uid}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () => {
+        void load();
+      })
+      .subscribe();
+    const applicationsChannel = supabase
+      .channel(`notification-applications-${uid}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'applications' }, () => {
         void load();
       })
       .subscribe();
@@ -305,6 +353,7 @@ export function NotificationCenter() {
     return () => {
       window.clearInterval(timer);
       void supabase.removeChannel(postsChannel);
+      void supabase.removeChannel(applicationsChannel);
       void supabase.removeChannel(plansChannel);
     };
   }, [load, refreshProfile, uid]);
@@ -349,6 +398,7 @@ export function NotificationCenter() {
       openMessages();
       return;
     }
+    if (item.kind === 'application') navigate('/app/postulaciones-recibidas');
     if (item.kind === 'post') navigate('/app/novedades');
     if (item.kind === 'admin_post') {
       navigate(profile?.role === 'estudiante' ? '/app/inicio-estudiante' : '/app/novedades');

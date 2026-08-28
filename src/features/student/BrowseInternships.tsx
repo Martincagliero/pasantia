@@ -14,6 +14,7 @@ import { InternshipDetailModal } from '../ui/InternshipDetailModal';
 import { EmojiText } from '../ui/EmojiText';
 import { useModalGuard } from '../ui/modalGuard';
 import { restrictionFromError } from '../../lib/planRestrictions';
+import { sendPushEvent } from '../../lib/notify';
 
 const modalityLabel: Record<Modality, string> = {
   presencial: 'Presencial',
@@ -346,11 +347,16 @@ export function ApplyModal({
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 15_000);
     try {
-      const { error } = await supabase.from('applications').insert({
-        internship_id: internship.id,
-        student_id: studentId,
-        message: message.trim() || null,
-      }).abortSignal(controller.signal);
+      const { data: application, error } = await supabase
+        .from('applications')
+        .insert({
+          internship_id: internship.id,
+          student_id: studentId,
+          message: message.trim() || null,
+        })
+        .abortSignal(controller.signal)
+        .select('id')
+        .single();
       if (error) {
         const restriction = restrictionFromError(error);
         if (restriction?.code === 'student_applications') {
@@ -365,6 +371,7 @@ export function ApplyModal({
         );
         return;
       }
+      void sendPushEvent('application', application.id);
       onApplied();
     } catch {
       setError(controller.signal.aborted

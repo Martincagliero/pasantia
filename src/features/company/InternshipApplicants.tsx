@@ -1,13 +1,15 @@
 // Empresa: ve los postulantes de una pasantía y cambia el estado de cada uno.
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Mail, GraduationCap, FileText, Link2, Globe } from 'lucide-react';
+import { ArrowLeft, Mail, GraduationCap, FileText, Link2, Globe, MessageSquare } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { ApplicationStatus, StudentProfile } from '../../lib/database.types';
 import { Card, EmptyState, PageHeader, PageLoader, StatusBadge } from '../ui/primitives';
 import { STATUS_META, STATUS_ORDER, normalizeStatus } from '../ui/applicationStatus';
 import { FREE_COMPANY_APPLICANTS_PER_INTERNSHIP, isPro } from '../../lib/plans';
+import { SelectField } from '../ui/Field';
+import { useMessages } from '../messages/MessagesProvider';
 
 interface ApplicantRow {
   id: string;
@@ -47,6 +49,7 @@ function Avatar({ url, name, className = '' }: { url?: string | null; name: stri
 
 export default function InternshipApplicants() {
   const { profile } = useAuth();
+  const { openChatWith } = useMessages();
   const { id } = useParams<{ id: string }>();
   const [title, setTitle] = useState('');
   const [rows, setRows] = useState<ApplicantRow[]>([]);
@@ -207,28 +210,37 @@ export default function InternshipApplicants() {
                     )}
                   </div>
 
-                  <div className="shrink-0">
+                  <div className="w-full shrink-0 lg:w-56">
                     <p className="mb-1.5 text-xs font-medium text-white/50">Cambiar estado</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {STATUS_ORDER.map((s) => {
-                        const activeS = normalizeStatus(r.status) === s;
-                        const Icon = STATUS_META[s].icon;
-                        return (
-                          <button
-                            key={s}
-                            onClick={() => changeStatus(r.id, s)}
-                            disabled={activeS}
-                            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                              activeS
-                                ? 'border-white/30 bg-white/12 text-white'
-                                : 'border-white/15 bg-white/5 text-white/70 hover:bg-white/10'
-                            }`}
-                          >
-                            <Icon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-                            {STATUS_META[s].label}
-                          </button>
-                        );
-                      })}
+                    <SelectField
+                      value={normalizeStatus(r.status)}
+                      onChange={(event) => changeStatus(r.id, event.target.value as ApplicationStatus)}
+                      className="h-10 py-0 text-sm"
+                    >
+                      {STATUS_ORDER.map((status) => (
+                        <option key={status} value={status}>{STATUS_META[status].label}</option>
+                      ))}
+                    </SelectField>
+                    <div className="mt-2 flex items-center gap-2">
+                      {r.student?.email && (
+                        <a
+                          href={`mailto:${r.student.email}`}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-white/60 transition hover:bg-white/10 hover:text-white"
+                          aria-label={`Enviar email a ${r.student.full_name}`}
+                          title="Enviar email"
+                        >
+                          <Mail className="h-3.5 w-3.5" />
+                        </a>
+                      )}
+                      {r.student?.id && (
+                        <button
+                          type="button"
+                          onClick={() => openChatWith(r.student!.id, r.student!.full_name, d?.avatar_url)}
+                          className="inline-flex h-8 items-center gap-1.5 rounded-full border border-white/15 px-3 text-xs font-semibold text-white/65 transition hover:bg-white/10 hover:text-white"
+                        >
+                          <MessageSquare className="h-3.5 w-3.5" /> Mensaje
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

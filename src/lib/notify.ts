@@ -5,6 +5,7 @@ import { supabase } from './supabase';
 export type PushEventType =
   | 'push_test'
   | 'message'
+  | 'application'
   | 'connection_request'
   | 'connection_accepted'
   | 'group_message'

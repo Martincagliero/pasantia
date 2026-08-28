@@ -8,11 +8,10 @@ import { useAuth } from '../auth/AuthProvider';
 import type { Post, PostCategory } from '../../lib/database.types';
 import { Button } from '../../components/ui/Button';
 import { Card, EmptyState, PageHeader, PageLoader } from '../ui/primitives';
-import { LinkPreview } from '../ui/LinkPreview';
 import { PostInteractions } from '../ui/PostInteractions';
 import { PostComposerModal } from './PostComposer';
-import { SocialPostImages, SocialPostText } from './SocialPostContent';
 import { PostActionsMenu } from './PostActionsMenu';
+import { ExpandablePostContent } from './ExpandablePostContent';
 
 const CATEGORIES: { value: PostCategory; label: string }[] = [
   { value: 'novedad', label: 'Novedad' },
@@ -67,6 +66,7 @@ export default function Novedades() {
     () => (filter === 'todas' ? posts : posts.filter((p) => p.category === filter)),
     [posts, filter]
   );
+  const visiblePosts = profile?.role === 'empresa' ? posts : filtered;
 
   if (profile?.role === 'estudiante' && !profile.is_admin) {
     return <Navigate to="/app/inicio-estudiante" replace />;
@@ -91,8 +91,7 @@ export default function Novedades() {
         }
       />
 
-      {/* Filtros por categoría */}
-      <div className="mb-6">
+      {profile?.role !== 'empresa' && <div className="mb-6">
         <button
           type="button"
           onClick={() => setFiltersOpen((v) => !v)}
@@ -123,9 +122,9 @@ export default function Novedades() {
             );
           })}
         </div>
-      </div>
+      </div>}
 
-      {filtered.length === 0 ? (
+      {visiblePosts.length === 0 ? (
         <EmptyState
           title="Todavía no hay publicaciones"
           description="Sé el primero en compartir algo con la comunidad."
@@ -137,7 +136,7 @@ export default function Novedades() {
         />
       ) : (
         <div className="grid items-start gap-3 sm:gap-4 lg:grid-cols-2">
-          {filtered.map((p) => (
+          {visiblePosts.map((p) => (
             <Card key={p.id} className="w-full">
               <div className="mb-1.5 flex items-center justify-between gap-2 sm:mb-2">
                 <span
@@ -153,11 +152,13 @@ export default function Novedades() {
               </div>
 
               {p.title && <h3 className="text-base font-semibold leading-snug text-white sm:text-lg">{p.title}</h3>}
-              <p className={`${p.title ? 'mt-1.5 sm:mt-2' : 'mt-2'} line-clamp-4 whitespace-pre-wrap break-words text-sm text-white/70 sm:line-clamp-none`}><SocialPostText text={p.body} mentions={p.mentions} /></p>
-
-              <SocialPostImages urls={p.image_urls} />
-
-              {p.link_url && <LinkPreview url={p.link_url} className="mt-2.5 sm:mt-3" />}
+              <ExpandablePostContent
+                body={p.body}
+                mentions={p.mentions}
+                imageUrls={p.image_urls}
+                linkUrl={p.link_url}
+                className={p.title ? 'mt-1.5 sm:mt-2' : 'mt-2'}
+              />
 
               <div>
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-2.5 sm:mt-4 sm:gap-3 sm:pt-3">

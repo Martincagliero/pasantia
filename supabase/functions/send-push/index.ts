@@ -61,6 +61,7 @@ Deno.serve(async (req) => {
     let url = '/app';
     let recipientIds: string[] | null = null;
     let broadcast = false;
+    let officialNotice = false;
 
     if (event_type === 'push_test') {
       if (resource_id !== caller.id) return json({ error: 'evento inválido' }, 403);
@@ -84,6 +85,28 @@ Deno.serve(async (req) => {
       body = String(message.content ?? '').slice(0, 140);
       url = '/app';
       recipientIds = [message.recipient_id];
+    } else if (event_type === 'application') {
+      const { data: application } = await admin
+        .from('applications')
+        .select('student_id, internship_id')
+        .eq('id', resource_id)
+        .maybeSingle();
+      if (!application || application.student_id !== caller.id) {
+        return json({ error: 'evento inválido' }, 403);
+      }
+      const [{ data: internship }, { data: student }] = await Promise.all([
+        admin
+          .from('internships')
+          .select('company_id, title')
+          .eq('id', application.internship_id)
+          .maybeSingle(),
+        admin.from('profiles').select('full_name').eq('id', caller.id).maybeSingle(),
+      ]);
+      if (!internship) return json({ error: 'pasantía no encontrada' }, 404);
+      title = 'Nueva postulación recibida';
+      body = `${student?.full_name || 'Un estudiante'} se postuló a ${internship.title}.`;
+      url = '/app/postulaciones-recibidas';
+      recipientIds = [internship.company_id];
     } else if (event_type === 'group_message') {
       const { data: message } = await admin
         .from('group_messages')
@@ -141,9 +164,10 @@ Deno.serve(async (req) => {
         .eq('id', caller.id)
         .maybeSingle();
       const official = author?.is_admin === true;
+      officialNotice = official;
       title = official ? 'Aviso oficial de PasantIA' : 'Nueva publicación en Novedades';
       body = official ? post.title : `${post.author_name || 'Usuario'}: ${post.title}`;
-      url = official ? '/app/inicio-estudiante' : '/app/novedades';
+      url = '/app/novedades';
       broadcast = true;
     } else if (event_type === 'internship') {
       const { data: internship } = await admin
@@ -223,6 +247,24 @@ Deno.serve(async (req) => {
     const { data: subs, error: subscriptionsError } = await subscriptionsQuery;
     if (subscriptionsError) return json({ error: subscriptionsError.message }, 500);
 
+    let deliverableSubs = subs ?? [];
+    if (deliverableSubs.length > 0) {
+      const subscribedUserIds = [...new Set(deliverableSubs.map((subscription) => subscription.user_id))];
+      const { data: recipients } = await admin
+        .from('profiles')
+        .select('id, role')
+        .in('id', subscribedUserIds);
+      const companyIds = new Set(
+        (recipients ?? [])
+          .filter((recipient) => recipient.role === 'empresa')
+          .map((recipient) => recipient.id)
+      );
+      const allowedForCompany = officialNotice || ['push_test', 'message', 'group_message', 'application'].includes(event_type);
+      if (!allowedForCompany) {
+        deliverableSubs = deliverableSubs.filter((subscription) => !companyIds.has(subscription.user_id));
+      }
+    }
+
     const payload = JSON.stringify({
       title,
       body,
@@ -230,7 +272,7 @@ Deno.serve(async (req) => {
     });
 
     let sent = 0;
-    for (const s of subs ?? []) {
+    for (const s of deliverableSubs) {
       try {
         await webpush.sendNotification(
           { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },

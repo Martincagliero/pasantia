@@ -6,14 +6,13 @@ import type { ConnectionRequest, InternshipWithCompany, Post, Profile } from '..
 import { Card, EmptyState, PageLoader } from '../ui/primitives';
 import { PostInteractions } from '../ui/PostInteractions';
 import { useAuth } from '../auth/AuthProvider';
-import { LinkPreview } from '../ui/LinkPreview';
 import { sendPushEvent } from '../../lib/notify';
 import { InternshipDetailModal } from '../ui/InternshipDetailModal';
 import { useMessages } from '../messages/MessagesProvider';
 import { ApplyModal } from './BrowseInternships';
 import { PostComposerModal } from '../posts/PostComposer';
-import { SocialPostImages, SocialPostText } from '../posts/SocialPostContent';
 import { PostActionsMenu } from '../posts/PostActionsMenu';
+import { ExpandablePostContent } from '../posts/ExpandablePostContent';
 import { VerifiedBadge } from '../ambassador/VerifiedBadge';
 import pasantiaLogo from '../../assets/logo.png';
 import { PlanRestrictionDialog } from '../plans/PlanRestrictionDialog';
@@ -446,11 +445,13 @@ export default function StudentHome() {
                     />
                   </div>
                   {item.post.title && <h2 className="mt-3 text-base font-semibold leading-snug text-white sm:text-lg">{item.post.title}</h2>}
-                  <p className={`${item.post.title ? 'mt-1.5' : 'mt-3'} whitespace-pre-wrap break-words text-sm leading-5 text-white/65`}>
-                    <SocialPostText text={item.post.body} mentions={item.post.mentions} />
-                  </p>
-                  <SocialPostImages urls={item.post.image_urls} />
-                  {item.post.link_url && <LinkPreview url={item.post.link_url} className="mt-3" />}
+                  <ExpandablePostContent
+                    body={item.post.body}
+                    mentions={item.post.mentions}
+                    imageUrls={item.post.image_urls}
+                    linkUrl={item.post.link_url}
+                    className={item.post.title ? 'mt-1.5' : 'mt-3'}
+                  />
                   <PostInteractions targetType="post" targetId={item.post.id} sharePost={item.post} />
                   </div>
                   {verified && (

@@ -15,7 +15,6 @@ import {
   X,
   Download,
   ChevronDown,
-  Lock,
   MessageSquare,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -211,6 +210,7 @@ export default function CompanyApplications() {
             <p className="mt-1 text-sm text-white/55">
               Podés revisar los primeros {FREE_COMPANY_APPLICANTS_PER_INTERNSHIP} postulados de cada pasantía. Empresa Pro muestra todos.
             </p>
+            <p className="mt-1 text-xs font-medium text-white/50">Contacto por email incluido. Mensajes dentro de PasantIA disponibles con Empresa Pro.</p>
           </div>
           <Link to="/app/planes" className="shrink-0 text-sm font-semibold text-brand-400 hover:text-brand-300">
             Ver Empresa Pro →
@@ -373,10 +373,11 @@ export default function CompanyApplications() {
                           }
                           openChatWith(r.student!.id, r.student!.full_name, d?.avatar_url);
                         }}
-                        title={isPro(profile) ? 'Mensaje' : 'Mensaje · Empresa Pro'}
+                        title={isPro(profile) ? 'Enviar mensaje' : 'Mensajes dentro de PasantIA · Empresa Pro'}
+                        aria-label={isPro(profile) ? `Enviar mensaje a ${r.student.full_name}` : 'Mensajería disponible con Empresa Pro'}
                         className="hover:text-white"
                       >
-                        {isPro(profile) ? <MessageSquare className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                        <MessageSquare className="h-4 w-4" />
                       </button>
                     )}
                   </div>

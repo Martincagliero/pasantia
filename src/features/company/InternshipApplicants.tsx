@@ -1,7 +1,7 @@
 // Empresa: ve los postulantes de una pasantía y cambia el estado de cada uno.
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Mail, GraduationCap, FileText, Link2, Globe, Lock, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Mail, GraduationCap, FileText, Link2, Globe, MessageSquare } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import type { ApplicationStatus, StudentProfile } from '../../lib/database.types';
@@ -114,6 +114,7 @@ export default function InternshipApplicants() {
             <p className="mt-1 text-sm text-white/55">
               Estás viendo hasta {FREE_COMPANY_APPLICANTS_PER_INTERNSHIP} postulados. Empresa Pro habilita la lista completa.
             </p>
+            <p className="mt-1 text-xs font-medium text-white/50">Contacto por email incluido. Mensajes dentro de PasantIA disponibles con Empresa Pro.</p>
           </div>
           <Link to="/app/planes" className="shrink-0 text-sm font-semibold text-brand-400 hover:text-brand-300">
             Ver Empresa Pro →
@@ -246,9 +247,9 @@ export default function InternshipApplicants() {
                             openChatWith(r.student!.id, r.student!.full_name, d?.avatar_url);
                           }}
                           className="inline-flex h-8 items-center gap-1.5 rounded-full border border-white/15 px-3 text-xs font-semibold text-white/65 transition hover:bg-white/10 hover:text-white"
+                          title={isPro(profile) ? 'Enviar mensaje' : 'Mensajes dentro de PasantIA · Empresa Pro'}
                         >
-                          {isPro(profile) ? <MessageSquare className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-                          {isPro(profile) ? 'Mensaje' : 'Mensaje Pro'}
+                          <MessageSquare className="h-3.5 w-3.5" /> Mensaje
                         </button>
                       )}
                     </div>

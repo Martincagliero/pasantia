@@ -54,22 +54,22 @@ import { restrictionFromError, type PlanRestriction } from '../../lib/planRestri
 
 type Tab = 'estudiantes' | 'empresas' | 'embajadores' | 'red';
 
-interface PublicProfile {
+export interface PublicProfile {
   full_name: string;
   email: string;
   role: 'estudiante' | 'empresa' | 'embajador';
   plan?: 'free' | 'pro' | 'enterprise';
   plan_expires_at?: string | null;
 }
-interface StudentRow extends StudentProfile {
+export interface StudentRow extends StudentProfile {
   profile: PublicProfile | null;
 }
-interface CompanyRow extends CompanyProfile {
+export interface CompanyRow extends CompanyProfile {
   profile: PublicProfile | null;
 }
-type AmbRow = AmbassadorProfile & { profile: PublicProfile | null };
+export type AmbRow = AmbassadorProfile & { profile: PublicProfile | null };
 
-type Selected =
+export type ProfileSelection =
   | { type: 'estudiantes'; row: StudentRow }
   | { type: 'empresas'; row: CompanyRow }
   | { type: 'embajadores'; row: AmbRow };
@@ -160,7 +160,7 @@ export default function Explore() {
   const [ambassadors, setAmbassadors] = useState<AmbRow[]>([]);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [connectionRequests, setConnectionRequests] = useState<ConnectionRequest[]>([]);
-  const [selected, setSelected] = useState<Selected | null>(null);
+  const [selected, setSelected] = useState<ProfileSelection | null>(null);
   const [proBannerOpen, setProBannerOpen] = useState(false);
   const [connectingId, setConnectingId] = useState<string | null>(null);
   const [planRestriction, setPlanRestriction] = useState<PlanRestriction | null>(null);
@@ -610,7 +610,7 @@ export default function Explore() {
       )}
 
       {selected && (
-        <DetailModal
+        <ProfileDetailModal
           selected={selected}
           onClose={() => setSelected(null)}
           onMessage={handleMessage}
@@ -677,7 +677,7 @@ function ProfileCard({
   );
 }
 
-function DetailModal({
+export function ProfileDetailModal({
   selected,
   onClose,
   onMessage,
@@ -689,7 +689,7 @@ function DetailModal({
   canConnect,
   messageOnly,
 }: {
-  selected: Selected;
+  selected: ProfileSelection;
   onClose: () => void;
   onMessage: (id: string, name: string, avatar?: string | null) => void;
   isFollowing: boolean;
@@ -1039,7 +1039,7 @@ function NetworkTab({
   requests: ConnectionRequest[];
   allStudents: StudentRow[];
   onRespond: (request: ConnectionRequest, accept: boolean) => void;
-  onOpen: (s: Selected) => void;
+  onOpen: (s: ProfileSelection) => void;
 }) {
   const followedIds = useMemo(
     () => [
@@ -1143,12 +1143,12 @@ function NetworkTab({
       )}
 
       {/* Empresas y Estudiantes: apilados en mobile (evita cortes), lado a lado en sm+ */}
-      <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-4 sm:grid-cols-2">
         <NetSection title={`Empresas (${companies.length})`}>
           {companies.length === 0 ? (
             <p className="text-xs text-white/40">No seguís empresas todavía.</p>
           ) : (
-            <div className="grid max-h-[240px] gap-2 overflow-y-auto pr-1 sm:max-h-[300px]">
+            <div className="grid w-full min-w-0 gap-2 overflow-x-hidden sm:max-h-[300px] sm:overflow-y-auto sm:pr-1">
               {companies.map((r) => (
                 <NetItem
                   key={r.id}
@@ -1166,7 +1166,7 @@ function NetworkTab({
           {students.length === 0 ? (
             <p className="text-xs text-white/40">Todavía no conectaste con estudiantes.</p>
           ) : (
-            <div className="grid max-h-[240px] gap-2 overflow-y-auto pr-1 sm:max-h-[300px]">
+            <div className="grid w-full min-w-0 gap-2 overflow-x-hidden sm:max-h-[300px] sm:overflow-y-auto sm:pr-1">
               {students.map((r) => (
                 <NetItem
                   key={r.id}
@@ -1238,7 +1238,7 @@ function NetSection({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <section>
+    <section className="min-w-0 overflow-x-hidden">
       <button
         onClick={() => setOpen((o) => !o)}
         className="mb-3 flex w-full items-center justify-between gap-2 text-left"
@@ -1270,7 +1270,7 @@ function NetItem({
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-2 text-left transition hover:bg-white/[0.06]"
+      className="flex w-full min-w-0 max-w-full items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-2 text-left transition hover:bg-white/[0.06]"
     >
       {avatar}
       <div className="min-w-0 flex-1">

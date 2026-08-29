@@ -1,7 +1,7 @@
 // Novedades: panel compartido donde estudiantes y empresas publican
 // novedades, proyectos, búsquedas y recursos. Todos los logueados las ven.
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Building2, GraduationCap, Mail, ChevronDown } from 'lucide-react';
+import { Plus, Mail, ChevronDown } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
@@ -36,6 +36,33 @@ const categoryLabel: Record<PostCategory, string> = {
 
 interface PostWithAuthor extends Post {
   author: { email: string } | null;
+  authorAvatarUrl: string | null;
+}
+
+function AuthorAvatar({ url, name }: { url: string | null; name: string }) {
+  const initials = name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase() || 'U';
+
+  return (
+    <span className="relative grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-500/15 text-[11px] font-semibold text-brand-500">
+      {initials}
+      {url && (
+        <img
+          src={url}
+          alt={`Foto de ${name}`}
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover"
+          onError={(event) => { event.currentTarget.style.display = 'none'; }}
+        />
+      )}
+    </span>
+  );
 }
 
 export default function Novedades() {
@@ -54,7 +81,33 @@ export default function Novedades() {
         .select('*, author:profiles!author_id(email)')
         .order('created_at', { ascending: false });
       if (!active) return;
-      setPosts((data as unknown as PostWithAuthor[]) ?? []);
+
+      const loadedPosts = (data as unknown as Omit<PostWithAuthor, 'authorAvatarUrl'>[]) ?? [];
+      const studentIds = loadedPosts.filter((post) => post.author_role === 'estudiante').map((post) => post.author_id);
+      const companyIds = loadedPosts.filter((post) => post.author_role === 'empresa').map((post) => post.author_id);
+      const ambassadorIds = loadedPosts.filter((post) => post.author_role === 'embajador').map((post) => post.author_id);
+      const [{ data: students }, { data: companies }, { data: ambassadors }] = await Promise.all([
+        studentIds.length
+          ? supabase.from('student_profiles').select('id, avatar_url').in('id', studentIds)
+          : Promise.resolve({ data: [] }),
+        companyIds.length
+          ? supabase.from('company_profiles').select('id, avatar_url').in('id', companyIds)
+          : Promise.resolve({ data: [] }),
+        ambassadorIds.length
+          ? supabase.from('ambassador_profiles').select('id, logo_url').in('id', ambassadorIds)
+          : Promise.resolve({ data: [] }),
+      ]);
+      if (!active) return;
+
+      const avatarByAuthor = new Map<string, string | null>([
+        ...(students ?? []).map((row) => [row.id, row.avatar_url] as const),
+        ...(companies ?? []).map((row) => [row.id, row.avatar_url] as const),
+        ...(ambassadors ?? []).map((row) => [row.id, row.logo_url] as const),
+      ]);
+      setPosts(loadedPosts.map((post) => ({
+        ...post,
+        authorAvatarUrl: avatarByAuthor.get(post.author_id) ?? null,
+      })));
       setLoading(false);
     })();
     return () => {
@@ -72,9 +125,23 @@ export default function Novedades() {
     return <Navigate to="/app/inicio-estudiante" replace />;
   }
 
-  function handleCreated(post: Post) {
-    setPosts((prev) => [{ ...post, author: null }, ...prev]);
+  async function handleCreated(post: Post) {
+    setPosts((prev) => [{ ...post, author: null, authorAvatarUrl: null }, ...prev]);
     setShowForm(false);
+
+    const avatarResult = post.author_role === 'embajador'
+      ? await supabase.from('ambassador_profiles').select('logo_url').eq('id', post.author_id).maybeSingle()
+      : await supabase
+          .from(post.author_role === 'empresa' ? 'company_profiles' : 'student_profiles')
+          .select('avatar_url')
+          .eq('id', post.author_id)
+          .maybeSingle();
+    const authorAvatarUrl = post.author_role === 'embajador'
+      ? (avatarResult.data as { logo_url?: string | null } | null)?.logo_url ?? null
+      : (avatarResult.data as { avatar_url?: string | null } | null)?.avatar_url ?? null;
+    setPosts((current) => current.map((item) => (
+      item.id === post.id ? { ...item, authorAvatarUrl } : item
+    )));
   }
 
   if (loading) return <PageLoader />;
@@ -163,11 +230,7 @@ export default function Novedades() {
               <div>
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-2.5 sm:mt-4 sm:gap-3 sm:pt-3">
                   <div className="flex items-center gap-2 text-xs text-white/50">
-                    {p.author_role === 'empresa' ? (
-                      <Building2 className="h-4 w-4" />
-                    ) : (
-                      <GraduationCap className="h-4 w-4" />
-                    )}
+                    <AuthorAvatar url={p.authorAvatarUrl} name={p.author_name || 'Usuario'} />
                     <span className="font-medium text-white/70">{p.author_name || 'Usuario'}</span>
                     <span>·</span>
                     <span>{new Date(p.created_at).toLocaleDateString('es-AR')}</span>

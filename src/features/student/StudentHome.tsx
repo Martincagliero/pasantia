@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Bookmark, BriefcaseBusiness, Building2, Check, Clock3, House, MessageSquare, Newspaper, Plus, UserCheck, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
@@ -17,6 +17,11 @@ import { VerifiedBadge } from '../ambassador/VerifiedBadge';
 import pasantiaLogo from '../../assets/logo.png';
 import { PlanRestrictionDialog } from '../plans/PlanRestrictionDialog';
 import { restrictionFromError, type PlanRestriction } from '../../lib/planRestrictions';
+import type { AmbRow, CompanyRow, ProfileSelection, StudentRow } from '../directory/Explore';
+
+const ProfileDetailModal = lazy(() =>
+  import('../directory/Explore').then((module) => ({ default: module.ProfileDetailModal }))
+);
 
 interface HomePost extends Post {
   author: { is_admin: boolean } | null;
@@ -75,6 +80,8 @@ export default function StudentHome() {
   const [selected, setSelected] = useState<InternshipWithCompany | null>(null);
   const [detail, setDetail] = useState<InternshipWithCompany | null>(null);
   const [composing, setComposing] = useState(false);
+  const [profileSelected, setProfileSelected] = useState<ProfileSelection | null>(null);
+  const [profileLoadingId, setProfileLoadingId] = useState<string | null>(null);
   const [planRestriction, setPlanRestriction] = useState<PlanRestriction | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -315,6 +322,59 @@ export default function StudentHome() {
     }
   }
 
+  async function openMemberProfile(member: HomeMember) {
+    setProfileLoadingId(member.id);
+    let opened = false;
+    const profileColumns = 'full_name, email, role, plan, plan_expires_at';
+    const publicStudentColumns = `id, avatar_url, verified, university, career, year, area, location, phone, instagram_url, linkedin_url, github_url, portfolio_url, bio, skills, profile:profiles(${profileColumns})`;
+    const studentColumns = profile?.role === 'empresa'
+      ? `*, profile:profiles(${profileColumns})`
+      : publicStudentColumns;
+
+    try {
+      if (member.role === 'estudiante') {
+        const { data, error } = await supabase
+          .from('student_profiles')
+          .select(studentColumns)
+          .eq('id', member.id)
+          .eq('is_public', true)
+          .maybeSingle();
+        if (error) throw error;
+        if (data) {
+          setProfileSelected({ type: 'estudiantes', row: data as unknown as StudentRow });
+          opened = true;
+        }
+      } else if (member.role === 'empresa') {
+        const { data, error } = await supabase
+          .from('company_profiles')
+          .select(`*, profile:profiles(${profileColumns})`)
+          .eq('id', member.id)
+          .maybeSingle();
+        if (error) throw error;
+        if (data) {
+          setProfileSelected({ type: 'empresas', row: data as CompanyRow });
+          opened = true;
+        }
+      } else {
+        const { data, error } = await supabase
+          .from('ambassador_profiles')
+          .select(`*, profile:profiles(${profileColumns})`)
+          .eq('id', member.id)
+          .maybeSingle();
+        if (error) throw error;
+        if (data) {
+          setProfileSelected({ type: 'embajadores', row: data as AmbRow });
+          opened = true;
+        }
+      }
+      if (!opened) alert('Este perfil no está disponible públicamente.');
+    } catch {
+      alert('No se pudo abrir este perfil. Intentá nuevamente.');
+    } finally {
+      setProfileLoadingId(null);
+    }
+  }
+
   return (
     <div className="-mx-4 max-w-5xl sm:mx-auto">
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
@@ -354,7 +414,7 @@ export default function StudentHome() {
                 const state = connectionStateFor(member.id);
                 return (
                   <div key={member.id} className="flex min-w-[12rem] items-center gap-2.5 rounded-lg border border-white/8 p-2">
-                    <Link to={`/app/explorar?u=${member.id}`} className="shrink-0">
+                    <button type="button" onClick={() => void openMemberProfile(member)} disabled={profileLoadingId === member.id} className="shrink-0 disabled:opacity-60">
                       {member.avatarUrl ? (
                         <img src={member.avatarUrl} alt={member.displayName} className="h-9 w-9 rounded-full object-cover" loading="lazy" decoding="async" />
                       ) : (
@@ -362,11 +422,11 @@ export default function StudentHome() {
                           {initials(member.displayName)}
                         </span>
                       )}
-                    </Link>
-                    <Link to={`/app/explorar?u=${member.id}`} className="min-w-0 flex-1">
+                    </button>
+                    <button type="button" onClick={() => void openMemberProfile(member)} disabled={profileLoadingId === member.id} className="min-w-0 flex-1 text-left disabled:opacity-60">
                       <p className="truncate text-xs font-semibold text-white">{member.displayName || 'Nuevo integrante'}</p>
                       <p className="truncate text-[11px] text-white/45">{roleLabel[member.role]}</p>
-                    </Link>
+                    </button>
                     {member.role === 'empresa' && (
                       <FollowButton
                         followed={followingIds.has(member.id)}
@@ -562,7 +622,7 @@ export default function StudentHome() {
                 return (
                   <div key={member.id} className="rounded-lg p-2 transition hover:bg-white/[0.05]">
                     <div className="flex items-center gap-3">
-                      <Link to={`/app/explorar?u=${member.id}`} className="shrink-0">
+                      <button type="button" onClick={() => void openMemberProfile(member)} disabled={profileLoadingId === member.id} className="shrink-0 disabled:opacity-60">
                         {member.avatarUrl ? (
                           <img src={member.avatarUrl} alt={member.displayName} className="h-10 w-10 rounded-full object-cover" loading="lazy" decoding="async" />
                         ) : (
@@ -570,11 +630,11 @@ export default function StudentHome() {
                             {initials(member.displayName)}
                           </span>
                         )}
-                      </Link>
-                      <Link to={`/app/explorar?u=${member.id}`} className="min-w-0 flex-1">
+                      </button>
+                      <button type="button" onClick={() => void openMemberProfile(member)} disabled={profileLoadingId === member.id} className="min-w-0 flex-1 text-left disabled:opacity-60">
                         <p className="truncate text-sm font-semibold text-white">{member.displayName || 'Nuevo integrante'}</p>
                         <p className="truncate text-xs text-white/45">{roleLabel[member.role]}</p>
-                      </Link>
+                      </button>
                     </div>
                     {member.role === 'empresa' && (
                       <FollowButton
@@ -666,6 +726,25 @@ export default function StudentHome() {
             setComposing(false);
           }}
         />
+      )}
+      {profileSelected && (
+        <Suspense fallback={null}>
+          <ProfileDetailModal
+            selected={profileSelected}
+            onClose={() => setProfileSelected(null)}
+            onMessage={(id, name, avatar) => {
+              setProfileSelected(null);
+              openChatWith(id, name, avatar ?? null);
+            }}
+            isFollowing={followingIds.has(profileSelected.row.id)}
+            onToggleFollow={() => void toggleFollow(profileSelected.row.id)}
+            connectionState={connectionStateFor(profileSelected.row.id)}
+            onToggleConnection={() => void toggleConnection(profileSelected.row.id)}
+            connecting={connectingId === profileSelected.row.id}
+            canConnect={isStudent}
+            messageOnly={isCommunity}
+          />
+        </Suspense>
       )}
       <PlanRestrictionDialog restriction={planRestriction} onClose={() => setPlanRestriction(null)} />
     </div>

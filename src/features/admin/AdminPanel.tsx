@@ -15,9 +15,6 @@ import {
   RefreshCw,
   Trash2,
   CreditCard,
-  Mail,
-  Send,
-  Loader2,
   X,
   Flag,
 } from 'lucide-react';
@@ -108,7 +105,7 @@ interface ReportRow {
   created_at: string;
 }
 
-type Tab = 'usuarios' | 'solicitudes' | 'planes' | 'emails-pro' | 'denuncias' | 'promotores';
+type Tab = 'usuarios' | 'solicitudes' | 'planes' | 'denuncias' | 'promotores';
 
 const roleLabel: Record<string, string> = {
   estudiante: 'Estudiante',
@@ -189,7 +186,6 @@ export default function AdminPanel() {
     { key: 'usuarios', label: 'Registrados', icon: Users, count: users.length },
     { key: 'solicitudes', label: 'Formulario', icon: ClipboardList, count: requests.length },
     { key: 'planes', label: 'Planes', icon: CreditCard, count: planRequests.filter((request) => request.status === 'pending').length },
-    { key: 'emails-pro', label: 'Emails Pro', icon: Mail, count: users.filter((user) => user.role === 'estudiante' && user.plan === 'free').length },
     { key: 'denuncias', label: 'Denuncias', icon: Flag, count: reports.filter((report) => report.status === 'pendiente').length },
     { key: 'promotores', label: 'Promotores', icon: Rocket, count: promoters.length },
   ];
@@ -236,119 +232,11 @@ export default function AdminPanel() {
         <RequestsTab requests={requests} users={users} onChanged={load} />
       ) : tab === 'planes' ? (
         <PlanRequestsTab requests={planRequests} onChanged={load} />
-      ) : tab === 'emails-pro' ? (
-        <StudentPlanEmailsTab users={users} />
       ) : tab === 'denuncias' ? (
         <ReportsTab reports={reports} setupError={reportsError} onChanged={load} />
       ) : (
         <PromotersTab promoters={promoters} onChanged={load} />
       )}
-    </div>
-  );
-}
-
-function StudentPlanEmailsTab({ users }: { users: UserRow[] }) {
-  const students = users.filter((user) => user.role === 'estudiante' && user.plan === 'free' && user.email);
-  const [q, setQ] = useState('');
-  const [sendingIds, setSendingIds] = useState<Set<string>>(new Set());
-  const [sentIds, setSentIds] = useState<Set<string>>(new Set());
-  const [batchSending, setBatchSending] = useState(false);
-
-  const filtered = students.filter((student) => {
-    const search = q.trim().toLowerCase();
-    return !search || `${student.full_name} ${student.email}`.toLowerCase().includes(search);
-  });
-
-  async function sendTo(student: UserRow): Promise<boolean> {
-    setSendingIds((current) => new Set(current).add(student.id));
-    try {
-      const { error } = await supabase.functions.invoke('send-student-plan-email', {
-        body: { user_id: student.id },
-      });
-      if (error) {
-        alert(`No se pudo enviar el email a ${student.email}: ${error.message}`);
-        return false;
-      }
-      setSentIds((current) => new Set(current).add(student.id));
-      return true;
-    } catch {
-      alert(`No se pudo conectar para enviar el email a ${student.email}.`);
-      return false;
-    } finally {
-      setSendingIds((current) => {
-        const next = new Set(current);
-        next.delete(student.id);
-        return next;
-      });
-    }
-  }
-
-  async function sendBatch() {
-    const pending = filtered.filter((student) => !sentIds.has(student.id));
-    if (pending.length === 0) return;
-    if (!window.confirm(`¿Enviar el email personalizado de Estudiante Pro a ${pending.length} estudiante${pending.length === 1 ? '' : 's'}?`)) return;
-    setBatchSending(true);
-    for (const [index, student] of pending.entries()) {
-      const sent = await sendTo(student);
-      if (!sent) break;
-      if (index < pending.length - 1) {
-        await new Promise((resolve) => window.setTimeout(resolve, 650));
-      }
-    }
-    setBatchSending(false);
-  }
-
-  return (
-    <div>
-      <Card className="mb-4 border-brand-500/20 bg-brand-500/5">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
-            <p className="font-semibold text-white">Campaña Estudiante Pro</p>
-            <p className="mt-1 max-w-2xl text-sm text-white/60">
-              Email personalizado con las funciones desbloqueadas, imagen de PasantIA y precio promocional de $5.000 por mes.
-            </p>
-          </div>
-          <Button size="sm" disabled={batchSending || filtered.length === 0} onClick={() => void sendBatch()}>
-            {batchSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            {batchSending ? 'Enviando…' : 'Enviar pendientes'}
-          </Button>
-        </div>
-      </Card>
-
-      <div className="relative mb-4">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
-        <input
-          value={q}
-          onChange={(event) => setQ(event.target.value)}
-          placeholder="Buscar estudiante por nombre o email…"
-          className="w-full rounded-full border border-white/12 bg-white/5 py-2 pl-9 pr-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-brand-400/60"
-        />
-      </div>
-
-      <div className="space-y-3">
-        {filtered.map((student) => {
-          const sending = sendingIds.has(student.id);
-          const sent = sentIds.has(student.id);
-          return (
-            <Card key={student.id} className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-              <div className="min-w-0">
-                <p className="truncate font-semibold text-white">{student.full_name || 'Estudiante'}</p>
-                <p className="truncate text-sm text-white/55">{student.email}</p>
-              </div>
-              <Button
-                variant={sent ? 'ghost' : 'secondary'}
-                size="sm"
-                disabled={sending || sent || batchSending}
-                onClick={() => void sendTo(student)}
-              >
-                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : sent ? <Check className="h-4 w-4" /> : <Mail className="h-4 w-4" />}
-                {sending ? 'Enviando…' : sent ? 'Enviado' : 'Enviar email'}
-              </Button>
-            </Card>
-          );
-        })}
-        {filtered.length === 0 && <Card className="text-center text-sm text-white/45">No hay estudiantes Gratis para contactar.</Card>}
-      </div>
     </div>
   );
 }

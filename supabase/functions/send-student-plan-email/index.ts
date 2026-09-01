@@ -146,6 +146,7 @@ Deno.serve(async (request) => {
       },
       body: JSON.stringify({
         from: 'PasantIA <planes@pasantia.com.ar>',
+        reply_to: 'holapasantia@gmail.com',
         to: [profile.email],
         subject: `${firstName}, desbloqueá Estudiante Pro por $5.000 al mes`,
         html,

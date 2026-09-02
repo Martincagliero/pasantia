@@ -366,6 +366,9 @@ function PlanRequestsTab({ requests, onChanged }: { requests: PlanRequestRow[]; 
   const [resolving, setResolving] = useState<string | null>(null);
 
   function openGmailDraft(request: PlanRequestRow) {
+    const isStudentPro = request.kind === 'subscription'
+      && request.role === 'estudiante'
+      && request.requested_plan === 'pro';
     const requestLabel = request.kind === 'subscription'
       ? request.role === 'embajador'
         ? 'el plan Embajador Premium'
@@ -375,12 +378,24 @@ function PlanRequestsTab({ requests, onChanged }: { requests: PlanRequestRow[]; 
       : request.kind === 'featured'
         ? `destacar “${request.internship_title || 'tu pasantía'}” por ${request.featured_days} días`
         : 'ser promotor/a de PasantIA';
+    const studentProDetails = `
+
+El plan Estudiante Pro tiene un valor de $5.000 por mes e incluye:
+
+• Postulaciones ilimitadas.
+• Conexiones sin límite.
+• Mensajes sin conexión previa.
+• Perfil destacado primero en Explorar.
+• Check Pro junto a tu nombre.
+• Ser promotor: enlace personal y participación en el ranking.
+
+Imagen de PasantIA: https://pasantia.com.ar/FOTOLINK.PNG`;
     const params = new URLSearchParams({
       view: 'cm',
       fs: '1',
       to: request.email,
-      su: 'Tu solicitud en PasantIA',
-      body: `Hola ${request.full_name || ''},\n\nTe escribimos desde PasantIA por tu solicitud para ${requestLabel}.\n\n\n\nSaludos,\nEquipo PasantIA`,
+      su: isStudentPro ? 'Estudiante Pro · PasantIA' : 'Tu solicitud en PasantIA',
+      body: `Hola ${request.full_name || ''},\n\nTe escribimos desde PasantIA por tu solicitud para ${requestLabel}.${isStudentPro ? studentProDetails : ''}\n\n\n\nSaludos,\nEquipo PasantIA`,
     });
 
     window.open(`https://mail.google.com/mail/?${params.toString()}`, '_blank', 'noopener,noreferrer');

@@ -17,6 +17,7 @@ import {
   CreditCard,
   X,
   Flag,
+  Mail,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { sendPushEvent } from '../../lib/notify';
@@ -364,6 +365,27 @@ function ReportsTab({
 function PlanRequestsTab({ requests, onChanged }: { requests: PlanRequestRow[]; onChanged: () => void }) {
   const [resolving, setResolving] = useState<string | null>(null);
 
+  function openGmailDraft(request: PlanRequestRow) {
+    const requestLabel = request.kind === 'subscription'
+      ? request.role === 'embajador'
+        ? 'el plan Embajador Premium'
+        : request.requested_plan === 'enterprise'
+          ? 'el plan Empresa'
+          : 'el plan Estudiante Pro'
+      : request.kind === 'featured'
+        ? `destacar “${request.internship_title || 'tu pasantía'}” por ${request.featured_days} días`
+        : 'ser promotor/a de PasantIA';
+    const params = new URLSearchParams({
+      view: 'cm',
+      fs: '1',
+      to: request.email,
+      su: 'Tu solicitud en PasantIA',
+      body: `Hola ${request.full_name || ''},\n\nTe escribimos desde PasantIA por tu solicitud para ${requestLabel}.\n\n\n\nSaludos,\nEquipo PasantIA`,
+    });
+
+    window.open(`https://mail.google.com/mail/?${params.toString()}`, '_blank', 'noopener,noreferrer');
+  }
+
   async function resolve(request: PlanRequestRow, approve: boolean) {
     const action = approve ? 'aprobar' : 'rechazar';
     if (!window.confirm(`¿${action[0].toUpperCase() + action.slice(1)} la solicitud de ${request.full_name}?`)) return;
@@ -412,6 +434,15 @@ function PlanRequestsTab({ requests, onChanged }: { requests: PlanRequestRow[]; 
               <div className="flex shrink-0 gap-2">
                 <Button variant="ghost" size="sm" disabled={resolving === request.id} onClick={() => void resolve(request, false)}>
                   <X className="h-4 w-4" /> Rechazar
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => openGmailDraft(request)}
+                  aria-label={`Preparar email para ${request.full_name || request.email}`}
+                  title="Preparar email en Gmail"
+                >
+                  <Mail className="h-4 w-4" />
                 </Button>
                 <Button variant="primary" size="sm" disabled={resolving === request.id} onClick={() => void resolve(request, true)}>
                   <Check className="h-4 w-4" /> Aprobar

@@ -6,7 +6,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useMessages } from '../messages/MessagesProvider';
 import pasantiaLogo from '../../assets/logo.png';
 
-type NotificationKind = 'message' | 'application' | 'internship' | 'post' | 'admin_post' | 'member' | 'connection' | 'promoter' | 'plan';
+type NotificationKind = 'message' | 'application' | 'admin_activity' | 'internship' | 'post' | 'admin_post' | 'member' | 'connection' | 'promoter' | 'plan';
 
 interface ActivityNotification {
   id: string;
@@ -21,6 +21,7 @@ interface ActivityNotification {
 const ICONS = {
   message: MessageSquare,
   application: FileUser,
+  admin_activity: ShieldCheck,
   internship: Briefcase,
   post: Newspaper,
   admin_post: ShieldCheck,
@@ -71,7 +72,7 @@ export function NotificationCenter() {
     setLoading(true);
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     try {
-      const [messagesResult, applicationsResult, internshipsResult, postsResult, membersResult, connectionsResult, promoterRequestsResult, planRequestsResult] = await Promise.all([
+      const [messagesResult, applicationsResult, internshipsResult, postsResult, membersResult, connectionsResult, promoterRequestsResult, planRequestsResult, adminActivityResult] = await Promise.all([
         supabase
           .from('messages')
           .select('id, sender_id, content, created_at')
@@ -129,6 +130,9 @@ export function NotificationCenter() {
           .gte('resolved_at', since)
           .order('resolved_at', { ascending: false })
           .limit(2),
+        profile?.is_admin
+          ? supabase.rpc('admin_list_application_activity', { p_limit: 20 })
+          : Promise.resolve({ data: [], error: null }),
       ]);
 
       const messageRows = (messagesResult.data ?? []) as {
@@ -234,6 +238,25 @@ export function NotificationCenter() {
           detail: `${applicantNames.get(application.student_id) || 'Un estudiante'} se postuló a ${internshipTitles.get(application.internship_id) || 'tu pasantía'}`,
           createdAt: application.created_at,
         })),
+        ...((adminActivityResult.data ?? []) as {
+          id: string;
+          event_type: 'application_created' | 'status_changed';
+          student_name: string;
+          internship_title: string;
+          company_name: string;
+          new_status: string | null;
+          created_at: string;
+        }[]).map((activity) => ({
+          id: `admin-activity-${activity.id}`,
+          kind: 'admin_activity' as const,
+          title: activity.event_type === 'application_created'
+            ? 'Nueva postulación en la plataforma'
+            : activity.new_status === 'seleccionado'
+              ? 'Una empresa seleccionó un candidato'
+              : 'Un candidato pasó a entrevista',
+          detail: `${activity.student_name} · ${activity.internship_title} · ${activity.company_name}`,
+          createdAt: activity.created_at,
+        })),
         ...((internshipsResult.data ?? []) as {
           id: string;
           title: string;
@@ -318,7 +341,7 @@ export function NotificationCenter() {
     } finally {
       setLoading(false);
     }
-  }, [profile?.role, uid]);
+  }, [profile?.is_admin, profile?.role, uid]);
 
   useEffect(() => {
     load();
@@ -399,6 +422,7 @@ export function NotificationCenter() {
       return;
     }
     if (item.kind === 'application') navigate('/app/postulaciones-recibidas');
+    if (item.kind === 'admin_activity') navigate('/app/admin');
     if (item.kind === 'post') navigate('/app/novedades');
     if (item.kind === 'admin_post') {
       navigate(profile?.role === 'estudiante' ? '/app/inicio-estudiante' : '/app/novedades');

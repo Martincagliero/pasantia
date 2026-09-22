@@ -148,25 +148,25 @@ export default function CompanyOverview() {
       </div>
 
       {paid ? (
-        <section className="overflow-hidden rounded-lg border border-[#24272e] bg-[#111317] shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
-          <div className="flex items-center justify-between gap-3 border-b border-[#24272e] px-3.5 py-3 sm:px-5 sm:py-4">
+        <section className="overflow-hidden rounded-lg border border-[#0141e8] bg-[#0148fd] shadow-[0_18px_45px_rgba(1,72,253,0.22)]">
+          <div className="flex items-center justify-between gap-3 border-b border-[#ffffff2e] px-3.5 py-3 sm:px-5 sm:py-4">
             <div>
-              <p className="text-sm font-semibold text-[#f4f6f8]">Pulso de contratación</p>
-              <p className="mt-0.5 text-[11px] text-[#8e96a3] sm:text-xs">Vista general de tus búsquedas</p>
+              <p className="text-sm font-semibold text-[#ffffff]">Pulso de contratación</p>
+              <p className="mt-0.5 text-[11px] text-[#d7e3ff] sm:text-xs">Vista general de tus búsquedas</p>
             </div>
-            <span className="inline-flex w-fit shrink-0 items-center gap-1.5 text-[10px] text-[#707887] sm:text-[11px]">
-              <Activity className="h-3.5 w-3.5 text-[#4b9cff]" /> <span className="hidden min-[380px]:inline">Actualizado</span>
+            <span className="inline-flex w-fit shrink-0 items-center gap-1.5 text-[10px] text-[#d7e3ff] sm:text-[11px]">
+              <Activity className="h-3.5 w-3.5 text-[#ffffff]" /> <span className="hidden min-[380px]:inline">Actualizado</span>
             </span>
           </div>
 
-          <div className="grid grid-cols-2 border-b border-[#24272e] lg:grid-cols-4">
+          <div className="grid grid-cols-2 border-b border-[#ffffff2e] lg:grid-cols-4">
             <ProMetric icon={Briefcase} label="Pasantías activas" value={stats.activas} detail={`${stats.total} publicadas`} />
             <ProMetric icon={CalendarDays} label="Últimos 30 días" value={stats.last30Days} detail="nuevas postulaciones" />
             <ProMetric icon={CheckCircle2} label="Tasa de revisión" value={`${reviewRate}%`} detail={`${reviewed} perfiles revisados`} />
             <ProMetric icon={Target} label="Conversión" value={`${selectedRate}%`} detail={`${funnel.seleccionado} seleccionados`} />
           </div>
 
-          <div className="flex overflow-x-auto border-b border-[#24272e] px-2 py-2 lg:hidden" role="tablist" aria-label="Secciones del panel">
+          <div className="flex overflow-x-auto border-b border-[#ffffff2e] px-2 py-2 lg:hidden" role="tablist" aria-label="Secciones del panel">
             {([
               ['funnel', 'Embudo'],
               ['priorities', 'Prioridades'],
@@ -180,7 +180,7 @@ export default function CompanyOverview() {
                 aria-selected={mobilePanel === id}
                 onClick={() => setMobilePanel(id)}
                 className={`shrink-0 rounded-md px-3 py-1.5 text-[11px] font-medium transition ${
-                  mobilePanel === id ? 'bg-[#272b32] text-[#f4f6f8]' : 'text-[#737b88]'
+                  mobilePanel === id ? 'bg-[#ffffff] text-[#0148fd]' : 'text-[#d7e3ff] hover:bg-[#ffffff14]'
                 }`}
               >
                 {label}
@@ -189,33 +189,33 @@ export default function CompanyOverview() {
           </div>
 
           <div className="grid lg:grid-cols-[minmax(0,1.45fr)_minmax(260px,0.75fr)]">
-            <div className={`${mobilePanel === 'funnel' ? 'block' : 'hidden'} p-4 sm:p-5 lg:block lg:border-r`}>
+            <div className={`${mobilePanel === 'funnel' ? 'block' : 'hidden'} p-4 sm:p-5 lg:block lg:border-r lg:border-[#ffffff2e]`}>
               <div className="mb-5 flex items-center justify-between">
                 <div>
-                  <h2 className="text-sm font-semibold text-[#f4f6f8]">Embudo de candidatos</h2>
-                  <p className="mt-0.5 text-xs text-[#737b88]">{stats.postulaciones} perfiles en total</p>
+                  <h2 className="text-sm font-semibold text-[#ffffff]">Embudo de candidatos</h2>
+                  <p className="mt-0.5 text-xs text-[#c4d6ff]">{stats.postulaciones} perfiles en total</p>
                 </div>
-                <Link to="/app/postulaciones-recibidas" className="text-xs font-medium text-[#78b4ff] hover:text-[#a6ceff]">Gestionar</Link>
+                <Link to="/app/postulaciones-recibidas" className="text-xs font-semibold text-[#ffffff] hover:text-[#d7e3ff]">Gestionar</Link>
               </div>
               <div className="space-y-4">
                 {funnelRows.map((row) => (
                   <div key={row.label} className="grid grid-cols-[105px_1fr_32px] items-center gap-3 sm:grid-cols-[130px_1fr_40px]">
-                    <span className="truncate text-xs text-[#aeb5bf]">{row.label}</span>
-                    <span className="h-1.5 overflow-hidden rounded-full bg-[#24272e]">
+                    <span className="truncate text-xs text-[#e5edff]">{row.label}</span>
+                    <span className="h-1.5 overflow-hidden rounded-full bg-[#0039c9]">
                       <span
-                        className="block h-full rounded-full bg-[#4b9cff]"
+                        className="block h-full rounded-full bg-[#ffffff]"
                         style={{ width: `${Math.max(row.value > 0 ? 5 : 0, (row.value / funnelMax) * 100)}%` }}
                       />
                     </span>
-                    <span className="text-right text-xs font-semibold text-[#e7e9ed]">{row.value}</span>
+                    <span className="text-right text-xs font-semibold text-[#ffffff]">{row.value}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             <div className={`${mobilePanel === 'priorities' ? 'block' : 'hidden'} p-4 sm:p-5 lg:block`}>
-              <h2 className="text-sm font-semibold text-[#f4f6f8]">Prioridades</h2>
-              <div className="mt-3 divide-y divide-[#24272e]">
+              <h2 className="text-sm font-semibold text-[#ffffff]">Prioridades</h2>
+              <div className="mt-3 divide-y divide-[#ffffff2e]">
                 <PriorityLink to="/app/postulaciones-recibidas" icon={Clock} value={stats.pendientes} label="sin revisar" />
                 <PriorityLink to="/app/postulaciones-recibidas" icon={Send} value={funnel.entrevista} label="en entrevista" />
                 <PriorityLink to="/app/mis-pasantias" icon={Briefcase} value={stats.activas} label="búsquedas activas" />
@@ -223,53 +223,53 @@ export default function CompanyOverview() {
             </div>
           </div>
 
-          <div className="grid border-t border-[#24272e] lg:grid-cols-2">
-            <div className={`${mobilePanel === 'performance' ? 'block' : 'hidden'} p-4 sm:p-5 lg:block lg:border-r`}>
+          <div className="grid border-t border-[#ffffff2e] lg:grid-cols-2">
+            <div className={`${mobilePanel === 'performance' ? 'block' : 'hidden'} p-4 sm:p-5 lg:block lg:border-r lg:border-[#ffffff2e]`}>
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-[#f4f6f8]">Interés por pasantía</h2>
-                <Link to="/app/mis-pasantias" className="text-xs text-[#737b88] hover:text-[#b9c0ca]">Ver publicaciones</Link>
+                <h2 className="text-sm font-semibold text-[#ffffff]">Interés por pasantía</h2>
+                <Link to="/app/mis-pasantias" className="text-xs text-[#d7e3ff] hover:text-[#ffffff]">Ver publicaciones</Link>
               </div>
               {performance.length > 0 ? (
                 <div className="space-y-3.5">
                   {performance.map((item) => (
                     <div key={item.id}>
                       <div className="mb-1.5 flex items-center justify-between gap-3">
-                        <span className="truncate text-xs text-[#b9c0ca]">{item.title}</span>
-                        <span className="shrink-0 text-xs font-semibold text-[#e7e9ed]">{item.applications}</span>
+                        <span className="truncate text-xs text-[#e5edff]">{item.title}</span>
+                        <span className="shrink-0 text-xs font-semibold text-[#ffffff]">{item.applications}</span>
                       </div>
-                      <div className="h-1 overflow-hidden rounded-full bg-[#24272e]">
-                        <div className="h-full rounded-full bg-[#596273]" style={{ width: `${(item.applications / performanceMax) * 100}%` }} />
+                      <div className="h-1 overflow-hidden rounded-full bg-[#0039c9]">
+                        <div className="h-full rounded-full bg-[#ffffff]" style={{ width: `${(item.applications / performanceMax) * 100}%` }} />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="py-5 text-xs text-[#737b88]">Publicá una pasantía para empezar a medir interés.</p>
+                <p className="py-5 text-xs text-[#c4d6ff]">Publicá una pasantía para empezar a medir interés.</p>
               )}
             </div>
 
             <div className={`${mobilePanel === 'activity' ? 'block' : 'hidden'} p-4 sm:p-5 lg:block`}>
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-[#f4f6f8]">Actividad reciente</h2>
-                {recent.length > 0 && <Link to="/app/postulaciones-recibidas" className="text-xs text-[#737b88] hover:text-[#b9c0ca]">Ver todas</Link>}
+                <h2 className="text-sm font-semibold text-[#ffffff]">Actividad reciente</h2>
+                {recent.length > 0 && <Link to="/app/postulaciones-recibidas" className="text-xs text-[#d7e3ff] hover:text-[#ffffff]">Ver todas</Link>}
               </div>
               {recent.length > 0 ? (
-                <div className="divide-y divide-[#24272e]">
+                <div className="divide-y divide-[#ffffff2e]">
                   {recent.slice(0, 4).map((application) => (
                     <Link key={application.id} to="/app/postulaciones-recibidas" className="flex items-center gap-3 py-2.5">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#24272e] text-[10px] font-semibold text-[#d7dbe1]">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#ffffff24] text-[10px] font-semibold text-[#ffffff]">
                         {(application.student?.full_name || 'E').slice(0, 1).toUpperCase()}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-xs font-medium text-[#dfe3e8]">{application.student?.full_name || 'Estudiante'}</span>
-                        <span className="block truncate text-[11px] text-[#737b88]">{application.internship?.title || 'Pasantía'}</span>
+                        <span className="block truncate text-xs font-medium text-[#ffffff]">{application.student?.full_name || 'Estudiante'}</span>
+                        <span className="block truncate text-[11px] text-[#c4d6ff]">{application.internship?.title || 'Pasantía'}</span>
                       </span>
-                      <span className="shrink-0 text-[10px] text-[#8e96a3]">{STATUS_META[normalizeStatus(application.status)].label}</span>
+                      <span className="shrink-0 text-[10px] text-[#d7e3ff]">{STATUS_META[normalizeStatus(application.status)].label}</span>
                     </Link>
                   ))}
                 </div>
               ) : (
-                <p className="py-5 text-xs text-[#737b88]">Las nuevas postulaciones aparecerán acá.</p>
+                <p className="py-5 text-xs text-[#c4d6ff]">Las nuevas postulaciones aparecerán acá.</p>
               )}
             </div>
           </div>
@@ -289,13 +289,13 @@ export default function CompanyOverview() {
 
 function ProMetric({ icon: Icon, label, value, detail }: { icon: LucideIcon; label: string; value: string | number; detail: string }) {
   return (
-    <div className="border-b border-r border-[#24272e] p-3 sm:p-5 lg:border-b-0">
-      <div className="flex items-center gap-2 text-[#8e96a3]">
+    <div className="border-b border-r border-[#ffffff2e] p-3 sm:p-5 lg:border-b-0">
+      <div className="flex items-center gap-2 text-[#d7e3ff]">
         <Icon className="h-3.5 w-3.5" strokeWidth={1.8} />
         <span className="truncate text-[10px] sm:text-[11px]">{label}</span>
       </div>
-      <p className="mt-2 text-xl font-semibold text-[#f4f6f8] sm:mt-3 sm:text-2xl">{value}</p>
-      <p className="mt-1 hidden text-[11px] text-[#646c79] min-[360px]:block">{detail}</p>
+      <p className="mt-2 text-xl font-semibold text-[#ffffff] sm:mt-3 sm:text-2xl">{value}</p>
+      <p className="mt-1 hidden text-[11px] text-[#b8ceff] min-[360px]:block">{detail}</p>
     </div>
   );
 }
@@ -303,10 +303,10 @@ function ProMetric({ icon: Icon, label, value, detail }: { icon: LucideIcon; lab
 function PriorityLink({ to, icon: Icon, value, label }: { to: string; icon: LucideIcon; value: number; label: string }) {
   return (
     <Link to={to} className="group flex items-center gap-3 py-3">
-      <Icon className="h-4 w-4 text-[#687180]" strokeWidth={1.7} />
-      <span className="text-lg font-semibold text-[#f4f6f8]">{value}</span>
-      <span className="text-xs text-[#8e96a3]">{label}</span>
-      <ArrowRight className="ml-auto h-3.5 w-3.5 text-[#555d69] transition group-hover:translate-x-0.5 group-hover:text-[#8e96a3]" />
+      <Icon className="h-4 w-4 text-[#c4d6ff]" strokeWidth={1.7} />
+      <span className="text-lg font-semibold text-[#ffffff]">{value}</span>
+      <span className="text-xs text-[#d7e3ff]">{label}</span>
+      <ArrowRight className="ml-auto h-3.5 w-3.5 text-[#b8ceff] transition group-hover:translate-x-0.5 group-hover:text-[#ffffff]" />
     </Link>
   );
 }

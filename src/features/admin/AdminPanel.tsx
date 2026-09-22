@@ -18,6 +18,8 @@ import {
   X,
   Flag,
   Mail,
+  BellRing,
+  BriefcaseBusiness,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { sendPushEvent } from '../../lib/notify';
@@ -106,7 +108,23 @@ interface ReportRow {
   created_at: string;
 }
 
-type Tab = 'usuarios' | 'solicitudes' | 'planes' | 'denuncias' | 'promotores';
+interface ApplicationActivityRow {
+  id: string;
+  event_type: 'application_created' | 'status_changed';
+  application_id: string;
+  student_id: string;
+  student_name: string;
+  student_email: string;
+  internship_id: string;
+  internship_title: string;
+  company_id: string;
+  company_name: string;
+  previous_status: string | null;
+  new_status: string | null;
+  created_at: string;
+}
+
+type Tab = 'actividad' | 'usuarios' | 'solicitudes' | 'planes' | 'denuncias' | 'promotores';
 
 const roleLabel: Record<string, string> = {
   estudiante: 'Estudiante',
@@ -129,10 +147,20 @@ function fmtDate(v: string | null): string {
   }
 }
 
+function fmtDateTime(v: string): string {
+  return new Date(v).toLocaleString('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 /* ------------------------------- Panel ------------------------------- */
 export default function AdminPanel() {
   const { profile, loading: authLoading } = useAuth();
-  const [tab, setTab] = useState<Tab>('usuarios');
+  const [tab, setTab] = useState<Tab>('actividad');
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [requests, setRequests] = useState<RequestRow[]>([]);
@@ -140,17 +168,20 @@ export default function AdminPanel() {
   const [planRequests, setPlanRequests] = useState<PlanRequestRow[]>([]);
   const [reports, setReports] = useState<ReportRow[]>([]);
   const [reportsError, setReportsError] = useState(false);
+  const [applicationActivity, setApplicationActivity] = useState<ApplicationActivityRow[]>([]);
+  const [activityError, setActivityError] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const [u, r, p, plans, reportList] = await Promise.all([
+    const [u, r, p, plans, reportList, activityList] = await Promise.all([
       supabase.rpc('admin_list_users_with_plans'),
       supabase.rpc('admin_list_requests'),
       supabase.rpc('admin_promoter_stats'),
       supabase.rpc('admin_list_plan_requests'),
       supabase.rpc('admin_list_reports'),
+      supabase.rpc('admin_list_application_activity', { p_limit: 200 }),
     ]);
     if (u.error || r.error || p.error || plans.error) {
       setError('No pudimos cargar los datos. ¿Corriste la migración y te marcaste como admin?');
@@ -162,6 +193,8 @@ export default function AdminPanel() {
     setPlanRequests((plans.data ?? []) as PlanRequestRow[]);
     setReports((reportList.data ?? []) as ReportRow[]);
     setReportsError(!!reportList.error);
+    setApplicationActivity((activityList.data ?? []) as ApplicationActivityRow[]);
+    setActivityError(!!activityList.error);
     setPromoters(
       ((p.data ?? []) as PromoterStat[]).map((row) => ({
         ...row,
@@ -184,6 +217,7 @@ export default function AdminPanel() {
   if (!profile?.is_admin) return <Navigate to="/app" replace />;
 
   const tabs: { key: Tab; label: string; icon: typeof Users; count: number }[] = [
+    { key: 'actividad', label: 'Actividad', icon: BellRing, count: applicationActivity.length },
     { key: 'usuarios', label: 'Registrados', icon: Users, count: users.length },
     { key: 'solicitudes', label: 'Formulario', icon: ClipboardList, count: requests.length },
     { key: 'planes', label: 'Planes', icon: CreditCard, count: planRequests.filter((request) => request.status === 'pending').length },
@@ -195,7 +229,7 @@ export default function AdminPanel() {
     <div>
       <PageHeader
         title="Administración"
-        description="Usuarios, solicitudes, denuncias y promotores."
+        description="Actividad, usuarios, solicitudes, denuncias y promotores."
         action={
           <Button variant="secondary" size="sm" onClick={load}>
             <RefreshCw className="h-4 w-4" /> Actualizar
@@ -227,6 +261,8 @@ export default function AdminPanel() {
 
       {loading ? (
         <PageLoader />
+      ) : tab === 'actividad' ? (
+        <ApplicationActivityTab activity={applicationActivity} setupError={activityError} />
       ) : tab === 'usuarios' ? (
         <UsersTab users={users} onChanged={load} />
       ) : tab === 'solicitudes' ? (
@@ -238,6 +274,82 @@ export default function AdminPanel() {
       ) : (
         <PromotersTab promoters={promoters} onChanged={load} />
       )}
+    </div>
+  );
+}
+
+function ApplicationActivityTab({
+  activity,
+  setupError,
+}: {
+  activity: ApplicationActivityRow[];
+  setupError: boolean;
+}) {
+  const [filter, setFilter] = useState<'todos' | 'application_created' | 'entrevista' | 'seleccionado'>('todos');
+
+  if (setupError) {
+    return (
+      <Card className="border-red-400/30 bg-red-500/5 text-sm text-red-700">
+        Falta ejecutar supabase/migracion-actividad-postulaciones-admin.sql en el SQL Editor.
+      </Card>
+    );
+  }
+
+  const filtered = activity.filter((item) => {
+    if (filter === 'todos') return true;
+    if (filter === 'application_created') return item.event_type === filter;
+    return item.event_type === 'status_changed' && item.new_status === filter;
+  });
+
+  return (
+    <div>
+      <div className="mb-4 flex justify-end">
+        <select
+          value={filter}
+          onChange={(event) => setFilter(event.target.value as typeof filter)}
+          className="rounded-full border border-white/12 bg-white/5 px-4 py-2 text-sm text-white outline-none focus:border-brand-400/60"
+          aria-label="Filtrar actividad de postulaciones"
+        >
+          <option value="todos">Toda la actividad</option>
+          <option value="application_created">Nuevas postulaciones</option>
+          <option value="entrevista">Entrevistas</option>
+          <option value="seleccionado">Seleccionados</option>
+        </select>
+      </div>
+
+      <div className="space-y-3">
+        {filtered.map((item) => {
+          const isApplication = item.event_type === 'application_created';
+          const statusLabel = item.new_status === 'seleccionado' ? 'Seleccionado' : 'Entrevista';
+          return (
+            <Card key={item.id}>
+              <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-500/10 text-brand-500">
+                  {isApplication ? <BriefcaseBusiness className="h-5 w-5" /> : <Check className="h-5 w-5" />}
+                </span>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-white">
+                      {isApplication ? 'Nueva postulación' : `Candidato ${statusLabel.toLowerCase()}`}
+                    </p>
+                    <span className="text-xs text-white/45">{fmtDateTime(item.created_at)}</span>
+                  </div>
+                  <p className="mt-1 text-sm text-white/75">
+                    <strong>{item.student_name}</strong> {isApplication ? 'se postuló' : `pasó a ${statusLabel}`} en{' '}
+                    <strong>{item.internship_title}</strong>.
+                  </p>
+                  <p className="mt-1 text-xs text-white/50">
+                    Empresa: {item.company_name}{item.student_email ? ` · ${item.student_email}` : ''}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+        {filtered.length === 0 && (
+          <Card className="text-center text-sm text-white/45">Todavía no hay actividad en esta categoría.</Card>
+        )}
+      </div>
     </div>
   );
 }
